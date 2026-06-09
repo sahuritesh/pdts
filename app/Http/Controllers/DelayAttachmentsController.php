@@ -425,7 +425,11 @@ class DelayAttachmentsController extends Controller
             return ['error' => true, 'msg' => 'File type not allowed. Allowed: ' . implode(', ', self::ALLOWED_EXTENSIONS)];
         }
 
-        if ($file->getSize() > self::MAX_FILE_SIZE_KB * 1024) {
+        $fileName = $file->getClientOriginalName();
+        $mimeType = $file->getClientMimeType();
+        $fileSize = (int) $file->getSize();
+
+        if ($fileSize > self::MAX_FILE_SIZE_KB * 1024) {
             return ['error' => true, 'msg' => 'File size must be 10 MB or less'];
         }
 
@@ -441,10 +445,10 @@ class DelayAttachmentsController extends Controller
 
         return [
             'error' => false,
-            'file_name' => $file->getClientOriginalName(),
+            'file_name' => $fileName,
             'file_path' => self::UPLOAD_DIR . '/' . $storedName,
-            'mime_type' => $file->getClientMimeType(),
-            'file_size' => (int) $file->getSize(),
+            'mime_type' => $mimeType,
+            'file_size' => $fileSize,
         ];
     }
 

@@ -2,14 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\Http\Request;
 use App\Models\Common_model;
+use App\Services\DashboardAnalyticsService;
 use Auth;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Session;
 
 class DashboardController extends Controller
 {
+    protected DashboardAnalyticsService $dashboardAnalytics;
+
+    public function __construct(DashboardAnalyticsService $dashboardAnalytics)
+    {
+        $this->dashboardAnalytics = $dashboardAnalytics;
+    }
+
     public function dashboard(Request $request)
     {
         if (permissionexists('dashboard_view') != '1') {
@@ -57,6 +65,14 @@ class DashboardController extends Controller
                     'status',
                     ACTIVE
                 ) ?: 0);
+
+                $data['show_delay_analytics'] = permissionexists('delay_registers_list') == '1'
+                    || permissionexists('projects_list') == '1'
+                    || permissionexists('executive_dashboard') == '1';
+
+                if ($data['show_delay_analytics']) {
+                    $data['analytics'] = $this->dashboardAnalytics->getModule1Analytics();
+                }
 
                 return response()->view('dashboard.dashboard', compact(
                     'pageTitle',

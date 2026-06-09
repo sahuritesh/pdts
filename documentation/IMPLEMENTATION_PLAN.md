@@ -180,11 +180,12 @@ All delay-tracking CRUD (categories → projects → register → mitigations �
 
 ## Phase 5 — Module 4: Dashboards, Reports & Notifications
 
-### 5.1 Executive Dashboard
+### 5.1 Executive Dashboard — partial (Module 1 on main `/dashboard`)
 
-- **Permission:** `executive_dashboard`
-- **KPIs:** total/active/delayed/completed projects, avg delay days, delay cost, high risk count, pending approvals
-- **Data:** aggregate queries in `DashboardController` or dedicated service
+- **KPIs on dashboard:** projects, open delays, critical count, total delay cost, mitigations, attachments
+- **Charts:** severity, category, project status, mitigation status, 6-month trend, hospital breakdown
+- **Service:** `DashboardAnalyticsService`
+- **Remaining:** renovation KPIs, EWS alerts, dedicated `executive_dashboard` / `delay_analytics` report pages
 
 ### 5.2 Delay Analytics
 
