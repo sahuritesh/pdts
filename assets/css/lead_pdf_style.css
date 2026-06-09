@@ -1,0 +1,19 @@
+.agreementSection table tr td, p{ font-family: poppins, Helvetica, sans-serif; }
+.agreementSection .gridTable, .gridTable th, .gridTable td { border: 1px solid black; border-collapse: collapse; border-color:#d16111; font-size:13px; padding:5px; }
+.agreementSection h4{margin: 0;}
+.agreementSection .fontSize13 {font-size:10px;}
+
+.paddingLeft{ padding-left:10px;}
+.agreementSection .alignCenter{text-align:center;}
+.agreementSection .alignLeft{text-align:left;}
+.agreementSection .alignjustify{text-align:justify;}
+.agreementSection .alignRight{text-align:right;}
+.agreementSection .tittleFont{font-size:18px;color:#d16111;font-weight:bold;padding-top:15px;}
+.agreementSection .tittleFontBlack{font-size:16px;color:#666666;font-weight:bold;padding-top:15px;}
+.agreementSection .tittleSubFont{font-size:16px;color:#d16111;font-weight:bold;padding-top:15px;}
+.agreementSection .width50{width:50%;}
+.agreementSection .width30{width:30%;}
+.agreementSection .width6{width:4%;}
+.agreementSection .borderBottom{border-bottom:1px solid #d16111 !important; }
+.agreementSection .borderRight{border-right:1px solid #d16111 !important;}
+.agreementSection .borderOrange{border:1px solid #d16111;}

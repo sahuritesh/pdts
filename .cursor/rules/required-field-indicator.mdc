@@ -1,0 +1,28 @@
+---
+alwaysApply: true
+description: Required field indicator pattern - use required-label class instead of manual asterisk spans
+---
+
+# Required Field Indicator Pattern
+
+**CRITICAL: Never use manual `<span class="text-danger">*</span>` for required field indicators.**
+
+## Correct Pattern
+
+```html
+<label for="field_name" class="required-label">Field Name</label>
+<input name="field_name" id="field_name" class="form-control required">
+```
+
+CSS adds the red asterisk automatically.
+
+## WRONG
+
+```html
+<label for="field_name">Field Name <span class="text-danger">*</span></label>
+```
+
+## Related
+
+- `required` class on input/select is still needed for client-side validation
+- `required-label` only controls the visual asterisk

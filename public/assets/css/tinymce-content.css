@@ -1,0 +1,388 @@
+/* TinyMCE Content Styles - Use classes instead of inline styles */
+
+/* Paragraph Styles */
+.tinymce-content p {
+    margin: 0 0 16px 0;
+    line-height: 1.7;
+    color: #333;
+}
+
+.tinymce-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Heading Styles */
+.tinymce-content h1 {
+    font-size: 2em;
+    margin: 0.67em 0;
+    font-weight: bold;
+    color: #1d2758;
+}
+
+.tinymce-content h2 {
+    font-size: 1.5em;
+    margin: 0.75em 0;
+    font-weight: bold;
+    color: #1d2758;
+}
+
+.tinymce-content h3 {
+    font-size: 1.17em;
+    margin: 0.83em 0;
+    font-weight: bold;
+    color: #1d2758;
+}
+
+.tinymce-content h4 {
+    font-size: 1em;
+    margin: 1em 0;
+    font-weight: bold;
+    color: #1d2758;
+}
+
+.tinymce-content h5 {
+    font-size: 0.83em;
+    margin: 1.17em 0;
+    font-weight: bold;
+    color: #1d2758;
+}
+
+.tinymce-content h6 {
+    font-size: 0.67em;
+    margin: 1.33em 0;
+    font-weight: bold;
+    color: #1d2758;
+}
+
+/* List Styles */
+.tinymce-content ul,
+.tinymce-content ol {
+    margin: 0 0 16px 0;
+    padding-left: 40px;
+    color: #333;
+}
+
+.tinymce-content li {
+    margin: 0 0 8px 0;
+    line-height: 1.7;
+}
+
+.tinymce-content ul {
+    list-style-type: disc;
+}
+
+.tinymce-content ol {
+    list-style-type: decimal;
+}
+
+/* Text Formatting */
+.tinymce-content strong,
+.tinymce-content b {
+    font-weight: bold;
+}
+
+.tinymce-content em,
+.tinymce-content i {
+    font-style: italic;
+}
+
+.tinymce-content u {
+    text-decoration: underline;
+}
+
+/* Alignment Classes */
+.tinymce-content .text-left {
+    text-align: left;
+}
+
+.tinymce-content .text-center {
+    text-align: center;
+}
+
+.tinymce-content .text-right {
+    text-align: right;
+}
+
+.tinymce-content .text-justify {
+    text-align: justify;
+}
+
+/* Color Classes */
+.tinymce-content .text-primary {
+    color: #1d2758;
+}
+
+.tinymce-content .text-secondary {
+    color: #6c757d;
+}
+
+.tinymce-content .text-muted {
+    color: #6c757d;
+}
+
+/* Link Styles */
+.tinymce-content a {
+    color: #0066cc;
+    text-decoration: underline;
+}
+
+.tinymce-content a:hover {
+    color: #0052a3;
+}
+
+/* Blockquote */
+.tinymce-content blockquote {
+    margin: 16px 0;
+    padding: 10px 20px;
+    border-left: 4px solid #ddd;
+    background-color: #f9f9f9;
+    font-style: italic;
+    color: #666;
+}
+
+/* Table Styles */
+.tinymce-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+}
+
+.tinymce-content table td,
+.tinymce-content table th {
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+.tinymce-content table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+/* Allow inline background colors to override - don't force background on elements with inline styles */
+.tinymce-content table td[style*="background-color"],
+.tinymce-content table th[style*="background-color"] {
+    /* Don't override inline background-color */
+    background-color: unset !important;
+}
+
+/* Spacing Utilities */
+.tinymce-content .mb-small {
+    margin-bottom: 8px;
+}
+
+.tinymce-content .mb-medium {
+    margin-bottom: 16px;
+}
+
+.tinymce-content .mb-large {
+    margin-bottom: 24px;
+}
+
+.tinymce-content .mt-small {
+    margin-top: 8px;
+}
+
+.tinymce-content .mt-medium {
+    margin-top: 16px;
+}
+
+.tinymce-content .mt-large {
+    margin-top: 24px;
+}
+
+/* Font Size Classes */
+.tinymce-content .text-small {
+    font-size: 0.875em;
+}
+
+.tinymce-content .text-normal {
+    font-size: 1em;
+}
+
+.tinymce-content .text-large {
+    font-size: 1.25em;
+}
+
+/* General Content Container */
+.tinymce-content {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #333;
+}
+
+/* Preserve all inline styles from TinyMCE */
+.tinymce-content * {
+    max-width: 100%;
+}
+
+/* Ensure lists, paragraphs, and other elements maintain formatting */
+.tinymce-content p,
+.tinymce-content div,
+.tinymce-content span {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal !important; /* Override any nowrap styles */
+}
+
+/* Ensure paragraphs display as block elements with proper spacing */
+.tinymce-content p {
+    display: block !important;
+    margin: 0 0 16px 0 !important;
+    white-space: normal !important;
+}
+
+.tinymce-content p:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Important: Preserve all inline styles from TinyMCE editor */
+.tinymce-content [style] {
+    /* Allow all inline styles to be applied */
+}
+
+/* Ensure text formatting is visible */
+.tinymce-content strong,
+.tinymce-content b {
+    font-weight: bold !important;
+}
+
+.tinymce-content em,
+.tinymce-content i {
+    font-style: italic !important;
+}
+
+.tinymce-content u {
+    text-decoration: underline !important;
+}
+
+/* Ensure colors are applied */
+.tinymce-content [style*="color"] {
+    /* Preserve color styles */
+}
+
+/* Ensure font sizes are applied */
+.tinymce-content [style*="font-size"] {
+    /* Preserve font-size styles */
+}
+
+/* Modal-specific styles - Ensure TinyMCE content in modals displays correctly */
+.modal .tinymce-content,
+#globalReusableModal .tinymce-content,
+#globalReusableModalBody .tinymce-content,
+#globalReusableModalBody .tinymce-content * {
+    font-family: Helvetica, Arial, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+    color: #333 !important;
+    white-space: normal !important; /* Override any nowrap styles */
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    display: block !important;
+}
+
+/* Force block display for paragraphs in modals */
+#globalReusableModalBody .tinymce-content p {
+    display: block !important;
+    margin: 0 0 16px 0 !important;
+    white-space: normal !important;
+}
+
+#globalReusableModalBody .tinymce-content p:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Force block display for lists in modals */
+#globalReusableModalBody .tinymce-content ul,
+#globalReusableModalBody .tinymce-content ol {
+    display: block !important;
+    margin: 0 0 16px 0 !important;
+    padding-left: 40px !important;
+    white-space: normal !important;
+}
+
+#globalReusableModalBody .tinymce-content li {
+    display: list-item !important;
+    white-space: normal !important;
+}
+
+/* Ensure all HTML elements in modal preserve their styles */
+.modal .tinymce-content *,
+#globalReusableModal .tinymce-content *,
+#globalReusableModalBody .tinymce-content * {
+    /* Preserve all inline styles */
+    box-sizing: border-box;
+    white-space: normal !important; /* Override any nowrap styles */
+}
+
+/* Ensure lists display properly in modals */
+.modal .tinymce-content ul,
+.modal .tinymce-content ol,
+#globalReusableModal .tinymce-content ul,
+#globalReusableModal .tinymce-content ol {
+    display: block !important;
+    margin: 0 0 16px 0 !important;
+    padding-left: 40px !important;
+    white-space: normal !important;
+    list-style-position: outside !important;
+}
+
+.modal .tinymce-content li,
+#globalReusableModal .tinymce-content li {
+    display: list-item !important;
+    margin: 0 0 8px 0 !important;
+    white-space: normal !important;
+}
+
+/* Force text formatting to be visible in modals */
+.modal .tinymce-content strong,
+.modal .tinymce-content b,
+#globalReusableModal .tinymce-content strong,
+#globalReusableModal .tinymce-content b {
+    font-weight: bold !important;
+}
+
+.modal .tinymce-content em,
+.modal .tinymce-content i,
+#globalReusableModal .tinymce-content em,
+#globalReusableModal .tinymce-content i {
+    font-style: italic !important;
+}
+
+.modal .tinymce-content u,
+#globalReusableModal .tinymce-content u {
+    text-decoration: underline !important;
+}
+
+/* Ensure content displays properly when rendered */
+.session-description,
+.event-description,
+.module-description {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #333;
+}
+
+.session-description p,
+.event-description p,
+.module-description p {
+    margin: 0 0 16px 0;
+}
+
+.session-description ul,
+.event-description ul,
+.module-description ul,
+.session-description ol,
+.event-description ol,
+.module-description ol {
+    margin: 0 0 16px 0;
+    padding-left: 40px;
+}
+
+.session-description li,
+.event-description li,
+.module-description li {
+    margin: 0 0 8px 0;
+}
+

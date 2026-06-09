@@ -1,0 +1,88 @@
+---
+alwaysApply: true
+description: AJAX request pattern - always use ajaxRequestWithPromise instead of direct $.ajax calls
+---
+
+# AJAX Request Pattern
+
+**CRITICAL: Always use `ajaxRequestWithPromise` function instead of direct `$.ajax` calls.**
+
+## Function Signature
+
+```javascript
+ajaxRequestWithPromise(url, parameterData, postKey, isFormData, callback, buttonSelector, method, timeoutMs)
+```
+
+## Parameters
+
+- `url` (string): The endpoint URL
+- `parameterData` (object|FormData): Data to send (object for JSON, FormData for file uploads)
+- `postKey` (string): Post key identifier (e.g., "insert", "update", "delete", "get_tasks")
+- `isFormData` (boolean|number): `true` or `1` for FormData/file uploads, `false` or `0` for JSON data
+- `callback` (function, optional): Optional callback function
+- `buttonSelector` (string|jQuery, optional): Button selector for automatic loading state management
+- `method` (string, optional): HTTP method - 'GET' or 'POST' (default: 'POST')
+- `timeoutMs` (number, optional): Request timeout in milliseconds
+
+## Server-Side Form Data Pattern
+
+Non-FormData POSTs from sidelayout forms typically send:
+
+```javascript
+var data = { data: JSON.stringify($("#formId").serializeArray()) };
+ajaxRequestWithPromise(url, data, 'insert_update_roles', 0, '', $submitButton);
+```
+
+Controller parses with: `parse_str(json_decode($requestData['data'], 1), $postData);`
+
+## Usage Examples
+
+### FormData (File Uploads)
+```javascript
+var formData = new FormData(formElement);
+var tokenValue = $('meta[name="csrf-token"]').attr('content');
+if (tokenValue) {
+    formData.append('_token', tokenValue);
+}
+
+ajaxRequestWithPromise(url, formData, 'insert', 1, '', $submitButton).then(function(response) {
+    if (response.error == 0 || response.error == "0") {
+        closeSideLayout();
+        reloadDataTable();
+    }
+});
+```
+
+### JSON Data (POST)
+```javascript
+ajaxRequestWithPromise(url, data, 'update', 0, '', $submitButton).then(function(response) {
+    if (response.error == 0 || response.error == "0") {
+        // Success handling
+    }
+});
+```
+
+### GET Requests
+```javascript
+ajaxRequestWithPromise(url, { project_id: projectId }, 'get_delay_registers', 0, '', null, 'GET').then(function(response) {
+    // Process response
+});
+```
+
+## Benefits
+
+- Automatic loader overlay (`showGlobalLoader`)
+- Automatic button loading state
+- Automatic error display via `displayResponseMessage`
+- Consistent error handling
+- Promise-based async handling
+
+## DO NOT USE
+
+- Direct `$.ajax()` calls
+- Manual `showGlobalLoader()` before requests (handled automatically by ajaxRequestWithPromise)
+- Manual button disable/spinner on submit buttons passed to `buttonSelector`
+
+## Reference
+
+See `assets/js/ajaxPromise.js` for the full implementation.

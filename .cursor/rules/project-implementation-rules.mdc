@@ -1,0 +1,42 @@
+---
+description: Core implementation rules for PDTS tasks
+alwaysApply: true
+---
+
+# PDTS Implementation Rules
+
+Follow these rules before and during every task implementation.
+
+## Mandatory Workflow
+
+- First read the applicable rules in `.cursor/rules/` before coding.
+- Read `documentation/CODING_STANDARDS.md` and the relevant section of `documentation/IMPLEMENTATION_PLAN.md`.
+- Preserve existing project structure and patterns; do not introduce new architecture.
+- Reuse utilities and shared helpers instead of duplicating logic.
+
+## AJAX Rule (Non-Negotiable)
+
+- Use only `ajaxRequestWithPromise(...)` for AJAX/network requests.
+- Do not write direct `$.ajax(...)`, `fetch(...)`, or `axios` calls in Blade/views.
+
+## UI and CRUD Pattern
+
+- Add/Edit flows must open in sidelayout (`openSideLayout(...)`) for admin modules.
+- Grid list pages must follow the existing `gridviews` + `grid_data` structure.
+- Keep route/controller/view naming and flow consistent with `RoleManagement` and `UserManagement`.
+
+## URL and Asset Handling
+
+- Use project helpers for URL generation: `getProjectUrl()`, `getAssetUrl()`, `getImageUrl()`.
+- Avoid hardcoded localhost paths in views/scripts/controllers.
+
+## Database (PDTS-Specific)
+
+- Migrations go in `database/migrations/ritesh/` only.
+- Table prefix: `tbl_`. Standard audit columns: `created_by`, `created_on`, `updated_by`, `updated_on`, `is_delete`.
+- **No database foreign keys** — use integer reference columns + indexes; enforce relationships in application layer.
+
+## Change Safety
+
+- Do not refactor unrelated working code while implementing a task.
+- Keep fixes minimal and targeted to the reported issue.

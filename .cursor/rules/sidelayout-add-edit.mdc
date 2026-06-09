@@ -1,0 +1,66 @@
+---
+description: Rule for opening add and edit pages in sidelayout instead of full page navigation
+globs: *.blade.php,*.js
+---
+
+# Sidelayout for Add/Edit Pages
+
+All add and edit admin pages MUST open in sidelayout (`openSideLayout`) — not full-page navigation.
+
+## Function
+
+```javascript
+openSideLayout(data, url, title, width = 75)
+```
+
+Helpers: `closeSideLayout()`, `generateSideLayoutEditLink()`, `generateSideLayoutAddButton()` in `assets/js/common.js`.
+
+## Grid Add Button
+
+```blade
+<a href="javascript:void(0)"
+   onclick="openSideLayout({}, '{{ getProjectUrl($grid_data['addurl']) }}', 'Add {{ $pageTitle }}'); return false;"
+   class="btn btn-primary">
+    <i class="fas fa-plus fa-fw"></i>
+</a>
+```
+
+## Controller Edit Link (DataTable row)
+
+```php
+$editUrl = getProjectUrl('delay-registers/edit/' . Crypt::encrypt($id));
+$row[] = '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Delay\'); return false;" title="Edit"><i class="ri-edit-fill"></i></a>';
+```
+
+## Controller Form Action (sidelayout vs full page)
+
+```php
+if ($request->input('postKey') == 'sidelayoutContent') {
+    return view('module.create-form', compact('pageTitle', 'data'));
+}
+return view('module.create', compact('pageTitle', 'data'));
+```
+
+Sidelayout loader sends `postKey: 'sidelayoutContent'` automatically via `openSideLayout`.
+
+## Form Submission (CRITICAL)
+
+- **DO NOT** use form `onsubmit` — use click handler on submit button
+- **ALWAYS** use `ajaxRequestWithPromise`
+- On success: `closeSideLayout()` + `reloadDataTable()` or `$('#ucList').DataTable().ajax.reload(null, false)`
+- On error: keep sidelayout open, call `parseFormErrors(res, 'error')`
+- Set title in `$(document).ready()`: `$('.sidelayoutTitle').html('{{ $pageTitle }}');`
+
+## Select2 in Sidelayout
+
+```javascript
+$('.multiselect, .dd-select').select2({
+    dropdownParent: $("#offcanvasRight")
+});
+```
+
+## Reference Implementations
+
+- Controller: `app/Http/Controllers/RoleManagement.php`
+- Form: `resources/views/roles/create-roles-form.blade.php`
+- Grid: `resources/views/gridviews/gridviews.blade.php`

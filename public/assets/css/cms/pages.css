@@ -1,0 +1,460 @@
+/* CMS Pages Styles */
+.section-title {
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-blue);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+}
+
+.sortable-container {
+    min-height: 50px;
+}
+
+.sortable-item {
+    cursor: move;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sortable-item:hover {
+    background-color: #e9ecef;
+    border-color: #007bff;
+}
+
+.sortable-item .section-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.sortable-item .section-info .drag-handle {
+    color: #6c757d;
+    cursor: grab;
+}
+
+.sortable-item .section-info .section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sortable-item .section-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.section-type-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e9ecef;
+    color: #495057;
+}
+
+/* Tab Card Styling */
+.sortable-item.card {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+.sortable-item.card .tab-card-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border-bottom: 2px solid #0056b3;
+    padding: 14px 18px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    min-height: 50px;
+    width: 100%;
+}
+
+.sortable-item.card .tab-card-header .tab-toggle-area {
+    flex-grow: 1;
+}
+
+.sortable-item.card .tab-card-header .tab-toggle-area:hover {
+    opacity: 0.95;
+}
+
+.sortable-item.card .tab-card-header .tab-actions {
+    flex-shrink: 0;
+    margin-left: 15px;
+}
+
+.sortable-item.card .tab-card-header:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.sortable-item.card .tab-card-header .drag-handle {
+    color: rgba(255, 255, 255, 0.9);
+    margin-right: 10px;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    align-self: center;
+    cursor: grab !important;
+    pointer-events: auto !important;
+    z-index: 10;
+    position: relative;
+}
+
+.sortable-item.card .tab-card-header .drag-handle:hover {
+    color: #fff;
+    transform: scale(1.1);
+    cursor: grab !important;
+}
+
+.sortable-item.card .tab-card-header .drag-handle:active {
+    cursor: grabbing !important;
+}
+
+/* Prevent tab-toggle-area from interfering with drag handle */
+.sortable-item.card .tab-card-header .tab-toggle-area {
+    pointer-events: none;
+}
+
+.sortable-item.card .tab-card-header .tab-toggle-area * {
+    pointer-events: auto;
+}
+
+.sortable-item.card .tab-card-header .drag-handle {
+    pointer-events: auto !important;
+}
+
+.sortable-item.card .tab-card-header i.fa-folder,
+.sortable-item.card .tab-card-header i[class^="fa-"] {
+    font-size: 16px;
+    margin-right: 8px;
+    opacity: 0.95;
+}
+
+.sortable-item.card .tab-card-header strong {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.sortable-item.card .tab-card-header .badge {
+    font-size: 11px;
+    padding: 5px 10px;
+    font-weight: 600;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.sortable-item.card .tab-card-header button {
+    margin-left: 8px;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.sortable-item.card .tab-card-header .btn-light {
+    background-color: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #fff;
+    backdrop-filter: blur(4px);
+}
+
+.sortable-item.card .tab-card-header .btn-light:hover {
+    background-color: rgba(255, 255, 255, 0.35);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.sortable-item.card .tab-card-header .btn-light:active {
+    transform: translateY(0);
+}
+
+.sortable-item.card .card-body {
+    padding: 18px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.sortable-item.card .nested-item {
+    margin-left: 0;
+    border-left: none;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    background: #fff;
+    padding: 0;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: move;
+}
+
+.sortable-item.card .nested-item:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 6px rgba(0,123,255,0.15);
+    transform: translateX(3px);
+}
+
+.sortable-item.card .nested-item > div {
+    padding: 12px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.sortable-item.card .nested-item .drag-handle {
+    color: #6c757d;
+    margin-right: 12px;
+    font-size: 14px;
+    cursor: grab !important;
+    pointer-events: auto !important;
+    z-index: 10;
+    position: relative;
+}
+
+.sortable-item.card .nested-item .drag-handle:hover {
+    color: #007bff;
+    cursor: grab !important;
+}
+
+.sortable-item.card .nested-item .drag-handle:active {
+    cursor: grabbing !important;
+}
+
+/* Ensure nested sections container is sortable */
+.nested-sections {
+    min-height: 20px;
+}
+
+.nested-sections .ui-sortable-placeholder {
+    background-color: #e3f2fd !important;
+    border: 2px dashed #2196f3 !important;
+    visibility: visible !important;
+    height: 50px !important;
+    margin: 5px 0;
+}
+
+.sortable-item.card .nested-item .section-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sortable-item.card .nested-item strong {
+    font-size: 14px;
+    color: #212529;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.sortable-item.card .nested-item .badge {
+    font-size: 10px;
+    padding: 3px 7px;
+    margin-top: 0;
+}
+
+.sortable-item.card .nested-item .section-actions {
+    display: flex;
+    gap: 5px;
+    margin-left: 15px;
+}
+
+.sortable-item.card .nested-item .btn-sm {
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+.sortable-item.card .nested-sections {
+    padding-left: 0;
+}
+
+/* Empty state styling */
+.sortable-item.card .text-muted {
+    font-style: italic;
+    padding: 15px;
+    text-align: center;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px dashed #dee2e6;
+}
+
+.sortable-item.card .text-muted i {
+    margin-right: 6px;
+    opacity: 0.7;
+}
+
+/* Glossary Section Styles */
+.glossary-section {
+    background: #fff;
+}
+
+.glossary-list {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.glossary-letter-group {
+    margin-bottom: 2.5rem;
+}
+
+.glossary-letter-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.letter-badge-wrapper {
+    flex-shrink: 0;
+}
+
+.letter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background: #007bff;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+}
+
+.glossary-items-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.glossary-item-card {
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.glossary-item-card:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.glossary-item-card .term-name {
+    font-size: 18px;
+    color: #1e3a5f;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.glossary-item-card .term-name strong {
+    font-weight: 600;
+    color: #1e3a5f;
+}
+
+.glossary-item-card .term-hindi {
+    color: #666;
+    font-weight: normal;
+    font-size: 16px;
+}
+
+.glossary-item-card .term-definition {
+    color: #555;
+    line-height: 1.7;
+    font-size: 15px;
+    margin-top: 5px;
+}
+
+.glossary-item-card .term-definition p {
+    margin-bottom: 0.5rem;
+}
+
+.glossary-item-card .term-definition p:last-child {
+    margin-bottom: 0;
+}
+
+/* FAQ Section Styles */
+.faq-section .accordion-button {
+    background-color: #f8f9fa;
+    color: #1e3a5f;
+    font-weight: 600;
+    border: none;
+    box-shadow: none;
+}
+
+.faq-section .accordion-button:not(.collapsed) {
+    background-color: #1e3a5f;
+    color: #fff;
+}
+
+.faq-section .accordion-button:focus {
+    box-shadow: none;
+    border-color: transparent;
+}
+
+.faq-section .accordion-body {
+    background-color: #fff;
+    padding: 1.5rem;
+    line-height: 1.8;
+}
+
+/* Published Papers Section Styles */
+.papers-section .paper-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: box-shadow 0.3s ease;
+}
+
+.papers-section .paper-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.papers-section .paper-title {
+    color: #1e3a5f;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.papers-section .paper-authors,
+.papers-section .paper-journal {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 0.5rem;
+}
+
+.papers-section .paper-actions {
+    margin-top: 1rem;
+}
+
+.papers-section .paper-actions .btn {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+

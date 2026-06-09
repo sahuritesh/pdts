@@ -1,0 +1,67 @@
+---
+description: PDTS controller response, permission, and grid patterns
+globs: app/Http/Controllers/**/*.php
+---
+
+# PDTS Controller Patterns
+
+## Traits to Use
+
+```php
+use GridConfigTrait, WebResponseTrait;
+```
+
+- `buildGridConfig()` — grid listing configuration
+- `buildTextFilter()`, `buildSelectFilter()`, `buildDateFilter()` — grid filters
+- `sendSuccessResponse()`, `sendValidationErrorResponse()`, `sendErrorResponse()`, `sendResponse()` — JSON responses
+
+## Response Format
+
+All AJAX endpoints return JSON:
+
+```php
+// Success
+{ "error": 0, "msg": { "0": "Saved successfully" }, "operation": "Add" }
+
+// Validation error
+{ "error": 1, "msg": { "0": "<li>Field is required</li>" } }
+```
+
+Use `sendValidationErrorResponse()` for validation; messages may contain `<li>` HTML.
+
+## Permission Check
+
+```php
+public $module = 'delay_registers';
+
+$res = permissionexists($this->module);
+if ($res != '1') {
+    return redirect()->back()->with('error', 'You dont have permission to access this page');
+}
+```
+
+Register new modules in `RolesSeeder`, `RoleManagement::getPermissionStructure()`, and `Common_controller::hasTablePermission()`.
+
+## Data Access
+
+Use `Common_model` and `Datatables_model` — do not add Eloquent models unless the project already uses them for that table.
+
+```php
+Common_model::getDataFromTable($table, $fields, $where, ...);
+Common_model::insertDataIntoTable($table, $data);
+Common_model::updateDataFromTable($table, $data, $whereField, $whereValue);
+Datatables_model::getDataTableResult(...);
+```
+
+## Grid Listing Method Pattern
+
+Follow `RoleManagement::get_role_list()`:
+1. Read filters from request
+2. Build `$where` with `is_delete = 0`
+3. Call `Datatables_model::getDataTableResult`
+4. Build `$row` array with encrypted IDs in edit URLs
+5. Return JSON for DataTables
+
+## Business Logic Services
+
+Complex calculations (delay days, severity, EWS alerts, risk scoring, financial totals) go in dedicated service classes under `app/Services/` — not inline in controllers.

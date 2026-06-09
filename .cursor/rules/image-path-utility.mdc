@@ -1,0 +1,42 @@
+---
+alwaysApply: true
+description: Always use getImageUrl() utility function for image and file paths instead of direct url() calls
+---
+
+# Image/File Path Utility Pattern
+
+**CRITICAL: Always use `getImageUrl()` for displaying stored file paths. Never use raw `url($path)`.**
+
+## Function
+
+```php
+getImageUrl($imagePath)
+```
+
+## Usage
+
+### CORRECT
+```blade
+<a href="{{ getImageUrl($attachment['file_path']) }}" target="_blank">View</a>
+<img src="{{ getImageUrl($user['profile_image']) }}" alt="Profile">
+```
+
+### WRONG
+```blade
+<a href="{{ url($attachment['file_path']) }}" target="_blank">View</a>
+```
+
+## File Storage Pattern
+
+Store relative paths **without** `public/` prefix:
+
+```php
+$filePath = 'uploads/delay_attachments/' . $projectId . '/' . $fileName;
+```
+
+Use `public_path()` for filesystem writes; store relative path in DB.
+
+## Reference
+
+- `getImageUrl()` in `app/Http/common_helper.php`
+- `PUBLIC_UPLOADS_PATH` in `config/constants.php`

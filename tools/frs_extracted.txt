@@ -1,0 +1,5 @@
+﻿
+Warning: PHP Startup: Unable to load dynamic library 'php_imagick' (tried: D:\newxampp\php\ext\php_imagick (The specified module could not be found), D:\newxampp\php\ext\php_php_imagick.dll (The specified module could not be found)) in Unknown on line 0
+=== DOCUMENT OUTLINE ===
+
+=== PAGE TEXT (best effort) ===

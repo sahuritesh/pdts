@@ -1,0 +1,38 @@
+---
+description: Rule for database migrations location
+globs: database/migrations/**/*.php
+---
+
+# Database Migrations Location Rule
+
+## Migration File Location
+
+**ALWAYS** create database migrations in `database/migrations/ritesh/`.
+
+```
+database/migrations/ritesh/YYYY_MM_DD_HHMMSS_migration_name.php
+```
+
+**DO NOT** create migrations in `database/migrations/` root.
+
+## PDTS Database Conventions
+
+- Table names: `tbl_` prefix (e.g., `tbl_delay_registers`)
+- Audit columns: `created_by`, `created_on`, `updated_by`, `updated_on`, `is_delete`
+- Soft delete: `is_delete = 0` active, `1` deleted — never hard-delete business records
+- **No foreign key constraints** — integer reference columns + indexes only
+- Calculated fields (delay days, severity, cost overrun %, risk level) stored in columns but computed in application services before save
+
+## Index Names
+
+MySQL index names max 64 characters — use short custom names when table/column names are long:
+
+```php
+$table->index('renovation_project_id', 'reno_op_impacts_project_idx');
+```
+
+## Run Migrations (XAMPP)
+
+```bash
+d:\newxampp\php\php.exe artisan migrate
+```

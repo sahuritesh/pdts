@@ -1,0 +1,681 @@
+/**
+ * Feedback Frontend CSS
+ * Styles for public-facing feedback forms
+ */
+
+/* ==========================================================================
+   CSS Custom Properties
+   ========================================================================== */
+:root {
+    --feedback-primary: #1e3a5f;
+    --feedback-secondary: #e91e63;
+    --feedback-accent: #ff9800;
+    --feedback-success: #11998e;
+    --feedback-gradient-start: #667eea;
+    --feedback-gradient-end: #764ba2;
+}
+
+/* ==========================================================================
+   Feedback Form Page
+   ========================================================================== */
+.feedback-page-body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header */
+.feedback-header {
+    background: linear-gradient(135deg, var(--feedback-primary) 0%, #2c5282 100%);
+    color: white;
+    padding: 30px 0;
+    margin-bottom: 30px;
+}
+
+.feedback-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.feedback-header .workshop-badge {
+    background: var(--feedback-secondary);
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: inline-block;
+}
+
+/* Container */
+.feedback-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 15px 50px;
+}
+
+/* Sections */
+.feedback-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.feedback-section .section-header {
+    background: linear-gradient(135deg, var(--feedback-primary) 0%, #34495e 100%);
+    color: white;
+    padding: 18px 25px;
+}
+
+.feedback-section .section-header h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.feedback-section .section-desc {
+    margin: 5px 0 0;
+    opacity: 0.85;
+    font-size: 0.9rem;
+}
+
+.feedback-section .section-body {
+    padding: 25px;
+}
+
+/* Form Elements */
+.feedback-form .form-label {
+    font-weight: 500;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.feedback-form .form-label.required::after {
+    content: " *";
+    color: var(--feedback-secondary);
+}
+
+.feedback-form .form-control,
+.feedback-form .form-select {
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    padding: 12px 15px;
+    transition: all 0.3s;
+}
+
+.feedback-form .form-control:focus,
+.feedback-form .form-select:focus {
+    border-color: var(--feedback-primary);
+    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+}
+
+/* Rating Groups */
+.rating-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.rating-group .btn-check:checked + .rating-btn {
+    background: var(--feedback-primary);
+    border-color: var(--feedback-primary);
+    color: white;
+}
+
+.rating-btn {
+    min-width: 50px;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+/* Star Rating */
+.star-rating {
+    display: flex;
+    gap: 8px;
+}
+
+.star-rating .star {
+    font-size: 28px;
+    color: #ddd;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.star-rating .star:hover,
+.star-rating .star.active {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+/* Form Checks */
+.feedback-form .form-check {
+    padding: 10px 15px 10px 35px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.feedback-form .form-check:hover {
+    background: #e9ecef;
+}
+
+.feedback-form .form-check-input:checked ~ .form-check-label {
+    font-weight: 600;
+    color: var(--feedback-primary);
+}
+
+/* Submit Section */
+.submit-section {
+    text-align: center;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--feedback-secondary) 0%, #c2185b 100%);
+    color: white;
+    border: none;
+    padding: 15px 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 30px;
+    transition: all 0.3s;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
+    color: white;
+}
+
+.btn-submit:disabled {
+    opacity: 0.7;
+    transform: none;
+}
+
+/* Help Text */
+.help-text {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+
+/* Validation */
+.feedback-form .is-invalid {
+    border-color: #dc3545 !important;
+}
+
+.feedback-form .invalid-feedback {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: block !important;
+}
+
+/* Checkbox and Radio Group Validation */
+.feedback-form .checkbox-group.is-invalid,
+.feedback-form .radio-group.is-invalid {
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #fff5f5;
+}
+
+.feedback-form .checkbox-group.is-invalid .form-check-input,
+.feedback-form .radio-group.is-invalid .form-check-input {
+    border-color: #dc3545;
+}
+
+.feedback-form .checkbox-group.is-invalid .form-check-label,
+.feedback-form .radio-group.is-invalid .form-check-label {
+    color: #dc3545;
+}
+
+/* ==========================================================================
+   Thank You Page
+   ========================================================================== */
+.thank-you-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 50px 40px;
+    text-align: center;
+    animation: fadeInUp 0.6s ease-out;
+    margin: 40px 0;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.success-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #2ed8b6 0%, #11998e 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 30px;
+    animation: bounceIn 0.8s ease-out 0.3s both;
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.success-icon i {
+    font-size: 50px;
+    color: white;
+}
+
+.thank-you-card h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.thank-you-card > p.thank-you-message {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 20px;
+}
+
+.action-buttons {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.btn-certificate {
+    background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+    color: white;
+    border: none;
+    padding: 14px 35px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-certificate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(233, 30, 99, 0.4);
+    color: white;
+}
+
+.btn-home {
+    background: white;
+    color: #4099ff;
+    border: 2px solid #4099ff;
+    padding: 14px 35px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-home:hover {
+    background: #4099ff;
+    color: white;
+    border-color: #4099ff;
+}
+
+.delegate-info {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+    margin: 30px 0;
+    text-align: left;
+    border: 1px solid #e9ecef;
+}
+
+.delegate-info p {
+    margin: 10px 0;
+    font-size: 1rem;
+    color: #495057;
+}
+
+.delegate-info strong {
+    color: #2c3e50;
+    font-weight: 600;
+    min-width: 100px;
+    display: inline-block;
+}
+
+/* ==========================================================================
+   Certificate Page
+   ========================================================================== */
+.certificate-body {
+    background: #f5f5f5;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.certificate-container {
+    max-width: 900px;
+    margin: 30px auto;
+}
+
+.certificate {
+    background: white;
+    border: 15px solid #1e3a5f;
+    border-radius: 0;
+    padding: 50px;
+    position: relative;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
+}
+
+.certificate::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    border: 2px solid #c9a43e;
+    pointer-events: none;
+}
+
+.certificate-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.certificate-logo {
+    max-height: 80px;
+    margin-bottom: 20px;
+}
+
+.certificate-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    color: #1e3a5f;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    margin-bottom: 10px;
+}
+
+.certificate-header .subtitle {
+    font-size: 1.1rem;
+    color: #c9a43e;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.certificate-body-content {
+    text-align: center;
+    padding: 30px 0;
+}
+
+.certificate-body-content .presented-to {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.certificate-body-content .recipient-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    color: #1e3a5f;
+    font-weight: 700;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #c9a43e;
+    display: inline-block;
+    padding: 0 30px 10px;
+}
+
+.certificate-body-content .description {
+    font-size: 1.1rem;
+    color: #555;
+    line-height: 1.8;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.certificate-body-content .event-name {
+    font-weight: 600;
+    color: #1e3a5f;
+}
+
+.certificate-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 50px;
+    padding-top: 30px;
+}
+
+.signature-block {
+    text-align: center;
+    width: 200px;
+}
+
+.signature-line {
+    border-top: 2px solid #1e3a5f;
+    padding-top: 10px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.date-block {
+    text-align: center;
+}
+
+.date-block .date-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e3a5f;
+}
+
+.date-block .date-label {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.seal {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #c9a43e 0%, #f5d280 50%, #c9a43e 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1e3a5f;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-align: center;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.ribbon {
+    position: absolute;
+    top: -10px;
+    right: 30px;
+    width: 50px;
+    height: 80px;
+    background: #e91e63;
+}
+
+.ribbon::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 0;
+    border-left: 25px solid #e91e63;
+    border-right: 25px solid #e91e63;
+    border-bottom: 15px solid transparent;
+}
+
+.print-btn {
+    background: #1e3a5f;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.print-btn:hover {
+    background: #2c5282;
+    transform: translateY(-2px);
+    color: white;
+}
+
+/* Certificate Print Styles */
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* ==========================================================================
+   Not Available Page
+   ========================================================================== */
+.not-available-body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.message-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 50px;
+    max-width: 500px;
+    text-align: center;
+}
+
+.message-icon {
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 30px;
+}
+
+.message-icon i {
+    font-size: 50px;
+    color: white;
+}
+
+.message-card h2 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.message-card p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.message-card .btn-home {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 30px;
+    margin-top: 20px;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.message-card .btn-home:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(30, 58, 95, 0.4);
+    color: white;
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+@media (max-width: 768px) {
+    .feedback-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .feedback-section .section-body {
+        padding: 20px 15px;
+    }
+    
+    .thank-you-card {
+        padding: 30px 20px;
+        margin: 15px;
+    }
+    
+    .thank-you-card h1 {
+        font-size: 2rem;
+    }
+    
+    .certificate {
+        padding: 30px 20px;
+    }
+    
+    .certificate-header h1 {
+        font-size: 2rem;
+        letter-spacing: 2px;
+    }
+    
+    .certificate-body-content .recipient-name {
+        font-size: 1.8rem;
+    }
+    
+    .certificate-footer {
+        flex-direction: column;
+        gap: 30px;
+        align-items: center;
+    }
+}
+

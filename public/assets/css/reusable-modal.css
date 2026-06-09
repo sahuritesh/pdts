@@ -1,0 +1,61 @@
+/* Reusable Modal Styles - Based on Parent Class */
+
+/* Base modal styles */
+.modal-content {
+    border-radius: 0.4rem;
+}
+
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+    background-color: #fff;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+}
+
+/* Frontend specific styling */
+.frontend-page .modal-content {
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.frontend-page .modal-header {
+    background-color: #1c3d7a;
+    color: #fff;
+    border-bottom: none;
+}
+
+.frontend-page .modal-header .btn-close {
+    filter: invert(1);
+    padding: 0rem .5rem !important;
+}
+
+.frontend-page .modal-header .btn-close :focus{box-shadow: none !important;}
+
+.frontend-page .modal-title {
+    color: #fff;
+}
+
+.frontend-page .modal-body {
+    background-color: #fff;
+}
+
+/* Admin specific styling */
+.admin-page .modal-content {
+    border: 1px solid #f1f5f7;
+}
+
+.admin-page .modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eff2f7;
+}
+
+.admin-page .modal-title {
+    color: #495057;
+}
+
