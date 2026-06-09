@@ -2,7 +2,7 @@
 
 Step-by-step guide to build the application on top of the completed database schema. Follow `CODING_STANDARDS.md` for every task.
 
-**Status:** Module 1 (Project Delay Tracking) complete — attachments added. Next: Phase 3 EWS or Phase 4 Renovation.
+**Status:** Module 1 complete; Module 3 renovation started (4.1 done). Next: 4.2 Task Tracking.
 
 **Master / sample data source:** `documentation/Project_Delay_Framework_Renovation_Enhanced.xlsx` — see `EXCEL_FRAMEWORK_ALIGNMENT.md`.
 
@@ -119,15 +119,17 @@ All delay-tracking CRUD (categories → projects → register → mitigations �
 
 ---
 
-## Phase 4 — Module 3: Renovation Project Monitoring
+## Phase 4 — Module 3: Renovation Project Monitoring — in progress
 
-### 4.1 Renovation Project Master
+### 4.1 Renovation Project Master — Done
 
 - **Table:** `tbl_renovation_projects`
-- **Fields:** project ID, name, scope, location, zone/department, renovation type
-- **Pattern:** Same as `tbl_projects` CRUD
+- **Controller:** `RenovationProjectsController`
+- **Routes:** `renovation-projects-list`, sidelayout add/edit
+- **Fields:** project ID, name, scope, location, zone/dept impacted, renovation type, status, handover, escalation, remarks
+- **Sample data:** REN-001 (ICU), REN-002 (OPD) visible in grid
 
-### 4.2 Task Tracking
+### 4.2 Task Tracking — Next
 
 - **Table:** `tbl_renovation_tasks`
 - **Fields:** category, description, priority, planned/actual dates, completion %, duration %

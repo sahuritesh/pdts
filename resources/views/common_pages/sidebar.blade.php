@@ -84,6 +84,25 @@
                 </li>
                 @php
                 }
+                $module3Items = [
+                    ['label' => 'Renovation Projects', 'value' => 'renovation_projects_list', 'route' => 'renovation-projects-list'],
+                ];
+                if (moduleexists($module3Items) > 0) {
+                @endphp
+                <li>
+                    <a href="javascript: void(0);" class="has-arrow waves-effect">
+                        <i class="ri-hospital-line"></i>
+                        <span>Renovation Monitoring</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        @php foreach ($module3Items as $value) {
+                            if (permissionexists($value['value']) == 1) { @endphp
+                        <li><a href="{{ getProjectUrl($value['route']) }}">{{ $value['label'] }}</a></li>
+                        @php } } @endphp
+                    </ul>
+                </li>
+                @php
+                }
                 @endphp
             </ul>
         </div>

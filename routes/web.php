@@ -17,6 +17,7 @@ use App\Http\Controllers\DelayRegistersController;
 use App\Http\Controllers\DelayMitigationsController;
 use App\Http\Controllers\DelayFinancialImpactsController;
 use App\Http\Controllers\DelayAttachmentsController;
+use App\Http\Controllers\RenovationProjectsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -90,6 +91,12 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::post('insert_update_delay_attachment', [DelayAttachmentsController::class, 'insert_update_delay_attachment']);
     Route::get('delay-attachments-list/{delayRegisterId?}', [DelayAttachmentsController::class, 'attachment_list']);
     Route::post('get_delay_attachment_list', [DelayAttachmentsController::class, 'get_delay_attachment_list']);
+
+    Route::match(array('GET', 'POST'), '/renovation-projects/add', [RenovationProjectsController::class, 'renovation_project_form']);
+    Route::match(array('GET', 'POST'), '/renovation-projects/edit/{id}', [RenovationProjectsController::class, 'renovation_project_form']);
+    Route::post('insert_update_renovation_project', [RenovationProjectsController::class, 'insert_update_renovation_project']);
+    Route::get('renovation-projects-list', [RenovationProjectsController::class, 'renovation_project_list']);
+    Route::post('get_renovation_project_list', [RenovationProjectsController::class, 'get_renovation_project_list']);
 });
 
 Route::group(['prefix' => '',  'middleware' => ['Admin', 'SanitizePostData']], function () {
