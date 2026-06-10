@@ -324,18 +324,18 @@ class Common_controller extends Controller
     private function hasTablePermission($table)
     {
         $tablePermissionMap = [
-            'tbl_user' => 'users_list',
+            'tbl_user' => 'users',
             'tbl_roles' => 'roles',
             'tbl_email_templates' => 'email_templates',
-            'tbl_delay_categories' => 'delay_categories_list',
-            'tbl_projects' => 'projects_list',
-            'tbl_delay_registers' => 'delay_registers_list',
-            'tbl_delay_mitigations' => 'mitigations_list',
-            'tbl_delay_financial_impacts' => 'financial_impacts_list',
+            'tbl_delay_categories' => 'delay_categories',
+            'tbl_projects' => 'projects',
+            'tbl_delay_registers' => 'delay_registers',
+            'tbl_delay_mitigations' => 'mitigations',
+            'tbl_delay_financial_impacts' => 'financial_impacts',
             'tbl_delay_attachments' => 'delay_attachments',
-            'tbl_renovation_projects' => 'renovation_projects_list',
-            'tbl_renovation_tasks' => 'renovation_tasks_list',
-            'tbl_renovation_daily_delay_logs' => 'renovation_daily_logs_list',
+            'tbl_renovation_projects' => 'renovation_projects',
+            'tbl_renovation_tasks' => 'renovation_projects',
+            'tbl_renovation_daily_delay_logs' => 'renovation_projects',
         ];
 
         $permissionKey = $tablePermissionMap[$table] ?? '';
@@ -343,7 +343,7 @@ class Common_controller extends Controller
             return false;
         }
 
-        return permissionexists($permissionKey) == '1';
+        return modulePermissionExists($permissionKey);
     }
 
 }

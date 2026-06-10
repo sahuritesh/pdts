@@ -7,8 +7,11 @@
 
 @php
 $analytics = $data['analytics'] ?? null;
-$showDelay = !empty($data['show_delay_analytics']);
-$showRenovation = !empty($data['show_renovation_analytics']);
+$widgets = $data['widgets'] ?? [];
+$showModule1 = !empty($data['show_module1']);
+$showModule3 = !empty($data['show_module3']);
+$hasWidgets = !empty($data['has_dashboard_widgets']);
+$w = function ($key) use ($widgets) { return !empty($widgets[$key]); };
 $kpis = $analytics['kpis'] ?? [];
 $renoKpis = $analytics['renovation']['kpis'] ?? [];
 $recentCritical = $analytics['recent_critical_delays'] ?? [];
@@ -19,7 +22,18 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     <div class="row align-items-center">
         <div class="col-md-8">
             <h3 class="mb-2">Welcome back, <span class="text-primary">@php echo Auth::user()->first_name ?? 'Admin' @endphp</span></h3>
-            <p class="text-muted mb-0 fs-12">PDTS overview — delay tracking, financial impact, mitigations, attachments, and renovation monitoring from live data.</p>
+            <p class="text-muted mb-0 fs-12">
+                PDTS overview
+                @if($showModule1 && $showModule3)
+                    — delay tracking and renovation monitoring from live data.
+                @elseif($showModule1)
+                    — delay tracking analytics from live data.
+                @elseif($showModule3)
+                    — renovation monitoring analytics from live data.
+                @else
+                    — application summary for your role.
+                @endif
+            </p>
         </div>
         <div class="col-md-4 text-md-end">
             <p class="text-muted mb-0">{{ $data['role_name'] ?? 'User' }}</p>
@@ -29,14 +43,16 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     </div>
 </div>
 
-@if((!empty($data['show_delay_analytics']) || !empty($data['show_renovation_analytics'])) && !empty($analytics))
+@if($hasWidgets && !empty($analytics))
 
-@if($showDelay)
+@if($showModule1)
 <div class="row mb-2">
     <div class="col-12">
         <h5 class="mb-0 text-primary"><i class="ri-building-2-line me-1"></i> Delay Tracking</h5>
     </div>
 </div>
+
+@if($w('m1_kpis'))
 <div class="row mb-3">
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card primary">
@@ -75,7 +91,6 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
         </div>
     </div>
 </div>
-
 <div class="row mb-3">
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="mini-stat-card info">
@@ -102,43 +117,59 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
         </div>
     </div>
 </div>
+@endif
 
+@if($w('m1_chart_severity') || $w('m1_chart_category'))
 <div class="row mb-3">
+    @if($w('m1_chart_severity'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
             <h6><i class="ri-pie-chart-2-line me-1"></i> Delays by severity</h6>
             <div id="chart-delays-severity"></div>
         </div>
     </div>
+    @endif
+    @if($w('m1_chart_category'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
             <h6><i class="ri-bar-chart-horizontal-line me-1"></i> Delays by category</h6>
             <div id="chart-delays-category"></div>
         </div>
     </div>
+    @endif
 </div>
+@endif
 
+@if($w('m1_chart_project_status') || $w('m1_chart_mitigation') || $w('m1_chart_financial'))
 <div class="row mb-3">
+    @if($w('m1_chart_project_status'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
             <h6><i class="ri-donut-chart-line me-1"></i> Project status</h6>
             <div id="chart-project-status"></div>
         </div>
     </div>
+    @endif
+    @if($w('m1_chart_mitigation'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
             <h6><i class="ri-shield-check-line me-1"></i> Mitigation status</h6>
             <div id="chart-mitigation-status"></div>
         </div>
     </div>
+    @endif
+    @if($w('m1_chart_financial'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
             <h6><i class="ri-money-dollar-circle-line me-1"></i> Financial impact split</h6>
             <div id="chart-financial-impact"></div>
         </div>
     </div>
+    @endif
 </div>
+@endif
 
+@if($w('m1_chart_trend'))
 <div class="row mb-3">
     <div class="col-12 mb-3">
         <div class="chart-card">
@@ -147,14 +178,19 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
         </div>
     </div>
 </div>
+@endif
 
+@if($w('m1_chart_hospital') || $w('m1_table_critical'))
 <div class="row mb-3">
+    @if($w('m1_chart_hospital'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
             <h6><i class="ri-hospital-line me-1"></i> Delays by hospital</h6>
             <div id="chart-delays-hospital"></div>
         </div>
     </div>
+    @endif
+    @if($w('m1_table_critical'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card dashboardTable">
             <h6><i class="ri-error-warning-line me-1"></i> Recent critical delays</h6>
@@ -186,9 +222,11 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
             @endif
         </div>
     </div>
+    @endif
 </div>
+@endif
 
-@if(permissionexists('delay_registers_list') == '1')
+@if(modulePermissionExists('delay_registers'))
 <div class="row mb-4">
     <div class="col-12">
         <div class="d-flex flex-wrap gap-2">
@@ -203,12 +241,14 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
 @endif
 @endif
 
-@if($showRenovation && !empty($analytics['renovation']))
+@if($showModule3)
 <div class="row mb-2">
     <div class="col-12">
         <h5 class="mb-0 text-primary"><i class="ri-hospital-line me-1"></i> Renovation Monitoring</h5>
     </div>
 </div>
+
+@if($w('m3_kpis'))
 <div class="row mb-3">
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card primary">
@@ -247,7 +287,6 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
         </div>
     </div>
 </div>
-
 <div class="row mb-3">
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="mini-stat-card primary">
@@ -274,58 +313,80 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
         </div>
     </div>
 </div>
+@endif
 
+@if($w('m3_chart_project_status') || $w('m3_chart_type'))
 <div class="row mb-3">
+    @if($w('m3_chart_project_status'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
             <h6><i class="ri-donut-chart-line me-1"></i> Renovation project status</h6>
             <div id="chart-reno-project-status"></div>
         </div>
     </div>
+    @endif
+    @if($w('m3_chart_type'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
             <h6><i class="ri-bar-chart-horizontal-line me-1"></i> Renovation type</h6>
             <div id="chart-reno-type"></div>
         </div>
     </div>
+    @endif
 </div>
+@endif
 
+@if($w('m3_chart_task_status') || $w('m3_chart_task_risk') || $w('m3_chart_escalation'))
 <div class="row mb-3">
+    @if($w('m3_chart_task_status'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
             <h6><i class="ri-task-line me-1"></i> Task status</h6>
             <div id="chart-reno-task-status"></div>
         </div>
     </div>
+    @endif
+    @if($w('m3_chart_task_risk'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
             <h6><i class="ri-alert-line me-1"></i> Task risk level</h6>
             <div id="chart-reno-task-risk"></div>
         </div>
     </div>
+    @endif
+    @if($w('m3_chart_escalation'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
             <h6><i class="ri-arrow-up-circle-line me-1"></i> Escalation status</h6>
             <div id="chart-reno-escalation"></div>
         </div>
     </div>
+    @endif
 </div>
+@endif
 
+@if($w('m3_chart_tasks_category') || $w('m3_chart_delay_trend'))
 <div class="row mb-3">
+    @if($w('m3_chart_tasks_category'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
             <h6><i class="ri-bar-chart-horizontal-line me-1"></i> Tasks by category</h6>
             <div id="chart-reno-task-category"></div>
         </div>
     </div>
+    @endif
+    @if($w('m3_chart_delay_trend'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
             <h6><i class="ri-line-chart-line me-1"></i> Renovation daily delays — last 6 months</h6>
             <div id="chart-reno-delay-trend"></div>
         </div>
     </div>
+    @endif
 </div>
+@endif
 
+@if($w('m3_table_escalated'))
 <div class="row mb-3">
     <div class="col-12 mb-3">
         <div class="chart-card dashboardTable">
@@ -361,8 +422,9 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
         </div>
     </div>
 </div>
+@endif
 
-@if(permissionexists('renovation_projects_list') == '1')
+@if(modulePermissionExists('renovation_projects'))
 <div class="row mb-3">
     <div class="col-12">
         <div class="d-flex flex-wrap gap-2">
@@ -373,7 +435,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
 @endif
 @endif
 
-@elseif(empty($analytics))
+@else
 <div class="row mb-3">
     <div class="col-lg-6 col-md-6 mb-3">
         <div class="stat-card primary">
@@ -398,7 +460,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <p class="text-muted mb-0">Module analytics will appear here when your role has delay tracking or renovation monitoring access.</p>
+                <p class="text-muted mb-0">Dashboard widgets will appear when your role has the matching dashboard widget permissions under <strong>Dashboard — Module 1</strong> or <strong>Dashboard — Module 3</strong> in role management.</p>
             </div>
         </div>
     </div>
@@ -408,13 +470,10 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
 @endsection
 
 @push('scripts')
-@if((!empty($data['show_delay_analytics']) || !empty($data['show_renovation_analytics'])) && !empty($analytics))
+@if($hasWidgets && !empty($analytics))
 <script>
     window.pdtsDashboardData = @json($analytics);
-    window.pdtsDashboardFlags = {
-        showDelay: @json($showDelay),
-        showRenovation: @json($showRenovation)
-    };
+    window.pdtsDashboardWidgets = @json($widgets);
 </script>
 <script src="{{ getAssetUrl('js/pages/pdts-dashboard.init.js') }}"></script>
 @endif

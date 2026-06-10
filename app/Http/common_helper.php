@@ -289,6 +289,15 @@ function permissionexists($module)
 }
 
 /**
+ * Check module/submodule access (sidebar-level permission).
+ * Accepts the canonical key plus legacy granular keys saved on older roles.
+ */
+function modulePermissionExists(string $module): bool
+{
+    return \App\Http\Controllers\RoleManagement::modulePermissionExists($module);
+}
+
+/**
  * Reload permissions for the current logged-in user
  * Updates session permissions from database based on user's current role
  * 

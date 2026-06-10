@@ -7,9 +7,9 @@ use App\Models\Common_model;
 use App\Models\Datatables_model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 use App\Http\Traits\GridConfigTrait;
 use App\Http\Traits\WebResponseTrait;
-use Illuminate\Support\Facades\Log;
 
 class RoleManagement extends Controller 
 {
@@ -116,10 +116,9 @@ class RoleManagement extends Controller
                 // Reload permissions for current user if they have the role that was just updated
                 if ($operation == 'Update' && !empty($role_id)) {
                     $currentUser = Auth::user();
-                    $currentUserRoleId = $currentUser->user_type ?? null;
-                    
-                    // If current user has the role that was just updated, reload their permissions
-                    if ($currentUserRoleId == $role_id) {
+                    $currentUserRoleId = Session::get('effective_role_id', $currentUser->user_type ?? null);
+
+                    if ((string) $currentUserRoleId === (string) $role_id) {
                         reloadCurrentUserPermissions();
                     }
                 }
@@ -259,65 +258,77 @@ class RoleManagement extends Controller
      */
     private function getPermissionStructure()
     {
-        return [
+        return array_merge([
             'Dashboard' => [
-                ['label' => 'View dashboard', 'value' => 'dashboard_view'],
+                ['label' => 'View dashboard page', 'value' => 'dashboard_view'],
             ],
+        ], self::getDashboardPermissionGroups(), [
             'User Management' => [
-                ['label' => 'User Creation', 'value' => 'users_creation'],
-                ['label' => 'User List', 'value' => 'users_list'],
-                ['label' => 'Roles', 'value' => 'roles']
+                ['label' => 'Roles', 'value' => 'roles'],
+                ['label' => 'Users', 'value' => 'users'],
             ],
-            'Module 1 — Project Delay Tracking' => [
-                ['label' => 'Delay category master', 'value' => 'delay_categories'],
-                ['label' => 'Delay category listing', 'value' => 'delay_categories_list'],
-                ['label' => 'Project master', 'value' => 'projects'],
-                ['label' => 'Create / edit projects', 'value' => 'projects_create'],
-                ['label' => 'Project listing', 'value' => 'projects_list'],
-                ['label' => 'Delay register', 'value' => 'delay_registers'],
-                ['label' => 'Create delay entry', 'value' => 'delay_registers_create'],
-                ['label' => 'Delay listing', 'value' => 'delay_registers_list'],
-                ['label' => 'Mitigation tracking', 'value' => 'mitigations'],
-                ['label' => 'Mitigation listing', 'value' => 'mitigations_list'],
-                ['label' => 'Financial impact', 'value' => 'financial_impacts'],
-                ['label' => 'Financial impact listing', 'value' => 'financial_impacts_list'],
-                ['label' => 'Delay attachments', 'value' => 'delay_attachments'],
+            'Delay Tracking' => [
+                ['label' => 'Delay Categories', 'value' => 'delay_categories'],
+                ['label' => 'Projects', 'value' => 'projects'],
+                ['label' => 'Delay Register', 'value' => 'delay_registers'],
+                ['label' => 'Mitigations', 'value' => 'mitigations'],
+                ['label' => 'Financial Impact', 'value' => 'financial_impacts'],
+                ['label' => 'Attachments', 'value' => 'delay_attachments'],
             ],
-            'Module 2 — Early Warning System' => [
-                ['label' => 'EWS alerts', 'value' => 'ews_alerts'],
-                ['label' => 'EWS configuration', 'value' => 'ews_config'],
+            'Renovation Monitoring' => [
+                ['label' => 'Renovation Projects', 'value' => 'renovation_projects'],
             ],
-            'Module 3 — Renovation Monitoring' => [
-                ['label' => 'Renovation projects', 'value' => 'renovation_projects'],
-                ['label' => 'Create renovation project', 'value' => 'renovation_projects_create'],
-                ['label' => 'Renovation project listing', 'value' => 'renovation_projects_list'],
-                ['label' => 'Renovation tasks', 'value' => 'renovation_tasks'],
-                ['label' => 'Task listing', 'value' => 'renovation_tasks_list'],
-                ['label' => 'Daily delay log', 'value' => 'renovation_daily_logs'],
-                ['label' => 'Daily delay log listing', 'value' => 'renovation_daily_logs_list'],
-                ['label' => 'Procurement tracking', 'value' => 'renovation_procurements'],
-                ['label' => 'Approval tracking', 'value' => 'renovation_approvals'],
-                ['label' => 'Change orders', 'value' => 'renovation_change_orders'],
-                ['label' => 'Cost tracking', 'value' => 'renovation_costs'],
-                ['label' => 'Risk scoring', 'value' => 'renovation_risks'],
-            ],
-            'Module 4 — Dashboards & Reports' => [
-                ['label' => 'Executive dashboard', 'value' => 'executive_dashboard'],
-                ['label' => 'Delay analytics', 'value' => 'delay_analytics'],
-                ['label' => 'Renovation dashboard', 'value' => 'renovation_dashboard'],
-                ['label' => 'Audit trail', 'value' => 'audit_trail'],
-            ],
-            'Settings' => [
-                ['label' => 'System Settings', 'value' => 'settings'],
-                ['label' => 'SMTP Settings', 'value' => 'smtp_settings'],
-                ['label' => 'Payment Gateway Settings', 'value' => 'razorpay_settings'],
-                ['label' => 'Email Templates', 'value' => 'email_templates'],
-            ],
-            'Notification Management' => [
-                ['label' => 'Send Notifications', 'value' => 'send_push_notification'],
-                ['label' => 'Notification listing', 'value' => 'push_notifications_listing'],
-            ],
+        ]);
+    }
+
+    /**
+     * Sidebar module keys and legacy aliases (for roles saved before simplification).
+     *
+     * @return array<string, string[]>
+     */
+    public static function getModulePermissionAliases(): array
+    {
+        return [
+            'users' => ['users_creation', 'users_list'],
+            'delay_categories' => ['delay_categories_list'],
+            'projects' => ['projects_list', 'projects_create'],
+            'delay_registers' => ['delay_registers_list', 'delay_registers_create'],
+            'mitigations' => ['mitigations_list'],
+            'financial_impacts' => ['financial_impacts_list'],
+            'renovation_projects' => ['renovation_projects_list', 'renovation_projects_create'],
         ];
+    }
+
+    /** All sidebar module permission keys (for seeders). */
+    public static function allModulePermissionKeys(): array
+    {
+        return [
+            'dashboard_view',
+            'roles',
+            'users',
+            'delay_categories',
+            'projects',
+            'delay_registers',
+            'mitigations',
+            'financial_impacts',
+            'delay_attachments',
+            'renovation_projects',
+        ];
+    }
+
+    public static function modulePermissionExists(string $module): bool
+    {
+        if (permissionexists($module) == '1') {
+            return true;
+        }
+
+        foreach (self::getModulePermissionAliases()[$module] ?? [] as $legacyKey) {
+            if (permissionexists($legacyKey) == '1') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -417,4 +428,167 @@ class RoleManagement extends Controller
 
         return "<label class='$class'>$statusName</label>";
     }
+
+    /**
+     * Dashboard widget registry — each widget maps to one permission key on tbl_roles.permission_types.
+     *
+     * @return array<string, array{permission: string, module: int, label: string}>
+     */
+    public static function getDashboardWidgets(): array
+    {
+        return [
+            'm1_kpis' => [
+                'permission' => 'dashboard_m1_kpis',
+                'module' => 1,
+                'label' => 'Overview KPI cards',
+            ],
+            'm1_chart_severity' => [
+                'permission' => 'dashboard_m1_chart_severity',
+                'module' => 1,
+                'label' => 'Delays by severity chart',
+            ],
+            'm1_chart_category' => [
+                'permission' => 'dashboard_m1_chart_category',
+                'module' => 1,
+                'label' => 'Delays by category chart',
+            ],
+            'm1_chart_project_status' => [
+                'permission' => 'dashboard_m1_chart_project_status',
+                'module' => 1,
+                'label' => 'Project status chart',
+            ],
+            'm1_chart_mitigation' => [
+                'permission' => 'dashboard_m1_chart_mitigation',
+                'module' => 1,
+                'label' => 'Mitigation status chart',
+            ],
+            'm1_chart_financial' => [
+                'permission' => 'dashboard_m1_chart_financial',
+                'module' => 1,
+                'label' => 'Financial impact chart',
+            ],
+            'm1_chart_trend' => [
+                'permission' => 'dashboard_m1_chart_trend',
+                'module' => 1,
+                'label' => 'Delay trend chart',
+            ],
+            'm1_chart_hospital' => [
+                'permission' => 'dashboard_m1_chart_hospital',
+                'module' => 1,
+                'label' => 'Delays by hospital chart',
+            ],
+            'm1_table_critical' => [
+                'permission' => 'dashboard_m1_table_critical',
+                'module' => 1,
+                'label' => 'Critical delays table',
+            ],
+            'm3_kpis' => [
+                'permission' => 'dashboard_m3_kpis',
+                'module' => 3,
+                'label' => 'Overview KPI cards',
+            ],
+            'm3_chart_project_status' => [
+                'permission' => 'dashboard_m3_chart_project_status',
+                'module' => 3,
+                'label' => 'Renovation project status chart',
+            ],
+            'm3_chart_type' => [
+                'permission' => 'dashboard_m3_chart_type',
+                'module' => 3,
+                'label' => 'Renovation type chart',
+            ],
+            'm3_chart_task_status' => [
+                'permission' => 'dashboard_m3_chart_task_status',
+                'module' => 3,
+                'label' => 'Task status chart',
+            ],
+            'm3_chart_task_risk' => [
+                'permission' => 'dashboard_m3_chart_task_risk',
+                'module' => 3,
+                'label' => 'Task risk level chart',
+            ],
+            'm3_chart_escalation' => [
+                'permission' => 'dashboard_m3_chart_escalation',
+                'module' => 3,
+                'label' => 'Escalation status chart',
+            ],
+            'm3_chart_tasks_category' => [
+                'permission' => 'dashboard_m3_chart_tasks_category',
+                'module' => 3,
+                'label' => 'Tasks by category chart',
+            ],
+            'm3_chart_delay_trend' => [
+                'permission' => 'dashboard_m3_chart_delay_trend',
+                'module' => 3,
+                'label' => 'Daily delay trend chart',
+            ],
+            'm3_table_escalated' => [
+                'permission' => 'dashboard_m3_table_escalated',
+                'module' => 3,
+                'label' => 'Escalated projects table',
+            ],
+        ];
     }
+
+    /**
+     * Dashboard permission groups for the role-management form.
+     */
+    public static function getDashboardPermissionGroups(): array
+    {
+        $groups = [
+            'Dashboard — Module 1 (Delay Tracking)' => [],
+            'Dashboard — Module 3 (Renovation Monitoring)' => [],
+        ];
+
+        foreach (self::getDashboardWidgets() as $widget) {
+            $entry = ['label' => $widget['label'], 'value' => $widget['permission']];
+            if ((int) $widget['module'] === 1) {
+                $groups['Dashboard — Module 1 (Delay Tracking)'][] = $entry;
+            } elseif ((int) $widget['module'] === 3) {
+                $groups['Dashboard — Module 3 (Renovation Monitoring)'][] = $entry;
+            }
+        }
+
+        return $groups;
+    }
+
+    /** All dashboard widget permission keys (for seeders). */
+    public static function allDashboardPermissionKeys(): array
+    {
+        return array_values(array_map(
+            fn ($widget) => $widget['permission'],
+            self::getDashboardWidgets()
+        ));
+    }
+
+    /**
+     * Resolve visible dashboard widgets using session permissions (permissionexists).
+     *
+     * @return array<string, bool>
+     */
+    public static function resolveDashboardWidgets(): array
+    {
+        $visible = [];
+        foreach (self::getDashboardWidgets() as $key => $widget) {
+            $visible[$key] = permissionexists($widget['permission']) == '1';
+        }
+
+        return $visible;
+    }
+
+    public static function dashboardModuleHasWidgets(array $visibleWidgets, int $module): bool
+    {
+        foreach (self::getDashboardWidgets() as $key => $widget) {
+            if ((int) $widget['module'] === $module && !empty($visibleWidgets[$key])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function dashboardHasAnyWidget(array $visibleWidgets): bool
+    {
+        return in_array(true, $visibleWidgets, true);
+    }
+}

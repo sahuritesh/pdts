@@ -18,7 +18,7 @@ class DelayFinancialImpactsController extends Controller
 {
     use GridConfigTrait, WebResponseTrait;
 
-    public $module = ['financial_impacts', 'financial_impacts_list'];
+    public $module = 'financial_impacts';
 
     protected AuditTrailService $auditTrail;
     protected FinancialImpactService $financialImpactService;
@@ -52,7 +52,7 @@ class DelayFinancialImpactsController extends Controller
 
     public function financial_impact_form(Request $request, $id = '', $delayRegisterId = '')
     {
-        if (permissionexists($this->module[0]) != '1') {
+        if (!modulePermissionExists($this->module)) {
             if ($request->input('postKey') == 'sidelayoutContent') {
                 return response()->json(['error' => 1, 'msg' => 'You dont have permission to access this page']);
             }
@@ -108,7 +108,7 @@ class DelayFinancialImpactsController extends Controller
 
     public function financial_impact_panel(Request $request, $delayRegisterId)
     {
-        if (permissionexists($this->module[1]) != '1' && permissionexists($this->module[0]) != '1') {
+        if (!modulePermissionExists($this->module)) {
             if ($request->input('postKey') == 'sidelayoutContent') {
                 return response()->json(['error' => 1, 'msg' => 'You dont have permission to access this page']);
             }
@@ -162,7 +162,7 @@ class DelayFinancialImpactsController extends Controller
 
     public function insert_update_financial_impact(Request $request)
     {
-        if (permissionexists($this->module[0]) != '1') {
+        if (!modulePermissionExists($this->module)) {
             $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
             return;
         }
@@ -215,7 +215,7 @@ class DelayFinancialImpactsController extends Controller
 
     public function financial_impact_list(Request $request, $delayRegisterId = '')
     {
-        if (permissionexists($this->module[1]) != '1') {
+        if (!modulePermissionExists($this->module)) {
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
@@ -247,7 +247,7 @@ class DelayFinancialImpactsController extends Controller
 
     public function get_delay_financial_impact_list(Request $request)
     {
-        if (permissionexists($this->module[1]) != '1' && permissionexists($this->module[0]) != '1') {
+        if (!modulePermissionExists($this->module)) {
             return response()->json([
                 'draw' => (int) ($request->draw ?? 0),
                 'recordsTotal' => 0,

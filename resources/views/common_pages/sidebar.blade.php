@@ -16,10 +16,7 @@
                     </a>
                 </li>
                 @php
-                $module = 'roles';
-                $res = permissionexists($module);
-                if($res == 1)
-                {
+                if (modulePermissionExists('roles')) {
                 @endphp
                 <li>
                     <a href="javascript: void(0);" class="has-arrow waves-effect">
@@ -33,12 +30,7 @@
                 </li>
                 @php
                 }
-                $module = [
-                ['label' =>'Create User','value' => 'users_creation','route' => 'user-management/add'],
-                ['label' =>'View Users','value' => 'users_list','route'=> 'user-management-list'],
-                ];
-                $count = moduleexists($module);
-                if($count > 0){
+                if (modulePermissionExists('users')) {
                 @endphp
                 <li>
                     <a href="javascript: void(0);" class="has-arrow waves-effect">
@@ -46,29 +38,28 @@
                         <span>Users</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        @php
-                        foreach($module as $value){
-                        $data = $value['value'];
-                        $res = permissionexists($data);
-                        if($res == 1){
-                        @endphp
-                        <li><a href="{{ getProjectUrl($value['route']) }}">{{ $value['label']}}</a></li>
-                        @php
-                        } }
-                        @endphp
+                        <li><a href="{{ getProjectUrl('user-management/add') }}">Create User</a></li>
+                        <li><a href="{{ getProjectUrl('user-management-list') }}">View Users</a></li>
                     </ul>
                 </li>
                 @php
                 }
                 $module1Items = [
-                    ['label' => 'Delay Categories', 'value' => 'delay_categories_list', 'route' => 'delay-categories-list'],
-                    ['label' => 'Projects', 'value' => 'projects_list', 'route' => 'projects-list'],
-                    ['label' => 'Delay Register', 'value' => 'delay_registers_list', 'route' => 'delay-registers-list'],
-                    ['label' => 'Mitigations', 'value' => 'mitigations_list', 'route' => 'delay-mitigations-list'],
-                    ['label' => 'Financial Impact', 'value' => 'financial_impacts_list', 'route' => 'delay-financial-impacts-list'],
+                    ['label' => 'Delay Categories', 'value' => 'delay_categories', 'route' => 'delay-categories-list'],
+                    ['label' => 'Projects', 'value' => 'projects', 'route' => 'projects-list'],
+                    ['label' => 'Delay Register', 'value' => 'delay_registers', 'route' => 'delay-registers-list'],
+                    ['label' => 'Mitigations', 'value' => 'mitigations', 'route' => 'delay-mitigations-list'],
+                    ['label' => 'Financial Impact', 'value' => 'financial_impacts', 'route' => 'delay-financial-impacts-list'],
                     ['label' => 'Attachments', 'value' => 'delay_attachments', 'route' => 'delay-attachments-list'],
                 ];
-                if (moduleexists($module1Items) > 0) {
+                $module1Visible = false;
+                foreach ($module1Items as $item) {
+                    if (modulePermissionExists($item['value'])) {
+                        $module1Visible = true;
+                        break;
+                    }
+                }
+                if ($module1Visible) {
                 @endphp
                 <li>
                     <a href="javascript: void(0);" class="has-arrow waves-effect">
@@ -77,17 +68,14 @@
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
                         @php foreach ($module1Items as $value) {
-                            if (permissionexists($value['value']) == 1) { @endphp
+                            if (modulePermissionExists($value['value'])) { @endphp
                         <li><a href="{{ getProjectUrl($value['route']) }}">{{ $value['label'] }}</a></li>
                         @php } } @endphp
                     </ul>
                 </li>
                 @php
                 }
-                $module3Items = [
-                    ['label' => 'Renovation Projects', 'value' => 'renovation_projects_list', 'route' => 'renovation-projects-list'],
-                ];
-                if (moduleexists($module3Items) > 0) {
+                if (modulePermissionExists('renovation_projects')) {
                 @endphp
                 <li>
                     <a href="javascript: void(0);" class="has-arrow waves-effect">
@@ -95,10 +83,7 @@
                         <span>Renovation Monitoring</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        @php foreach ($module3Items as $value) {
-                            if (permissionexists($value['value']) == 1) { @endphp
-                        <li><a href="{{ getProjectUrl($value['route']) }}">{{ $value['label'] }}</a></li>
-                        @php } } @endphp
+                        <li><a href="{{ getProjectUrl('renovation-projects-list') }}">Renovation Projects</a></li>
                     </ul>
                 </li>
                 @php

@@ -103,18 +103,37 @@ function selectCheckbox(pr_cls, chld_cls, type) {
         }
         return;
     }
-    // Child checkbox: sync parent checked state from children (do not force all children off).
+    // Child checkbox: sync parent checked state from children.
+    syncParentFromChildren(parentCls, childCls);
+}
+
+function syncParentFromChildren(parentCls, childCls) {
     var chkdLength = $('.' + childCls).filter(':checked').length;
-    if (chkdLength > 0) {
-        $('.' + parentCls).prop('checked', true);
-    } else {
-        $('.' + parentCls).prop('checked', false);
-    }
+    var totalLength = $('.' + childCls).length;
+    $('.' + parentCls).prop('checked', totalLength > 0 && chkdLength === totalLength);
+}
+
+function syncAllPermissionParents() {
+    $('.role-permission-ui h5').each(function() {
+        var $parent = $(this).find('input[type=checkbox]').first();
+        if (!$parent.length) {
+            return;
+        }
+        var parentCls = ($parent.attr('class') || '').split(/\s+/).filter(function(c) {
+            return c.indexOf('_parent') !== -1;
+        })[0];
+        if (!parentCls) {
+            return;
+        }
+        var childCls = parentCls.replace('_parent', '_child');
+        syncParentFromChildren(parentCls, childCls);
+    });
 }
 
 $(document).ready(function() {
     // Set title in sidelayout (matches CI4 pattern)
     $('.sidelayoutTitle').html('{{ $pageTitle ?? "Role Management" }}');
+    syncAllPermissionParents();
 
     var formId = 'addrolesform';
     var url = "{{ getProjectUrl('insert_update_roles') }}";

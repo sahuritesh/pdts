@@ -18,14 +18,14 @@ class UserManagement extends Controller
 {
     use GridConfigTrait, WebResponseTrait, EmailTrait;
 
-    public $module = ['users_creation', 'users_list'];
+    public $module = 'users';
 
     /**
      * Display user create/edit form
      */
     public function user_management(Request $request, $param = '')
     {
-        $res = permissionexists($this->module[0]);
+        $res = modulePermissionExists($this->module) ? '1' : '0';
         if ($res != '1') {
             if ($request->input('postKey') == 'sidelayoutContent') {
                 return response()->json(['error' => 1, 'msg' => 'You dont have permission to access this page']);
@@ -95,7 +95,7 @@ class UserManagement extends Controller
      */
     public function insert_update_user(Request $request)
     {
-        $res = permissionexists($this->module[0]);
+        $res = modulePermissionExists($this->module) ? '1' : '0';
         if ($res != '1') {
             $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
             return;
@@ -153,7 +153,7 @@ class UserManagement extends Controller
      */
     public function user_management_list(Request $request)
     {
-        $res = permissionexists($this->module[1]);
+        $res = modulePermissionExists($this->module) ? '1' : '0';
         if ($res != '1') {
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
@@ -187,7 +187,7 @@ class UserManagement extends Controller
      */
     public function get_user_management_list(Request $request)
     {
-        $res = permissionexists($this->module[1]);
+        $res = modulePermissionExists($this->module) ? '1' : '0';
         if ($res != '1') {
             return response()->json([
                 'draw' => (int) ($request->draw ?? 0),
@@ -363,7 +363,7 @@ class UserManagement extends Controller
      */
     public function send_forgotemail(Request $request)
     {
-        $res = permissionexists($this->module[1]);
+        $res = modulePermissionExists($this->module) ? '1' : '0';
         if ($res != '1') {
             return response()->json([
                 'error' => 1,

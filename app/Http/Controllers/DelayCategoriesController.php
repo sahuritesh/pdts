@@ -28,7 +28,7 @@ class DelayCategoriesController extends Controller
 
     public function delay_category_form(Request $request, $id = '')
     {
-        if (permissionexists($this->module) != '1') {
+        if (!modulePermissionExists($this->module)) {
             if ($request->input('postKey') == 'sidelayoutContent') {
                 return response()->json(['error' => 1, 'msg' => 'You dont have permission to access this page']);
             }
@@ -72,7 +72,7 @@ class DelayCategoriesController extends Controller
 
     public function insert_update_delay_category(Request $request)
     {
-        if (permissionexists($this->module) != '1') {
+        if (!modulePermissionExists($this->module)) {
             $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
             return;
         }
@@ -117,7 +117,7 @@ class DelayCategoriesController extends Controller
 
     public function delay_category_list(Request $request)
     {
-        if (permissionexists('delay_categories_list') != '1' && permissionexists($this->module) != '1') {
+        if (!modulePermissionExists($this->module)) {
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 

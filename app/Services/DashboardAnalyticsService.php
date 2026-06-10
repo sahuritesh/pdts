@@ -7,25 +7,90 @@ use Illuminate\Support\Facades\DB;
 class DashboardAnalyticsService
 {
     /**
-     * Aggregate dashboard metrics for all enabled modules.
+     * Load only analytics datasets for widgets the role may see.
+     *
+     * @param array<string, bool> $visibleWidgets
      */
-    public function getDashboardAnalytics(bool $includeDelay = true, bool $includeRenovation = true): array
+    public function getDashboardAnalytics(array $visibleWidgets): array
     {
         $data = [];
 
-        if ($includeDelay) {
-            $data = array_merge($data, $this->getModule1Analytics());
+        if (!empty($visibleWidgets['m1_kpis'])) {
+            $data['kpis'] = $this->getKpis();
+        }
+        if (!empty($visibleWidgets['m1_chart_severity'])) {
+            $data['delays_by_severity'] = $this->getDelaysBySeverity();
+        }
+        if (!empty($visibleWidgets['m1_chart_category'])) {
+            $data['delays_by_category'] = $this->getDelaysByCategory();
+        }
+        if (!empty($visibleWidgets['m1_chart_project_status'])) {
+            $data['project_status'] = $this->getProjectStatusBreakdown();
+        }
+        if (!empty($visibleWidgets['m1_chart_mitigation'])) {
+            $data['mitigation_status'] = $this->getMitigationStatusBreakdown();
+        }
+        if (!empty($visibleWidgets['m1_chart_financial'])) {
+            $data['financial_impact'] = $this->getFinancialImpactBreakdown();
+        }
+        if (!empty($visibleWidgets['m1_chart_trend'])) {
+            $data['delay_trend'] = $this->getDelayTrendByMonth(6);
+        }
+        if (!empty($visibleWidgets['m1_chart_hospital'])) {
+            $data['delays_by_hospital'] = $this->getDelaysByHospital(8);
+        }
+        if (!empty($visibleWidgets['m1_table_critical'])) {
+            $data['recent_critical_delays'] = $this->getRecentCriticalDelays(5);
         }
 
-        if ($includeRenovation) {
-            $data['renovation'] = $this->getModule3Analytics();
+        $renovation = $this->getModule3AnalyticsForWidgets($visibleWidgets);
+        if (!empty($renovation)) {
+            $data['renovation'] = $renovation;
         }
 
         return $data;
     }
 
     /**
-     * Aggregate Module 1 metrics for the main dashboard.
+     * @param array<string, bool> $visibleWidgets
+     */
+    private function getModule3AnalyticsForWidgets(array $visibleWidgets): array
+    {
+        $data = [];
+
+        if (!empty($visibleWidgets['m3_kpis'])) {
+            $data['kpis'] = $this->getRenovationKpis();
+        }
+        if (!empty($visibleWidgets['m3_chart_project_status'])) {
+            $data['project_status'] = $this->getRenovationProjectStatusBreakdown();
+        }
+        if (!empty($visibleWidgets['m3_chart_type'])) {
+            $data['renovation_type'] = $this->getRenovationTypeBreakdown();
+        }
+        if (!empty($visibleWidgets['m3_chart_escalation'])) {
+            $data['escalation_status'] = $this->getRenovationEscalationBreakdown();
+        }
+        if (!empty($visibleWidgets['m3_chart_task_status'])) {
+            $data['task_status'] = $this->getRenovationTaskStatusBreakdown();
+        }
+        if (!empty($visibleWidgets['m3_chart_task_risk'])) {
+            $data['task_risk'] = $this->getRenovationTaskRiskBreakdown();
+        }
+        if (!empty($visibleWidgets['m3_chart_tasks_category'])) {
+            $data['tasks_by_category'] = $this->getRenovationTasksByCategory(8);
+        }
+        if (!empty($visibleWidgets['m3_chart_delay_trend'])) {
+            $data['daily_delay_trend'] = $this->getRenovationDailyDelayTrend(6);
+        }
+        if (!empty($visibleWidgets['m3_table_escalated'])) {
+            $data['recent_escalated_projects'] = $this->getRecentEscalatedRenovationProjects(5);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @deprecated Use getDashboardAnalytics($visibleWidgets) instead.
      */
     public function getModule1Analytics(): array
     {

@@ -18,7 +18,7 @@ class DelayRegistersController extends Controller
 {
     use GridConfigTrait, WebResponseTrait;
 
-    public $module = ['delay_registers_create', 'delay_registers_list'];
+    public $module = 'delay_registers';
 
     protected AuditTrailService $auditTrail;
     protected DelayRegisterService $delayRegisterService;
@@ -31,7 +31,7 @@ class DelayRegistersController extends Controller
 
     public function delay_register_form(Request $request, $id = '')
     {
-        if (permissionexists($this->module[0]) != '1') {
+        if (!modulePermissionExists($this->module)) {
             if ($request->input('postKey') == 'sidelayoutContent') {
                 return response()->json(['error' => 1, 'msg' => 'You dont have permission to access this page']);
             }
@@ -81,7 +81,7 @@ class DelayRegistersController extends Controller
 
     public function insert_update_delay_register(Request $request)
     {
-        if (permissionexists($this->module[0]) != '1') {
+        if (!modulePermissionExists($this->module)) {
             $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
             return;
         }
@@ -129,7 +129,7 @@ class DelayRegistersController extends Controller
 
     public function delay_register_list(Request $request)
     {
-        if (permissionexists($this->module[1]) != '1') {
+        if (!modulePermissionExists($this->module)) {
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
@@ -165,7 +165,7 @@ class DelayRegistersController extends Controller
 
     public function get_delay_register_list(Request $request)
     {
-        if (permissionexists($this->module[1]) != '1') {
+        if (!modulePermissionExists($this->module)) {
             return response()->json([
                 'draw' => (int) ($request->draw ?? 0),
                 'recordsTotal' => 0,
@@ -461,19 +461,19 @@ class DelayRegistersController extends Controller
 
         $html = '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Delay Entry\', 90); return false;" title="Edit delay"><i class="ri-edit-fill"></i></a>';
 
-        if (permissionexists('mitigations_list') == '1' || permissionexists('mitigations') == '1') {
+        if (modulePermissionExists('mitigations')) {
             $html .= ' <a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $mitigationUrl . '\', \'Mitigations\', 95); return false;" title="Mitigations"><i class="ri-shield-check-line"></i></a>';
             $html .= ' <a href="' . $mitigationListUrl . '" title="Open mitigations list"><i class="ri-list-check-2"></i></a>';
         }
 
-        if (permissionexists('financial_impacts_list') == '1' || permissionexists('financial_impacts') == '1') {
+        if (modulePermissionExists('financial_impacts')) {
             $financialUrl = getProjectUrl('delay-financial-impacts/panel/' . $encryptedId);
             $financialListUrl = getProjectUrl('delay-financial-impacts-list/' . $encryptedId);
             $html .= ' <a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $financialUrl . '\', \'Financial Impact\', 95); return false;" title="Financial impact"><i class="ri-money-dollar-circle-line"></i></a>';
             $html .= ' <a href="' . $financialListUrl . '" title="Open financial impact list"><i class="ri-funds-line"></i></a>';
         }
 
-        if (permissionexists('delay_attachments') == '1') {
+        if (modulePermissionExists('delay_attachments')) {
             $attachmentUrl = getProjectUrl('delay-attachments/panel/' . $encryptedId);
             $attachmentListUrl = getProjectUrl('delay-attachments-list/' . $encryptedId);
             $html .= ' <a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $attachmentUrl . '\', \'Attachments\', 95); return false;" title="Attachments"><i class="ri-attachment-2"></i></a>';

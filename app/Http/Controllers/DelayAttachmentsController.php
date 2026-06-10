@@ -42,7 +42,7 @@ class DelayAttachmentsController extends Controller
 
     public function attachment_form(Request $request, $id = '', $delayRegisterId = '')
     {
-        if (permissionexists($this->module) != '1') {
+        if (!modulePermissionExists($this->module)) {
             if ($request->input('postKey') == 'sidelayoutContent') {
                 return response()->json(['error' => 1, 'msg' => 'You dont have permission to access this page']);
             }
@@ -99,7 +99,7 @@ class DelayAttachmentsController extends Controller
 
     public function attachment_panel(Request $request, $delayRegisterId)
     {
-        if (permissionexists($this->module) != '1') {
+        if (!modulePermissionExists($this->module)) {
             if ($request->input('postKey') == 'sidelayoutContent') {
                 return response()->json(['error' => 1, 'msg' => 'You dont have permission to access this page']);
             }
@@ -152,7 +152,7 @@ class DelayAttachmentsController extends Controller
 
     public function insert_update_delay_attachment(Request $request)
     {
-        if (permissionexists($this->module) != '1') {
+        if (!modulePermissionExists($this->module)) {
             return response()->json(['error' => 1, 'msg' => 'Permission missing. Contact administrator.']);
         }
 
@@ -215,7 +215,7 @@ class DelayAttachmentsController extends Controller
 
     public function attachment_list(Request $request, $delayRegisterId = '')
     {
-        if (permissionexists($this->module) != '1') {
+        if (!modulePermissionExists($this->module)) {
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
@@ -249,7 +249,7 @@ class DelayAttachmentsController extends Controller
 
     public function get_delay_attachment_list(Request $request)
     {
-        if (permissionexists($this->module) != '1') {
+        if (!modulePermissionExists($this->module)) {
             return response()->json([
                 'draw' => (int) ($request->draw ?? 0),
                 'recordsTotal' => 0,
