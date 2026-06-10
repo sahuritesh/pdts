@@ -68,10 +68,21 @@ class DashboardController extends Controller
 
                 $data['show_delay_analytics'] = permissionexists('delay_registers_list') == '1'
                     || permissionexists('projects_list') == '1'
+                    || permissionexists('financial_impacts_list') == '1'
+                    || permissionexists('mitigations_list') == '1'
+                    || permissionexists('delay_analytics') == '1'
                     || permissionexists('executive_dashboard') == '1';
 
-                if ($data['show_delay_analytics']) {
-                    $data['analytics'] = $this->dashboardAnalytics->getModule1Analytics();
+                $data['show_renovation_analytics'] = permissionexists('renovation_projects_list') == '1'
+                    || permissionexists('renovation_tasks_list') == '1'
+                    || permissionexists('renovation_dashboard') == '1'
+                    || permissionexists('executive_dashboard') == '1';
+
+                if ($data['show_delay_analytics'] || $data['show_renovation_analytics']) {
+                    $data['analytics'] = $this->dashboardAnalytics->getDashboardAnalytics(
+                        (bool) $data['show_delay_analytics'],
+                        (bool) $data['show_renovation_analytics']
+                    );
                 }
 
                 return response()->view('dashboard.dashboard', compact(

@@ -1,5 +1,5 @@
 /**
- * PDTS Module 1 dashboard charts (ApexCharts).
+ * PDTS dashboard charts (ApexCharts) — Module 1 delay tracking + Module 3 renovation.
  */
 (function () {
     if (typeof ApexCharts === 'undefined') {
@@ -7,7 +7,8 @@
     }
 
     var data = window.pdtsDashboardData || {};
-    var kpis = data.kpis || {};
+    var flags = window.pdtsDashboardFlags || { showDelay: true, showRenovation: false };
+    var renovation = data.renovation || {};
 
     function hasSeriesValues(series) {
         return Array.isArray(series) && series.some(function (v) { return Number(v) > 0; });
@@ -37,7 +38,7 @@
         }).render();
     }
 
-    function renderBar(elId, chartData, horizontal, fallbackText) {
+    function renderBar(elId, chartData, horizontal, fallbackText, seriesName) {
         var el = document.querySelector(elId);
         if (!el) {
             return;
@@ -48,8 +49,8 @@
         }
         new ApexCharts(el, {
             chart: { type: 'bar', height: 300, toolbar: { show: false } },
-            series: [{ name: 'Count', data: chartData.series }],
-            xaxis: horizontal ? { categories: chartData.labels } : { categories: chartData.labels },
+            series: [{ name: seriesName || 'Count', data: chartData.series }],
+            xaxis: { categories: chartData.labels },
             plotOptions: {
                 bar: {
                     horizontal: !!horizontal,
@@ -57,13 +58,13 @@
                     borderRadius: 4
                 }
             },
-            colors: ['#003e6b'],
+            colors: chartData.colors || ['#003e6b'],
             dataLabels: { enabled: false },
             grid: { strokeDashArray: 4 }
         }).render();
     }
 
-    function renderLine(elId, chartData, fallbackText) {
+    function renderLine(elId, chartData, fallbackText, seriesName) {
         var el = document.querySelector(elId);
         if (!el) {
             return;
@@ -74,7 +75,7 @@
         }
         new ApexCharts(el, {
             chart: { type: 'area', height: 300, toolbar: { show: false }, zoom: { enabled: false } },
-            series: [{ name: 'Delays logged', data: chartData.series }],
+            series: [{ name: seriesName || 'Count', data: chartData.series }],
             xaxis: { categories: chartData.labels },
             stroke: { curve: 'smooth', width: 3 },
             fill: {
@@ -88,11 +89,24 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        renderDonut('#chart-delays-severity', data.delays_by_severity, 'No delay entries yet.');
-        renderBar('#chart-delays-category', data.delays_by_category, true, 'No categorised delays yet.');
-        renderDonut('#chart-project-status', data.project_status, 'No projects yet.');
-        renderDonut('#chart-mitigation-status', data.mitigation_status, 'No mitigations logged yet.');
-        renderLine('#chart-delay-trend', data.delay_trend, 'No delay trend data for the last 6 months.');
-        renderBar('#chart-delays-hospital', data.delays_by_hospital, true, 'No hospital delay data yet.');
+        if (flags.showDelay) {
+            renderDonut('#chart-delays-severity', data.delays_by_severity, 'No delay entries yet.');
+            renderBar('#chart-delays-category', data.delays_by_category, true, 'No categorised delays yet.');
+            renderDonut('#chart-project-status', data.project_status, 'No projects yet.');
+            renderDonut('#chart-mitigation-status', data.mitigation_status, 'No mitigations logged yet.');
+            renderDonut('#chart-financial-impact', data.financial_impact, 'No financial impact records yet.');
+            renderLine('#chart-delay-trend', data.delay_trend, 'No delay trend data for the last 6 months.', 'Delays logged');
+            renderBar('#chart-delays-hospital', data.delays_by_hospital, true, 'No hospital delay data yet.');
+        }
+
+        if (flags.showRenovation && renovation) {
+            renderDonut('#chart-reno-project-status', renovation.project_status, 'No renovation projects yet.');
+            renderBar('#chart-reno-type', renovation.renovation_type, true, 'No renovation type data yet.');
+            renderDonut('#chart-reno-task-status', renovation.task_status, 'No renovation tasks yet.');
+            renderDonut('#chart-reno-task-risk', renovation.task_risk, 'No task risk data yet.');
+            renderDonut('#chart-reno-escalation', renovation.escalation_status, 'No escalation data yet.');
+            renderBar('#chart-reno-task-category', renovation.tasks_by_category, true, 'No task categories yet.');
+            renderLine('#chart-reno-delay-trend', renovation.daily_delay_trend, 'No renovation daily delay logs for the last 6 months.', 'Daily delay logs');
+        }
     });
 })();
