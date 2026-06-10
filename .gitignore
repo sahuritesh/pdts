@@ -34,3 +34,6 @@ storage/framework/*
 
 
 config/firebase/*.json*
+
+# Generated captcha images (runtime only)
+/captcha/
