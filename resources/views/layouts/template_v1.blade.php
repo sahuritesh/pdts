@@ -35,6 +35,7 @@
 
     <link href="{{ getAssetUrl('libs/datatables.net-responsive-bs4/css/responsive.bootstrap4.min.css') }}"
         rel="stylesheet" type="text/css" />
+        <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
     <!-- Bootstrap Css -->
     <!-- Icons Css -->
     <link rel="stylesheet" href="{{ getAssetUrl('css/select2.min.css') }}">

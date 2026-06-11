@@ -208,6 +208,7 @@ table thead tr th{
         margin: auto;
         margin-left: 9px;
         line-height: 0px;
+        
 
     }
 
@@ -608,6 +609,116 @@ body[data-sidebar=dark] .navbar-brand-box { background:var(--menuColor);}
     padding: .625rem 0.7rem;
     font-size:12px;
 }
+/* table css */
+.custom-table-wrapper{
+    background:#fff;
+
+    border:1px solid #e2e8f0;
+
+    border-radius:16px;
+
+    overflow:hidden;
+}
+
+.custom-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+}
+
+/* Header */
+
+.custom-table thead th{
+    background:linear-gradient(
+        90deg,
+        #f0fdfa,
+        #eff6ff
+    );
+
+    color:#1e293b;
+
+    font-size:13px;
+    font-weight:700;
+
+    padding:16px 18px;
+
+    border:none;
+
+    white-space:nowrap;
+}
+
+.custom-table thead th i{
+    color:#1F8EF1;
+    margin-right:6px;
+}
+
+/* Body */
+
+.custom-table tbody td{
+    padding:16px 18px;
+
+    border-top:1px solid #f1f5f9;
+
+    vertical-align:middle;
+}
+
+.custom-table tbody tr{
+    transition:.3s;
+}
+
+.custom-table tbody tr:hover{
+    background:#f8fafc;
+}
+
+/* Delay Title */
+
+.delay-title{
+    font-weight:600;
+    color:#1e293b;
+    font-size: 12px;
+}
+
+/* Project */
+
+.project-name{
+    color:#64748b;
+    font-size:13px;
+}
+
+/* Days */
+
+.days-badge{
+    display:ruby-text;
+
+    padding:6px 12px;
+
+    background:#eff6ff;
+
+    color:#2563eb;
+
+    border-radius:30px;
+
+    font-size:12px;
+    font-weight:600;
+}
+
+/* Severity */
+
+.severity-badge{
+    display:inline-block;
+
+    padding:6px 12px;
+
+    border-radius:30px;
+
+    background:#fef2f2;
+
+    color:#dc2626;
+
+    font-size:12px;
+    font-weight:700;
+}
+/* End table css */
 
 #sidebar-menu ul li ul.sub-menu li a {
     padding: .4rem 1.5rem .4rem 2.3rem;
@@ -661,12 +772,12 @@ body[data-sidebar=dark] #sidebar-menu ul li a:hover i {color: var(--full-white) 
 }
 /* vertical-collpsed */
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li:hover>a{    color: var(--full-white) !important;
-    background: var(--dark-yellow) !important;   }
+    background: var(--dark-blue) !important;   }
     body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li:hover>a i{ color: var(--full-white) !important;}
 
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li.mm-active:hover>a{ background: var(--dark-yellow)  !important;}
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul ul{
-    background-color: var(--dark-yellow);
+    background-color: var(--dark-blue);
     border-bottom-right-radius: 10px;
      border-top-right-radius: 10px; 
     position: absolute;
@@ -707,6 +818,8 @@ body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul ul::-w
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu ul li li a.active, body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu ul li li a.mm-active {
     color: var(--full-white) !important;}
 .vertical-collpsed .vertical-menu #sidebar-menu>ul>li:hover>ul a{padding: 8px 20px;    font-size: 12px;}  
+
+
 
 .page-title-box{background:transparent; padding:14px 15px 12px 15px !important; border-radius: 4px;}
 .page-title-box h4{color:var(--dark-blue); font-size: 16px; margin: 0px;}
@@ -855,7 +968,7 @@ body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li>a{p
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li>a span{display: block;padding-left: 0;    font-size: 12px;}
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li:hover>a{width: calc(190px - 105px);}
 .vertical-collpsed .vertical-menu #sidebar-menu>ul>li:hover>ul a{    text-align: left;}
-body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li{    white-space: normal;text-align: center;}
+body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li{    white-space: normal;text-align: center; border-bottom: 1px #0f8c9129 solid;}
 body[data-sidebar=dark].sidebar-enable.vertical-collpsed{}
 body[data-sidebar=dark].vertical-collpsed{}
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu ul>li>a.mm-active{color: var(--full-white)  !important;

@@ -178,6 +178,7 @@
     gap:12px;
     font-size:16px;
     font-weight:700;
+
     color:#1e293b;
 }
 
@@ -416,162 +417,312 @@
 /* End */
 /* Stat Cards */
 /* ===== CARD BASE ===== */
-.stat-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 15px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  z-index: 0;
+/* ==========================================
+   MODERN ANIMATED STAT CARD DESIGN
+========================================== */
+
+.stat-card{
+    background:#ffffff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:16px;
+
+    padding:15px;
+
+    position:relative;
+
+    overflow:hidden;
+
+    transition:all .35s ease;
+
+    z-index:1;
 }
 
-/* 🔥 SOFT GRAY GRADIENT LAYER */
-.stat-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, #f9fafb, #f3f4f6);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  z-index: -1;
+/* Floating Glow Top Right */
+
+.stat-card::before{
+    content:"";
+
+    position:absolute;
+
+    width:220px;
+    height:220px;
+
+    top:-100px;
+    right:-100px;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            rgba(59,130,246,.12),
+            transparent 70%
+        );
+
+    animation:floatGlow 8s ease-in-out infinite;
+
+    z-index:-1;
 }
 
-/* 🔥 HOVER EFFECT */
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.08);
+/* Floating Glow Bottom Left */
+
+.stat-card::after{
+    content:"";
+
+    position:absolute;
+
+    width:180px;
+    height:180px;
+
+    bottom:-80px;
+    left:-80px;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            rgba(0,169,157,.10),
+            transparent 70%
+        );
+
+    animation:floatGlow2 10s ease-in-out infinite;
+
+    z-index:-1;
 }
 
-/* SHOW GRADIENT */
-.stat-card:hover::after {
-  opacity: 1;
-}
-/* ===== HEADER ===== */
-.stats-header {
-  background: #ffffff;
-  padding: 5px 10px;
-  border-bottom: 1px solid #eef2f6;
-  display: flex;
-  align-items: center;
-}
+/* Dot Pattern Background */
 
-/* LEFT */
-.stats-header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.stat-card{
+    background-image:
+        radial-gradient(
+            rgba(37,99,235,.04) 1px,
+            transparent 1px
+        );
+
+    background-size:18px 18px;
 }
 
-/* ICON BOX */
-.stats-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #f1f5f9;
-  color: #2563eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
+/* Hover Effect */
+
+.stat-card:hover{
+    transform:translateY(-5px);
+
+    border-color:#bfdbfe;
+
+    box-shadow:
+        0 15px 35px rgba(15,23,42,.08);
 }
 
-/* TITLE */
-.stats-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #111827;
+/* ==========================================
+   HEADER
+========================================== */
+
+.stats-header{
+    background:#ffffff;
+
+    padding:5px 10px;
+
+    border-bottom:1px solid #eef2f6;
+
+    display:flex;
+    align-items:center;
 }
 
-/* SUBTEXT */
-.stats-sub {
-  font-size: 12px;
-  color: #6b7280;
+.stats-header-left{
+    display:flex;
+    align-items:center;
+    gap:12px;
 }
 
-/* TEXT */
-.stat-value {
-  color: #111827;
+.stats-icon{
+    width:40px;
+    height:40px;
+
+    border-radius:10px;
+
+    background:#f1f5f9;
+
+    color:#2563eb;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:18px;
 }
 
-.stat-label {
-  color: #6b7280;
+.stats-title{
+    font-size:15px;
+    font-weight:600;
+
+    color:#111827;
 }
 
-/* ICON */
-.stat-icon {
-  transition: all 0.3s ease;
+.stats-sub{
+    font-size:12px;
+    color:#6b7280;
 }
 
-/* ICON HOVER */
-.stat-card:hover .stat-icon {
-  background: #f1f5f9;
-  transform: scale(1.05);
+/* ==========================================
+   CONTENT
+========================================== */
+
+.stat-card-Inner{
+    display:flex;
+    align-items:center;
+    gap:14px;
 }
 
-/* ===== LEFT BORDER (SOFT CORPORATE) ===== */
-.stat-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 12px;
-  bottom: 12px;
-  width: 3px;
-  border-radius: 10px;
+.stat-value{
+    color:#111827;
+
+    font-size:28px;
+    font-weight:700;
+
+    line-height:1;
 }
 
-/* COLORS */
-.stat-card.primary::before { background: #2563eb; }
-.stat-card.success::before { background: #16a34a; }
-.stat-card.info::before { background: #3b82f6; }
-.stat-card.warning::before { background: #f59e0b; }
-.stat-card.danger::before { background: #ef4444; }
+.stat-label{
+    color:#6b7280;
 
-/* ===== FLEX ===== */
-.stat-card-Inner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+    font-size:14px;
+
+    margin:0;
 }
 
-/* ===== ICON (MODERN SQUARE STYLE) ===== */
-.stat-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
+/* ==========================================
+   ICON
+========================================== */
+
+.stat-icon{
+    width:48px;
+    height:48px;
+
+    border-radius:14px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:20px;
+
+    flex-shrink:0;
+
+    transition:all .35s ease;
 }
 
-/* ICON COLORS */
-.stat-card.primary .stat-icon {
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563eb;
+.stat-card:hover .stat-icon{
+    transform:scale(1.08) rotate(5deg);
 }
 
-.stat-card.success .stat-icon {
-  background: rgba(22, 163, 74, 0.1);
-  color: #16a34a;
+/* ==========================================
+   LEFT COLOR BORDER
+========================================== */
+
+.stat-card.primary{
+    border-left:4px solid #2563eb;
 }
 
-.stat-card.info .stat-icon {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+.stat-card.success{
+    border-left:4px solid #16a34a;
 }
 
-.stat-card.warning .stat-icon {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+.stat-card.info{
+    border-left:4px solid #3b82f6;
 }
 
-.stat-card.danger .stat-icon {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+.stat-card.warning{
+    border-left:4px solid #f59e0b;
+}
+
+.stat-card.danger{
+    border-left:4px solid #ef4444;
+}
+
+/* ==========================================
+   ICON COLORS
+========================================== */
+
+.stat-card.primary .stat-icon{
+    background:rgba(37,99,235,.12);
+    color:#2563eb;
+}
+
+.stat-card.success .stat-icon{
+    background:rgba(22,163,74,.12);
+    color:#16a34a;
+}
+
+.stat-card.info .stat-icon{
+    background:rgba(59,130,246,.12);
+    color:#3b82f6;
+}
+
+.stat-card.warning .stat-icon{
+    background:rgba(245,158,11,.12);
+    color:#f59e0b;
+}
+
+.stat-card.danger .stat-icon{
+    background:rgba(239,68,68,.12);
+    color:#ef4444;
+}
+
+/* ==========================================
+   SHINE EFFECT
+========================================== */
+
+.shine{
+    position:absolute;
+
+    top:0;
+    left:-120%;
+
+    width:80px;
+    height:100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,.65),
+            transparent
+        );
+
+    transform:skewX(-25deg);
+
+    transition:.9s;
+}
+
+.stat-card:hover .shine{
+    left:140%;
+}
+
+/* ==========================================
+   ANIMATIONS
+========================================== */
+
+@keyframes floatGlow{
+
+    0%,100%{
+        transform:translate(0,0) scale(1);
+    }
+
+    50%{
+        transform:translate(-20px,20px) scale(1.15);
+    }
+}
+
+@keyframes floatGlow2{
+
+    0%,100%{
+        transform:translate(0,0) scale(1);
+    }
+
+    50%{
+        transform:translate(25px,-15px) scale(1.1);
+    }
 }
 
 /* ===== VALUE ===== */
@@ -798,6 +949,12 @@ color: var(--color-black) !important;
 
 
 /* bottom boxs css */
+/* four box designs */
+
+/* End four boxs design css */
+
+
+
 /* ===== CARD V2 ===== */
 .stat-card-v2 {
   background: #ffffff;
@@ -869,4 +1026,116 @@ color: var(--color-black) !important;
   background: rgba(34, 197, 94, 0.1);
   color: #22c55e;
 }
+.quick-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+}
 
+.quick-btn{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    padding:12px 18px;
+
+    border-radius:14px;
+
+    text-decoration:none;
+
+    font-size:14px;
+    font-weight:600;
+
+    transition:.3s ease;
+
+    border:1px solid transparent;
+}
+
+.quick-btn i{
+    width:34px;
+    height:34px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:10px;
+
+    font-size:18px;
+}
+
+/* Delay Register */
+
+.quick-primary{
+    background:#eff6ff;
+    color:#2563eb;
+    border-color:#bfdbfe;
+}
+
+.quick-primary i{
+    background:#2563eb;
+    color:#fff;
+}
+
+/* Projects */
+
+.quick-project{
+    background:#ecfeff;
+    color:#0891b2;
+    border-color:#a5f3fc;
+}
+
+.quick-project i{
+    background:#0891b2;
+    color:#fff;
+}
+
+/* Mitigation */
+
+.quick-mitigation{
+    background:#ecfdf5;
+    color:#059669;
+    border-color:#a7f3d0;
+}
+
+.quick-mitigation i{
+    background:#059669;
+    color:#fff;
+}
+
+/* Finance */
+
+.quick-finance{
+    background:#fefce8;
+    color:#ca8a04;
+    border-color:#fde68a;
+}
+
+.quick-finance i{
+    background:#ca8a04;
+    color:#fff;
+}
+
+/* Attachment */
+
+.quick-attachment{
+    background:#faf5ff;
+    color:#9333ea;
+    border-color:#d8b4fe;
+}
+
+.quick-attachment i{
+    background:#9333ea;
+    color:#fff;
+}
+
+/* Hover */
+
+.quick-btn:hover{
+    transform:translateY(-3px);
+
+    text-decoration:none;
+
+    box-shadow:
+        0 8px 20px rgba(0,0,0,.08);
+}

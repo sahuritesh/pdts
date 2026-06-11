@@ -68,6 +68,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
 <div class="row mb-3">
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card primary">
+             <span class="shine"></span>
             <div class="stat-card-Inner">
                 <div class="stat-icon"><i class="ri-building-2-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['total_projects'] ?? 0) }}</div>
@@ -77,6 +78,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card warning">
+             <span class="shine"></span>
             <div class="stat-card-Inner">
                 <div class="stat-icon"><i class="ri-time-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['open_delays'] ?? 0) }}</div>
@@ -86,6 +88,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card danger">
+             <span class="shine"></span>
             <div class="stat-card-Inner">
                 <div class="stat-icon"><i class="ri-alert-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['critical_delays'] ?? 0) }}</div>
@@ -95,6 +98,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="stat-card success">
+             <span class="shine"></span>
             <div class="stat-card-Inner">
                 <div class="stat-icon"><i class="ri-money-dollar-circle-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['total_delay_cost'] ?? 0, 0) }}</div>
@@ -217,28 +221,62 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
         <div class="chart-card dashboardTable">
             <h6> <span class="chart-icon"><i class="ri-error-warning-line me-1"></i></span> Recent critical delays</h6>
             @if(!empty($recentCritical))
-            <div class="table-responsive">
-                <table class="table table-sm table-bordered mb-0">
-                    <thead>
-                        <tr>
-                            <th>Delay</th>
-                            <th>Project</th>
-                            <th>Days</th>
-                            <th>Severity</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($recentCritical as $row)
-                        <tr>
-                            <td>{{ $row['title'] }}</td>
-                            <td><small>{{ $row['project'] }}</small></td>
-                            <td>{{ $row['days'] }}</td>
-                            <td><span class="badge rounded-pill badge-soft-danger">{{ $row['severity'] }}</span></td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+            <div class="custom-table-wrapper">
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>
+                        <i class="ri-error-warning-line"></i>
+                        Delay
+                    </th>
+                    <th>
+                        <i class="ri-building-2-line"></i>
+                        Project
+                    </th>
+                    <th>
+                        <i class="ri-time-line"></i>
+                        Days
+                    </th>
+                    <th>
+                        <i class="ri-alert-line"></i>
+                        Severity
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach($recentCritical as $row)
+                <tr>
+                    <td>
+                        <div class="delay-title">
+                            {{ $row['title'] }}
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="project-name">
+                            {{ $row['project'] }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="days-badge">
+                            {{ $row['days'] }} Days
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="severity-badge">
+                            {{ $row['severity'] }}
+                        </span>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
             @else
             <p class="text-muted mb-0 py-4 text-center">No critical or showstopper delays recorded.</p>
             @endif
@@ -251,13 +289,34 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
 @if(modulePermissionExists('delay_registers'))
 <div class="row mb-4">
     <div class="col-12">
-        <div class="d-flex flex-wrap gap-2">
-            <a href="{{ getProjectUrl('delay-registers-list') }}" class="btn btn-primary btn-sm">Delay Register</a>
-            <a href="{{ getProjectUrl('projects-list') }}" class="btn btn-outline-primary btn-sm">Projects</a>
-            <a href="{{ getProjectUrl('delay-mitigations-list') }}" class="btn btn-outline-primary btn-sm">Mitigations</a>
-            <a href="{{ getProjectUrl('delay-financial-impacts-list') }}" class="btn btn-outline-primary btn-sm">Financial Impact</a>
-            <a href="{{ getProjectUrl('delay-attachments-list') }}" class="btn btn-outline-primary btn-sm">Attachments</a>
-        </div>
+        <div class="quick-actions">
+
+    <a href="{{ getProjectUrl('delay-registers-list') }}" class="quick-btn quick-primary">
+        <i class="ri-file-list-3-line"></i>
+        <span>Delay Register</span>
+    </a>
+
+    <a href="{{ getProjectUrl('projects-list') }}" class="quick-btn quick-project">
+        <i class="ri-building-2-line"></i>
+        <span>Projects</span>
+    </a>
+
+    <a href="{{ getProjectUrl('delay-mitigations-list') }}" class="quick-btn quick-mitigation">
+        <i class="ri-shield-check-fill"></i>
+        <span>Mitigations</span>
+    </a>
+
+    <a href="{{ getProjectUrl('delay-financial-impacts-list') }}" class="quick-btn quick-finance">
+        <i class="ri-money-dollar-circle-line"></i>
+        <span>Financial Impact</span>
+    </a>
+
+    <a href="{{ getProjectUrl('delay-attachments-list') }}" class="quick-btn quick-attachment">
+        <i class="ri-attachment-2"></i>
+        <span>Attachments</span>
+    </a>
+
+</div>
     </div>
 </div>
 @endif
