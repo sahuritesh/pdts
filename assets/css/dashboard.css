@@ -1,24 +1,92 @@
 /* Dashboard Styles - EFI Project */
-
-.dashboard-welcome {
-    background: var(--color-white);
-    /* border-radius: 12px; */
-    /* padding: 30px; */
-    /* color: white; */
-    margin-bottom: 30px;
-    /* box-shadow: 0 4px 15px rgba(0, 62, 107, 0.2); */
+.dashboard-welcome{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 16px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    margin-bottom: 16px;
 }
 
-.dashboard-welcome h3 {
-    color:var(--dark-blue);
-    margin-bottom: 0px;
-    font-weight: 600;
-    font-size: 18px;
+.welcome-left{
+    display:flex;
+    align-items:center;
+    gap:14px;
 }
 
-.dashboard-welcome .blue-color {
-    color: var(--color-black) !important;
-    font-weight: 700;
+.welcome-icon{
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #00A99D, #1F8EF1);
+    color: #fff;
+    font-size: 22px;
+}
+
+.welcome-left h3{
+    margin:0;
+    font-size:18px;
+    font-weight:700;
+    color:#1e293b;
+}
+
+.welcome-left h3 span{
+    color:#1F8EF1;
+}
+
+.welcome-left p{
+    margin:4px 0 0;
+    font-size:13px;
+    color:#64748b;
+}
+
+.welcome-right{
+    text-align:right;
+}
+
+.admin-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+
+    padding:7px 12px;
+
+    background:#eff6ff;
+
+    color:#1F8EF1;
+
+    border-radius:30px;
+
+    font-size:13px;
+    font-weight:600;
+
+    margin-bottom:6px;
+}
+
+.welcome-right small{
+    display:block;
+
+    color:#64748b;
+
+    font-size:12px;
+}
+@media(max-width:768px){
+
+    .dashboard-welcome{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:15px;
+    }
+
+    .welcome-right{
+        text-align:left;
+        width:100%;
+    }
 }
 
 /* card design */
@@ -103,6 +171,14 @@
 /* ===== HEADER ===== */
 .corporate-table thead {
     background: #f8fafc;
+}
+.dashboard-title{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:16px;
+    font-weight:700;
+    color:#1e293b;
 }
 
 .corporate-table thead th {
@@ -602,22 +678,63 @@ color: var(--color-black) !important;
 }
 
 /* Chart Cards */
-.chart-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    padding: 20px;
-    margin-bottom: 20px;
-    height: 100%;
+.chart-card{
+    background:#fff;
+    border:1px solid #e2e8f0;
+    border-radius:14px;
+    padding:20px;
+    margin-bottom:20px;
+    height:100%;
+    transition:all .3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 }
 
-.chart-card h6 {
-    color: #2d3448;
-    font-weight: 600;
-    margin-bottom: 20px;
-    font-size: 16px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #eff2f7;
+.chart-card:hover{
+    border-color:#00BCD4;
+
+    transform:translateY(-2px);
+}
+
+.chart-card h6{
+    color:#2d3448;
+    font-weight:700;
+    margin-bottom:20px;
+    font-size:16px;
+
+    padding-bottom:10px;
+
+    border-bottom:2px solid #eff2f7;
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.chart-icon{
+    width:36px;
+    height:36px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:12px;
+
+    background:linear-gradient(
+        135deg,
+        #00A99D,
+        #1F8EF1
+    );
+
+    box-shadow:
+        0 8px 18px rgba(31,142,241,.25);
+
+    flex-shrink:0;
+}
+
+.chart-icon i{
+    color:#fff;
+    font-size:20px;
 }
 
 /* Mini Stat Cards */

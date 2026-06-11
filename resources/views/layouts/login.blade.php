@@ -431,7 +431,9 @@ body::before{
     }
 }
 @media(max-width:992px){
-
+.animated-bg, .login-left::after, body::before, .login-left-content::before{
+    display:none;
+}
     .login-container{
         flex-direction:column;
         gap:20px;
@@ -461,6 +463,7 @@ body::before{
 
     .login-container{
         padding:15px;
+        width: 100%;
     }
 
     .login-right{
@@ -476,7 +479,8 @@ body::before{
     }
 
     .login-left-content img{
-        max-width:170px;
+        /* max-width:170px; */
+        margin-bottom:10px;
     }
 
     .captcha-wrapper{

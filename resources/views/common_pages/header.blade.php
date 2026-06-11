@@ -96,17 +96,17 @@
                             <i class="ri-user-line"></i>
                         </div>
                         <div class="d-none d-xl-inline-block ms-2 text-start">
-                            <div style="font-weight: 600; font-size: 14px; line-height: 1.2; color: var(--dark-blue);">
+                            <div style="font-weight: 600; font-size: 14px; line-height: 1.2; color: var(--full-white);">
                                 @php echo ucwords(substr(Auth::user()->first_name ?? 'Admin', 0, 15)) @endphp
                             </div>
                             @php
                                 $role = DB::table('tbl_roles')->where('id', Auth::user()->user_type)->first();
                                 $roleName = $role ? $role->role_name : 'User';
                             @endphp
-                            <small style="font-size: 11px; opacity: 0.7; display: block; color: var(--dark-blue);">{{ $roleName }}</small>
+                            <small style="font-size: 11px; opacity: 0.7; display: block; color: var(--full-white);">{{ $roleName }}</small>
                         </div>
                     </div>
-                    <i class="mdi mdi-chevron-down d-none d-xl-inline-block ms-2" style="color: var(--dark-blue);"></i>
+                    <i class="mdi mdi-chevron-down d-none d-xl-inline-block ms-2" style="color: var(--full-white);"></i>
                 </button>
                 <div class="dropdown-menu dropdown-menu-end">
                     <!-- item-->

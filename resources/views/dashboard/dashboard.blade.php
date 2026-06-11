@@ -18,28 +18,34 @@ $recentCritical = $analytics['recent_critical_delays'] ?? [];
 $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
 @endphp
 
-<div class="dashboard-welcome mb-4">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h3 class="mb-2">Welcome back, <span class="text-primary">@php echo Auth::user()->first_name ?? 'Admin' @endphp</span></h3>
-            <p class="text-muted mb-0 fs-12">
-                PDTS overview
-                @if($showModule1 && $showModule3)
-                    — delay tracking and renovation monitoring from live data.
-                @elseif($showModule1)
-                    — delay tracking analytics from live data.
-                @elseif($showModule3)
-                    — renovation monitoring analytics from live data.
-                @else
-                    — application summary for your role.
-                @endif
+<div class="dashboard-welcome">
+    <div class="welcome-left">
+        <div class="welcome-icon">
+           <i class="ri-bar-chart-box-line"></i>
+        </div>
+
+        <div>
+            <h3>
+                Welcome Back,
+                <span>Admin</span>
+            </h3>
+
+            <p>
+                PDTS overview — delay tracking analytics from live data.
             </p>
         </div>
-        <div class="col-md-4 text-md-end">
-            <p class="text-muted mb-0">{{ $data['role_name'] ?? 'User' }}</p>
-            <small class="text-muted">Last login:
-                {{ $data['last_logged_on'] ? displayCustomDateTime($data['last_logged_on']) : 'Never' }}</small>
+    </div>
+
+    <div class="welcome-right">
+        <div class="admin-badge">
+            <i class="ri-shield-user-line"></i>
+            Super Admin
         </div>
+
+        <small>
+            <i class="ri-time-line"></i>
+            Last login: 11 Jun 2026 • 01:22 PM
+        </small>
     </div>
 </div>
 
@@ -48,7 +54,13 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
 @if($showModule1)
 <div class="row mb-2">
     <div class="col-12">
-        <h5 class="mb-0 text-primary"><i class="ri-building-2-line me-1"></i> Delay Tracking</h5>
+        <!-- <h5 class="mb-0 text-primary"><i class="ri-building-2-line me-1"></i> Delay Tracking</h5> -->
+         <h5 class="dashboard-title mb-0">
+    <span class="title-icon">
+        <i class="ri-building-2-line"></i>
+    </span>
+    Delay Tracking
+</h5>
     </div>
 </div>
 
@@ -124,15 +136,23 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     @if($w('m1_chart_severity'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
-            <h6><i class="ri-pie-chart-2-line me-1"></i> Delays by severity</h6>
-            <div id="chart-delays-severity"></div>
-        </div>
+    <h6>
+        <span class="chart-icon">
+            <i class="ri-pie-chart-2-line"></i>
+        </span>
+        Delays by Severity
+    </h6>
+
+    <div id="chart-delays-severity"></div>
+</div>
     </div>
     @endif
     @if($w('m1_chart_category'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
-            <h6><i class="ri-bar-chart-horizontal-line me-1"></i> Delays by category</h6>
+            <h6>
+                <span class="chart-icon"><i class="ri-bar-chart-horizontal-line me-1"></i> </span>
+                Delays by category</h6>
             <div id="chart-delays-category"></div>
         </div>
     </div>
@@ -145,7 +165,9 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     @if($w('m1_chart_project_status'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
-            <h6><i class="ri-donut-chart-line me-1"></i> Project status</h6>
+            <h6>
+                 <span class="chart-icon"><i class="ri-donut-chart-line me-1"></i> </span>
+                Project status</h6>
             <div id="chart-project-status"></div>
         </div>
     </div>
@@ -153,7 +175,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     @if($w('m1_chart_mitigation'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
-            <h6><i class="ri-shield-check-line me-1"></i> Mitigation status</h6>
+            <h6> <span class="chart-icon"><i class="ri-shield-check-line me-1"></i></span> Mitigation status</h6>
             <div id="chart-mitigation-status"></div>
         </div>
     </div>
@@ -161,7 +183,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     @if($w('m1_chart_financial'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
-            <h6><i class="ri-money-dollar-circle-line me-1"></i> Financial impact split</h6>
+            <h6> <span class="chart-icon"><i class="ri-money-dollar-circle-line me-1"></i></span> Financial impact split</h6>
             <div id="chart-financial-impact"></div>
         </div>
     </div>
@@ -173,7 +195,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
 <div class="row mb-3">
     <div class="col-12 mb-3">
         <div class="chart-card">
-            <h6><i class="ri-line-chart-line me-1"></i> Delays logged — last 6 months</h6>
+            <h6> <span class="chart-icon"><i class="ri-line-chart-line me-1"></i></span> Delays logged — last 6 months</h6>
             <div id="chart-delay-trend"></div>
         </div>
     </div>
@@ -185,7 +207,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     @if($w('m1_chart_hospital'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card">
-            <h6><i class="ri-hospital-line me-1"></i> Delays by hospital</h6>
+            <h6> <span class="chart-icon"><i class="ri-hospital-line me-1"></i></span> Delays by hospital</h6>
             <div id="chart-delays-hospital"></div>
         </div>
     </div>
@@ -193,7 +215,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     @if($w('m1_table_critical'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card dashboardTable">
-            <h6><i class="ri-error-warning-line me-1"></i> Recent critical delays</h6>
+            <h6> <span class="chart-icon"><i class="ri-error-warning-line me-1"></i></span> Recent critical delays</h6>
             @if(!empty($recentCritical))
             <div class="table-responsive">
                 <table class="table table-sm table-bordered mb-0">
