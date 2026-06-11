@@ -117,7 +117,7 @@ table tbody tr td p small{font-size: 14px;}
 table tbody tr td label small{font-size: 14px !important;}
 table tbody tr td p {margin-bottom: 0px !important; font-size: 14px !important;}
 table thead tr th{
-    background-color: #254aa5 !important;
+    background-color: var(--dark-blue) !important;
     color: #ffffff;
     font-size: 14px;
 }
@@ -751,13 +751,13 @@ body[data-sidebar=dark] #sidebar-menu ul li a i{color: var(--dark-blue);    opac
 body[data-sidebar=dark] #sidebar-menu ul li.mm-active a i{color: var(--full-white) !important;opacity: 1;}
 body[data-sidebar=dark] #sidebar-menu ul li.mm-active a{background-color:var(--dark-blue); color:var(--full-white) !important; opacity: 1;}
 body[data-sidebar=dark] .mm-active>i {color: var(--dark-blue) !important; opacity: 1 !important;}
-body[data-sidebar=dark] #sidebar-menu ul li a.mm-active{background-color:var(--dark-yellow); color:var(--full-white) !important;}
+body[data-sidebar=dark] #sidebar-menu ul li a.mm-active{background-color:var(--dark-blue); color:var(--full-white) !important;}
 body[data-sidebar=dark] #sidebar-menu ul li a.mm-active i{color:var(--full-white)  !important; opacity: 1 !important; }
 .metismenu .mm-collapse.mm-show{background: var(--dark-yellow);}
 .metismenu .mm-collapse.mm-show li{background: var(--dark-yellow);}
 body[data-sidebar=dark] #sidebar-menu ul li ul.sub-menu li a{color: var(--full-white) !important;}
 
-body[data-sidebar=dark] #sidebar-menu ul li.mm-active a:hover{background-color:var(--dark-yellow); color:var(--full-white) !important;}
+body[data-sidebar=dark] #sidebar-menu ul li.mm-active a:hover{background-color:var(--dark-blue); color:var(--full-white) !important;}
 body[data-sidebar=dark] #sidebar-menu ul li.mm-active a:hover i{color:var(--full-white) !important; opacity: 1 !important; }
 
  #sidebar-menu ul li ul.sub-menu a:hover{background: transparent !important; color:#b3c1ff !important;}
@@ -775,7 +775,7 @@ body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li:hov
     background: var(--dark-blue) !important;   }
     body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li:hover>a i{ color: var(--full-white) !important;}
 
-body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li.mm-active:hover>a{ background: var(--dark-yellow)  !important;}
+body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul>li.mm-active:hover>a{ background: var(--dark-blue)  !important;}
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul ul{
     background-color: var(--dark-blue);
     border-bottom-right-radius: 10px;
@@ -810,10 +810,10 @@ body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul ul::-w
 
 /* Handle on hover */
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu>ul ul::-webkit-scrollbar-thumb:hover {
-  background: #204891; 
+  background-color: var(--dark-blue); 
 }
 
-.vertical-collpsed .vertical-menu #sidebar-menu>ul>li.mm-active a.mm-active{box-shadow: 0 2px 6px rgb(77 89 160 / 30%);  background-color: var(--dark-yellow);}
+.vertical-collpsed .vertical-menu #sidebar-menu>ul>li.mm-active a.mm-active{box-shadow: 0 2px 6px rgb(77 89 160 / 30%);  background-color: var(--dark-blue);}
 
 body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu ul li li a.active, body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu ul li li a.mm-active {
     color: var(--full-white) !important;}
@@ -844,7 +844,11 @@ body[data-sidebar=dark].vertical-collpsed {max-height:100%;}
 .dataTables_length{    font-size: 13px;}
 div.dataTables_wrapper div.dataTables_info{font-size: 13px;width: 48%;text-align: left;padding-left: 20px;}
 .page-item.active .page-link{background-color: var(--dark-blue); border-color: var(--dark-blue);}
-.footer{font-size: 13px;color: #535666;}
+.footer{font-size: 13px;
+background: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+}
 .pagination{padding-right: 20px;}
 div.dataTables_wrapper div.dataTables_paginate ul.pagination{font-size: 13px;}
 
@@ -877,7 +881,7 @@ font-size: 14px;color: #1B428A;
 .dataTables_scrollHeadInner table{width: 100% !important;}
 .dataTables_scroll .dataTables_scrollHeadInner table{margin-top: 0px !important;}
 .dataTables_scrollBody table thead tr{border-color: var(--full-white);}
-.offcanvas-header{background: #135e32;}
+.offcanvas-header{background-color: var(--dark-blue)}
 .offcanvas-header h5, .offcanvas-header button{color: var(--full-white);}
 .offcanvas-header .popup-close{color: var(--full-white);}
 .offcanvas-footer{border-top: 1px solid #ccc;}
@@ -984,7 +988,7 @@ body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu ul>li>a.m
 
 /* ===== BUTTON ===== */
 .btn-submit {
-  background: #254aa5;
+  background-color: var(--dark-blue);
     color: #ffffff;
     border: none;
     border-radius: 30px;
@@ -996,7 +1000,7 @@ body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu ul>li>a.m
 
 /* HOVER */
 .btn-submit:hover {
-  background: #254aa5;
+  background-color: var(--dark-blue);
   color: #fff;
 }
 

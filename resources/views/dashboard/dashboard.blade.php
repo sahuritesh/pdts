@@ -108,30 +108,55 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     </div>
 </div>
 <div class="row mb-3">
+
     <div class="col-lg-3 col-md-6 mb-3">
-        <div class="mini-stat-card info">
-            <div class="mini-stat-value">{{ number_format($kpis['delayed_projects'] ?? 0) }}</div>
-            <div class="mini-stat-label">Delayed projects</div>
+        <div class="tracker-card tracker-blue">
+            <div class="tracker-count">
+                {{ number_format($kpis['delayed_projects'] ?? 0) }}
+            </div>
+            <div class="tracker-info">
+                <h6>Delayed Projects</h6>
+                <p>Current delayed projects</p>
+            </div>
         </div>
     </div>
+
     <div class="col-lg-3 col-md-6 mb-3">
-        <div class="mini-stat-card primary">
-            <div class="mini-stat-value">{{ number_format($kpis['avg_delay_days'] ?? 0, 1) }}</div>
-            <div class="mini-stat-label">Avg delay days</div>
+        <div class="tracker-card tracker-purple">
+            <div class="tracker-count">
+                {{ number_format($kpis['avg_delay_days'] ?? 0,1) }}
+            </div>
+            <div class="tracker-info">
+                <h6>Avg Delay Days</h6>
+                <p>Average project delay</p>
+            </div>
         </div>
     </div>
+
     <div class="col-lg-3 col-md-6 mb-3">
-        <div class="mini-stat-card warning">
-            <div class="mini-stat-value">{{ number_format($kpis['open_mitigations'] ?? 0) }}</div>
-            <div class="mini-stat-label">Open mitigations</div>
+        <div class="tracker-card tracker-orange">
+            <div class="tracker-count">
+                {{ number_format($kpis['open_mitigations'] ?? 0) }}
+            </div>
+            <div class="tracker-info">
+                <h6>Open Mitigations</h6>
+                <p>Pending actions</p>
+            </div>
         </div>
     </div>
+
     <div class="col-lg-3 col-md-6 mb-3">
-        <div class="mini-stat-card success">
-            <div class="mini-stat-value">{{ number_format($kpis['attachment_count'] ?? 0) }}</div>
-            <div class="mini-stat-label">Attachments</div>
+        <div class="tracker-card tracker-green">
+            <div class="tracker-count">
+                {{ number_format($kpis['attachment_count'] ?? 0) }}
+            </div>
+            <div class="tracker-info">
+                <h6>Attachments</h6>
+                <p>Uploaded files</p>
+            </div>
         </div>
     </div>
+
 </div>
 @endif
 
