@@ -5,30 +5,156 @@
     $rootCauses = $data['root_causes'];
     $statuses = $data['register_statuses'];
     $encPd = Crypt::encrypt($ctx['id']);
+    $rootCauseMap = collect($rootCauses)->keyBy('id');
+    $statusMap = collect($statuses)->pluck('label', 'value');
+    $severityClass = ['minor' => 'secondary', 'moderate' => 'warning', 'critical' => 'danger', 'showstopper' => 'dark'];
 @endphp
-<div class="sidelayout-panel">
+<div class="sidelayout-panel delay-register-panel">
     <div class="sidelayout-context">{{ $ctx['project_code'] }} — {{ $ctx['department_name'] }}</div>
 
+    @if($delays->count())
+    <h6>Delay Log History <span class="badge bg-light text-dark">{{ $delays->count() }}</span></h6>
+
     @foreach($delays as $delay)
-    <div class="card border">
-        <div class="card-body py-2">
-            <div class="d-flex justify-content-between align-items-start gap-2">
-                <strong class="small">{{ $delay->delay_title }}</strong>
-                <span class="badge bg-warning text-dark flex-shrink-0">{{ ucfirst($delay->severity ?? '') }} · {{ (int)$delay->delay_days }}d</span>
+    @php
+        $rootLabel = trim($delay->root_cause_label ?? '');
+        if ($rootLabel === '' && !empty($delay->root_cause_id) && $rootCauseMap->has($delay->root_cause_id)) {
+            $rootLabel = $rootCauseMap[$delay->root_cause_id]->cause_name;
+        }
+        $statusLabel = $statusMap[$delay->register_status ?? 'open'] ?? ucfirst(str_replace('_', ' ', $delay->register_status ?? 'open'));
+        $sev = strtolower($delay->severity ?? 'minor');
+        $loggedAt = !empty($delay->created_on) && $delay->created_on !== '0000-00-00 00:00:00'
+            ? date('d M Y, h:i A', strtotime($delay->created_on)) : '—';
+        $updatedAt = !empty($delay->updated_on) && $delay->updated_on !== '0000-00-00 00:00:00'
+            && $delay->updated_on !== $delay->created_on
+            ? date('d M Y, h:i A', strtotime($delay->updated_on)) : null;
+        $startDate = !empty($delay->delay_start_date) ? date('d M Y', strtotime($delay->delay_start_date)) : '—';
+        $endDate = !empty($delay->delay_end_date) ? date('d M Y', strtotime($delay->delay_end_date)) : '—';
+        $targetDate = !empty($delay->target_revised_completion_date)
+            ? date('d M Y', strtotime($delay->target_revised_completion_date)) : '—';
+    @endphp
+    <div class="delay-log-card card border mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
+                <div>
+                    <h6 class="delay-log-title mb-1">{{ $delay->delay_title }}</h6>
+                    <div class="delay-log-meta">
+                        <i class="ri-time-line"></i> Logged: <strong>{{ $loggedAt }}</strong>
+                        @if($updatedAt)
+                        <span class="mx-1">·</span> Updated: <strong>{{ $updatedAt }}</strong>
+                        @endif
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-1 justify-content-end">
+                    <span class="badge bg-{{ $severityClass[$sev] ?? 'secondary' }}">{{ ucfirst($sev) }}</span>
+                    <span class="badge bg-info text-dark">{{ (int)($delay->delay_days ?? 0) }} days</span>
+                    <span class="badge bg-primary">{{ $statusLabel }}</span>
+                    @if(!empty($delay->licensing_openings_affected))
+                    <span class="badge bg-dark">Showstopper</span>
+                    @endif
+                </div>
             </div>
-            @if($delay->specific_event_description)
-            <p class="small text-muted mb-2 mt-1">{{ $delay->specific_event_description }}</p>
-            @endif
-            @if(isset($mitigations[$delay->id]))
-            <ul class="small mb-0 ps-3">
+
+            <div class="delay-log-details">
+                @if(!empty($delay->primary_delay_drivers))
+                <div class="delay-log-field">
+                    <span class="delay-log-label">Primary Delay Driver(s)</span>
+                    <p class="delay-log-value">{{ $delay->primary_delay_drivers }}</p>
+                </div>
+                @endif
+
+                @if(!empty($delay->specific_event_description))
+                <div class="delay-log-field">
+                    <span class="delay-log-label">Event Description</span>
+                    <p class="delay-log-value">{{ $delay->specific_event_description }}</p>
+                </div>
+                @endif
+
+                @if(!empty($delay->impacted_task))
+                <div class="delay-log-field">
+                    <span class="delay-log-label">Impacted Task</span>
+                    <p class="delay-log-value">{{ $delay->impacted_task }}</p>
+                </div>
+                @endif
+
+                @if(!empty($delay->delay_description))
+                <div class="delay-log-field">
+                    <span class="delay-log-label">Description</span>
+                    <p class="delay-log-value">{{ $delay->delay_description }}</p>
+                </div>
+                @endif
+
+                <div class="row g-2 delay-log-grid">
+                    <div class="col-md-6">
+                        <span class="delay-log-label">Delay Start</span>
+                        <p class="delay-log-value mb-0">{{ $startDate }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="delay-log-label">Delay End</span>
+                        <p class="delay-log-value mb-0">{{ $endDate }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="delay-log-label">Root Cause</span>
+                        <p class="delay-log-value mb-0">{{ $rootLabel !== '' ? $rootLabel : '—' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="delay-log-label">Target Revised Completion</span>
+                        <p class="delay-log-value mb-0">{{ $targetDate }}</p>
+                    </div>
+                    @if(!empty($delay->responsibility_name))
+                    <div class="col-md-6">
+                        <span class="delay-log-label">Responsibility</span>
+                        <p class="delay-log-value mb-0">{{ $delay->responsibility_name }}</p>
+                    </div>
+                    @endif
+                    @if(!empty($delay->alert_level))
+                    <div class="col-md-6">
+                        <span class="delay-log-label">Alert Level</span>
+                        <p class="delay-log-value mb-0 text-capitalize">{{ $delay->alert_level }}</p>
+                    </div>
+                    @endif
+                    @if(!empty($delay->escalation_level))
+                    <div class="col-md-6">
+                        <span class="delay-log-label">Escalation Level</span>
+                        <p class="delay-log-value mb-0">{{ $delay->escalation_level }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+            @if(isset($mitigations[$delay->id]) && count($mitigations[$delay->id]))
+            <div class="delay-mitigations mt-3 pt-3 border-top">
+                <span class="delay-log-label d-block mb-2">Mitigations ({{ count($mitigations[$delay->id]) }})</span>
                 @foreach($mitigations[$delay->id] as $m)
-                <li>{{ $m->mitigation_action }} <em>({{ $m->current_status ?? 'open' }})</em></li>
+                @php
+                    $mLogged = !empty($m->created_on) && $m->created_on !== '0000-00-00 00:00:00'
+                        ? date('d M Y, h:i A', strtotime($m->created_on)) : '—';
+                    $mTarget = !empty($m->target_resolution_date)
+                        ? date('d M Y', strtotime($m->target_resolution_date)) : '—';
+                @endphp
+                <div class="delay-mitigation-item">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                        <strong class="small">{{ $m->mitigation_action }}</strong>
+                        <span class="badge bg-light text-dark text-capitalize flex-shrink-0">{{ str_replace('_', ' ', $m->current_status ?? 'open') }}</span>
+                    </div>
+                    <div class="small text-muted">
+                        @if(!empty($m->owner_name))<span>Owner: {{ $m->owner_name }}</span><span class="mx-1">·</span>@endif
+                        <span>Target: {{ $mTarget }}</span><span class="mx-1">·</span>
+                        <span>Logged: {{ $mLogged }}</span>
+                    </div>
+                    @if(!empty($m->resolution_remarks))
+                    <p class="small mb-0 mt-1 text-muted"><em>{{ $m->resolution_remarks }}</em></p>
+                    @endif
+                </div>
                 @endforeach
-            </ul>
+            </div>
             @endif
         </div>
     </div>
     @endforeach
+    @else
+    <div class="alert alert-light border small mb-3">No delay entries logged for this department yet.</div>
+    @endif
 
     <h6>Log Delay</h6>
     <form id="wizardDelayForm" class="custom-validations">
@@ -116,6 +242,55 @@
         </div>
     </form>
 </div>
+
+<style>
+.delay-register-panel .delay-log-card {
+    background: #fafbfc;
+}
+.delay-register-panel .delay-log-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #343a40;
+}
+.delay-register-panel .delay-log-meta {
+    font-size: 0.75rem;
+    color: #878a99;
+}
+.delay-register-panel .delay-log-meta i {
+    margin-right: 0.2rem;
+}
+.delay-register-panel .delay-log-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #878a99;
+    margin-bottom: 0.2rem;
+}
+.delay-register-panel .delay-log-value {
+    font-size: 0.85rem;
+    color: #495057;
+    margin-bottom: 0.65rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.delay-register-panel .delay-log-grid {
+    margin-top: 0.25rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed #e9ecef;
+}
+.delay-register-panel .delay-mitigation-item {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.delay-register-panel .delay-mitigation-item:last-child {
+    margin-bottom: 0;
+}
+</style>
 
 <script>
 $(function() {
