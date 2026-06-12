@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardAnalyticsService
 {
@@ -28,7 +29,7 @@ class DashboardAnalyticsService
             $data['project_status'] = $this->getProjectStatusBreakdown();
         }
         if (!empty($visibleWidgets['m1_chart_mitigation'])) {
-            $data['mitigation_status'] = $this->getMitigationStatusBreakdown();
+            $data['department_status'] = $this->getDepartmentStatusBreakdown();
         }
         if (!empty($visibleWidgets['m1_chart_financial'])) {
             $data['financial_impact'] = $this->getFinancialImpactBreakdown();
@@ -40,12 +41,7 @@ class DashboardAnalyticsService
             $data['delays_by_hospital'] = $this->getDelaysByHospital(8);
         }
         if (!empty($visibleWidgets['m1_table_critical'])) {
-            $data['recent_critical_delays'] = $this->getRecentCriticalDelays(5);
-        }
-
-        $renovation = $this->getModule3AnalyticsForWidgets($visibleWidgets);
-        if (!empty($renovation)) {
-            $data['renovation'] = $renovation;
+            $data['recent_delayed_departments'] = $this->getRecentDelayedDepartments(8);
         }
 
         return $data;
@@ -129,22 +125,26 @@ class DashboardAnalyticsService
     {
         $projectQuery = DB::table('tbl_projects')->where('is_delete', 0);
         $delayQuery = DB::table('tbl_delay_registers')->where('is_delete', 0);
+        $pdQuery = DB::table('tbl_project_departments')->where('is_delete', 0);
 
         $totalProjects = (clone $projectQuery)->count();
         $activeProjects = (clone $projectQuery)->where('project_status', 'active')->count();
         $delayedProjects = (clone $projectQuery)->where('project_status', 'delayed')->count();
         $completedProjects = (clone $projectQuery)->where('project_status', 'completed')->count();
 
+        $totalDepartments = (clone $pdQuery)->count();
+        $departmentsDelayed = (clone $pdQuery)->where('department_status', 'delay')->count();
+        $departmentsInProgress = (clone $pdQuery)->whereIn('department_status', ['start', 'in_progress'])->count();
+        $departmentsCompleted = (clone $pdQuery)->where('department_status', 'completed')->count();
+
         $openDelays = (clone $delayQuery)->whereIn('register_status', ['open', 'in_progress'])->count();
         $totalDelays = (clone $delayQuery)->count();
-        $avgDelayDays = round((float) ((clone $delayQuery)->avg('delay_days') ?? 0), 1);
+        $avgDelayDays = round((float) ((clone $pdQuery)->avg('delay_days') ?? 0), 1);
         $criticalCount = (clone $delayQuery)->whereIn('severity', ['critical', 'showstopper'])->count();
 
-        $totalDelayCost = (float) DB::table('tbl_delay_financial_impacts as fi')
-            ->join('tbl_delay_registers as dr', 'dr.id', '=', 'fi.delay_register_id')
-            ->where('fi.is_delete', 0)
-            ->where('dr.is_delete', 0)
-            ->sum('fi.total_project_delay_cost');
+        $totalDelayCost = (float) DB::table('tbl_delay_financial_impacts')
+            ->where('is_delete', 0)
+            ->sum('total_project_delay_cost');
 
         if ($totalDelayCost <= 0) {
             $totalDelayCost = (float) (clone $projectQuery)->sum('total_delay_cost');
@@ -164,6 +164,10 @@ class DashboardAnalyticsService
             'active_projects' => $activeProjects,
             'delayed_projects' => $delayedProjects,
             'completed_projects' => $completedProjects,
+            'total_departments' => $totalDepartments,
+            'departments_delayed' => $departmentsDelayed,
+            'departments_in_progress' => $departmentsInProgress,
+            'departments_completed' => $departmentsCompleted,
             'open_delays' => $openDelays,
             'total_delays' => $totalDelays,
             'avg_delay_days' => $avgDelayDays,
@@ -213,10 +217,32 @@ class DashboardAnalyticsService
 
     private function getDelaysByCategory(): array
     {
+        $deptTable = $this->departmentsTable();
+        $nameCol = $this->departmentNameColumn();
+
+        if (Schema::hasTable('tbl_project_departments')) {
+            $rows = DB::table('tbl_project_departments as pd')
+                ->join("$deptTable as d", 'd.id', '=', 'pd.department_id')
+                ->where('pd.is_delete', 0)
+                ->where('pd.department_status', 'delay')
+                ->select(DB::raw("d.$nameCol as label"), DB::raw('COUNT(*) as total'))
+                ->groupBy('label')
+                ->orderByDesc('total')
+                ->limit(8)
+                ->get();
+
+            if ($rows->isNotEmpty()) {
+                return [
+                    'labels' => $rows->pluck('label')->all(),
+                    'series' => $rows->pluck('total')->map(fn ($v) => (int) $v)->all(),
+                ];
+            }
+        }
+
         $rows = DB::table('tbl_delay_registers as dr')
-            ->leftJoin('tbl_delay_categories as dc', 'dc.id', '=', 'dr.delay_category_id')
+            ->leftJoin("$deptTable as d", 'd.id', '=', 'dr.delay_category_id')
             ->where('dr.is_delete', 0)
-            ->select(DB::raw("COALESCE(dc.category_name, 'Uncategorised') as label"), DB::raw('COUNT(*) as total'))
+            ->select(DB::raw("COALESCE(d.$nameCol, 'Uncategorised') as label"), DB::raw('COUNT(*) as total'))
             ->groupBy('label')
             ->orderByDesc('total')
             ->limit(8)
@@ -226,6 +252,48 @@ class DashboardAnalyticsService
             'labels' => $rows->pluck('label')->all(),
             'series' => $rows->pluck('total')->map(fn ($v) => (int) $v)->all(),
         ];
+    }
+
+    private function getDepartmentStatusBreakdown(): array
+    {
+        if (!Schema::hasTable('tbl_project_departments')) {
+            return ['labels' => [], 'series' => [], 'colors' => []];
+        }
+
+        $labelsMap = [
+            'pending' => 'Pending',
+            'start' => 'Ready',
+            'in_progress' => 'In Progress',
+            'delay' => 'Delayed',
+            'completed' => 'Completed',
+        ];
+        $colorsMap = [
+            'pending' => '#adb5bd',
+            'start' => '#4aa3ff',
+            'in_progress' => '#003e6b',
+            'delay' => '#fcb92c',
+            'completed' => '#1cbb8c',
+        ];
+
+        $rows = DB::table('tbl_project_departments')
+            ->select('department_status', DB::raw('COUNT(*) as total'))
+            ->where('is_delete', 0)
+            ->groupBy('department_status')
+            ->pluck('total', 'department_status');
+
+        $labels = [];
+        $series = [];
+        $colors = [];
+        foreach ($labelsMap as $key => $label) {
+            $count = (int) ($rows[$key] ?? 0);
+            if ($count > 0) {
+                $labels[] = $label;
+                $series[] = $count;
+                $colors[] = $colorsMap[$key];
+            }
+        }
+
+        return compact('labels', 'series', 'colors');
     }
 
     private function getProjectStatusBreakdown(): array
@@ -340,9 +408,7 @@ class DashboardAnalyticsService
     private function getFinancialImpactBreakdown(): array
     {
         $row = DB::table('tbl_delay_financial_impacts as fi')
-            ->join('tbl_delay_registers as dr', 'dr.id', '=', 'fi.delay_register_id')
             ->where('fi.is_delete', 0)
-            ->where('dr.is_delete', 0)
             ->selectRaw('COALESCE(SUM(fi.direct_cost_total), 0) as direct_total, COALESCE(SUM(fi.opportunity_cost_total), 0) as opportunity_total')
             ->first();
 
@@ -628,33 +694,51 @@ class DashboardAnalyticsService
             ->all();
     }
 
-    private function getRecentCriticalDelays(int $limit = 5): array
+    private function getRecentDelayedDepartments(int $limit = 8): array
     {
-        return DB::table('tbl_delay_registers as dr')
-            ->leftJoin('tbl_projects as tp', 'tp.id', '=', 'dr.project_id')
-            ->leftJoin('tbl_delay_categories as dc', 'dc.id', '=', 'dr.delay_category_id')
-            ->where('dr.is_delete', 0)
-            ->whereIn('dr.severity', ['critical', 'showstopper'])
-            ->orderByDesc('dr.delay_days')
-            ->orderByDesc('dr.id')
+        if (!Schema::hasTable('tbl_project_departments')) {
+            return [];
+        }
+
+        $deptTable = $this->departmentsTable();
+        $nameCol = $this->departmentNameColumn();
+
+        return DB::table('tbl_project_departments as pd')
+            ->join('tbl_projects as tp', 'tp.id', '=', 'pd.project_id')
+            ->join("$deptTable as d", 'd.id', '=', 'pd.department_id')
+            ->where('pd.is_delete', 0)
+            ->where('tp.is_delete', 0)
+            ->where('pd.department_status', 'delay')
+            ->orderByDesc('pd.delay_days')
+            ->orderByDesc('pd.id')
             ->limit($limit)
             ->get([
-                'dr.delay_title',
-                'dr.severity',
-                'dr.delay_days',
-                'dr.register_status',
+                "d.$nameCol as department_name",
+                'pd.department_status',
+                'pd.delay_days',
                 'tp.project_code',
+                'tp.project_name',
                 'tp.hospital_name',
-                'dc.category_name',
             ])
             ->map(fn ($row) => [
-                'title' => $row->delay_title,
-                'severity' => ucfirst($row->severity ?? ''),
+                'department' => $row->department_name,
+                'status' => ucfirst(str_replace('_', ' ', $row->department_status ?? '')),
                 'days' => (int) ($row->delay_days ?? 0),
-                'status' => ucfirst(str_replace('_', ' ', $row->register_status ?? '')),
-                'project' => trim(($row->project_code ?? '') . ($row->hospital_name ? ' — ' . $row->hospital_name : '')),
-                'category' => $row->category_name ?? '—',
+                'project' => trim(($row->project_code ?? '') . ' — ' . ($row->project_name ?? '')),
+                'hospital' => $row->hospital_name ?? '—',
             ])
             ->all();
+    }
+
+    private function departmentsTable(): string
+    {
+        return Schema::hasTable('tbl_departments') ? 'tbl_departments' : 'tbl_delay_categories';
+    }
+
+    private function departmentNameColumn(): string
+    {
+        $table = $this->departmentsTable();
+
+        return Schema::hasColumn($table, 'department_name') ? 'department_name' : 'category_name';
     }
 }

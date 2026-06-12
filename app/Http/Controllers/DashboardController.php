@@ -79,7 +79,7 @@ class DashboardController extends Controller
         $widgets = RoleManagement::resolveDashboardWidgets();
         $data['widgets'] = $widgets;
         $data['show_module1'] = RoleManagement::dashboardModuleHasWidgets($widgets, 1);
-        $data['show_module3'] = RoleManagement::dashboardModuleHasWidgets($widgets, 3);
+        $data['show_module3'] = false;
         $data['has_dashboard_widgets'] = RoleManagement::dashboardHasAnyWidget($widgets);
 
         if ($data['has_dashboard_widgets']) {

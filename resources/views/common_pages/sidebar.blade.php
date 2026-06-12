@@ -44,46 +44,29 @@
                 </li>
                 @php
                 }
-                $module1Items = [
-                    ['label' => 'Delay Categories', 'value' => 'delay_categories', 'route' => 'delay-categories-list'],
+                $masterDataItems = [
+                    ['label' => 'Departments', 'value' => 'departments', 'route' => 'departments-list'],
                     ['label' => 'Projects', 'value' => 'projects', 'route' => 'projects-list'],
-                    ['label' => 'Delay Register', 'value' => 'delay_registers', 'route' => 'delay-registers-list'],
-                    ['label' => 'Mitigations', 'value' => 'mitigations', 'route' => 'delay-mitigations-list'],
-                    ['label' => 'Financial Impact', 'value' => 'financial_impacts', 'route' => 'delay-financial-impacts-list'],
-                    ['label' => 'Attachments', 'value' => 'delay_attachments', 'route' => 'delay-attachments-list'],
                 ];
-                $module1Visible = false;
-                foreach ($module1Items as $item) {
+                $masterDataVisible = false;
+                foreach ($masterDataItems as $item) {
                     if (modulePermissionExists($item['value'])) {
-                        $module1Visible = true;
+                        $masterDataVisible = true;
                         break;
                     }
                 }
-                if ($module1Visible) {
+                if ($masterDataVisible) {
                 @endphp
                 <li>
                     <a href="javascript: void(0);" class="has-arrow waves-effect">
                         <i class="ri-building-2-line"></i>
-                        <span>Delay Tracking</span>
+                        <span>Project Tracking</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        @php foreach ($module1Items as $value) {
+                        @php foreach ($masterDataItems as $value) {
                             if (modulePermissionExists($value['value'])) { @endphp
                         <li><a href="{{ getProjectUrl($value['route']) }}">{{ $value['label'] }}</a></li>
                         @php } } @endphp
-                    </ul>
-                </li>
-                @php
-                }
-                if (modulePermissionExists('renovation_projects')) {
-                @endphp
-                <li>
-                    <a href="javascript: void(0);" class="has-arrow waves-effect">
-                        <i class="ri-hospital-line"></i>
-                        <span>Renovation Monitoring</span>
-                    </a>
-                    <ul class="sub-menu" aria-expanded="false">
-                        <li><a href="{{ getProjectUrl('renovation-projects-list') }}">Renovation Projects</a></li>
                     </ul>
                 </li>
                 @php

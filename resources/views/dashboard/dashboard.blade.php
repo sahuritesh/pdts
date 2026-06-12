@@ -13,9 +13,7 @@ $showModule3 = !empty($data['show_module3']);
 $hasWidgets = !empty($data['has_dashboard_widgets']);
 $w = function ($key) use ($widgets) { return !empty($widgets[$key]); };
 $kpis = $analytics['kpis'] ?? [];
-$renoKpis = $analytics['renovation']['kpis'] ?? [];
-$recentCritical = $analytics['recent_critical_delays'] ?? [];
-$recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
+$recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
 @endphp
 
 <div class="dashboard-welcome">
@@ -31,7 +29,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
             </h3>
 
             <p>
-                PDTS overview — delay tracking analytics from live data.
+                PDTS overview — project and department tracking from live data.
             </p>
         </div>
     </div>
@@ -59,7 +57,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     <span class="title-icon">
         <i class="ri-building-2-line"></i>
     </span>
-    Delay Tracking
+    Project Tracking
 </h5>
     </div>
 </div>
@@ -83,7 +81,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
                 <div class="stat-icon"><i class="ri-time-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['open_delays'] ?? 0) }}</div>
             </div>
-            <p class="stat-label">Open delays</p>
+            <p class="stat-label">Open delay entries</p>
         </div>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
@@ -91,9 +89,9 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
              <span class="shine"></span>
             <div class="stat-card-Inner">
                 <div class="stat-icon"><i class="ri-alert-line"></i></div>
-                <div class="stat-value">{{ number_format($kpis['critical_delays'] ?? 0) }}</div>
+                <div class="stat-value">{{ number_format($kpis['departments_delayed'] ?? 0) }}</div>
             </div>
-            <p class="stat-label">Critical / showstopper</p>
+            <p class="stat-label">Departments delayed</p>
         </div>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
@@ -124,11 +122,11 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="tracker-card tracker-purple">
             <div class="tracker-count">
-                {{ number_format($kpis['avg_delay_days'] ?? 0,1) }}
+                {{ number_format($kpis['departments_in_progress'] ?? 0) }}
             </div>
             <div class="tracker-info">
-                <h6>Avg Delay Days</h6>
-                <p>Average project delay</p>
+                <h6>Departments In Progress</h6>
+                <p>Active department workflows</p>
             </div>
         </div>
     </div>
@@ -136,11 +134,11 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="tracker-card tracker-orange">
             <div class="tracker-count">
-                {{ number_format($kpis['open_mitigations'] ?? 0) }}
+                {{ number_format($kpis['departments_completed'] ?? 0) }}
             </div>
             <div class="tracker-info">
-                <h6>Open Mitigations</h6>
-                <p>Pending actions</p>
+                <h6>Departments Completed</h6>
+                <p>Finished on projects</p>
             </div>
         </div>
     </div>
@@ -148,11 +146,11 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="tracker-card tracker-green">
             <div class="tracker-count">
-                {{ number_format($kpis['attachment_count'] ?? 0) }}
+                {{ number_format($kpis['total_departments'] ?? 0) }}
             </div>
             <div class="tracker-info">
-                <h6>Attachments</h6>
-                <p>Uploaded files</p>
+                <h6>Total Departments</h6>
+                <p>Across all projects</p>
             </div>
         </div>
     </div>
@@ -181,7 +179,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
         <div class="chart-card">
             <h6>
                 <span class="chart-icon"><i class="ri-bar-chart-horizontal-line me-1"></i> </span>
-                Delays by category</h6>
+                Delayed departments</h6>
             <div id="chart-delays-category"></div>
         </div>
     </div>
@@ -204,7 +202,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     @if($w('m1_chart_mitigation'))
     <div class="col-lg-4 mb-3">
         <div class="chart-card">
-            <h6> <span class="chart-icon"><i class="ri-shield-check-line me-1"></i></span> Mitigation status</h6>
+            <h6> <span class="chart-icon"><i class="ri-stack-line me-1"></i></span> Department execution status</h6>
             <div id="chart-mitigation-status"></div>
         </div>
     </div>
@@ -244,8 +242,8 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     @if($w('m1_table_critical'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card dashboardTable">
-            <h6> <span class="chart-icon"><i class="ri-error-warning-line me-1"></i></span> Recent critical delays</h6>
-            @if(!empty($recentCritical))
+            <h6> <span class="chart-icon"><i class="ri-error-warning-line me-1"></i></span> Delayed departments</h6>
+            @if(!empty($recentDelayedDepts))
             <div class="custom-table-wrapper">
     <div class="table-responsive">
         <table class="custom-table">
@@ -253,49 +251,30 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
                 <tr>
                     <th>
                         <i class="ri-error-warning-line"></i>
-                        Delay
+                        Department
                     </th>
                     <th>
                         <i class="ri-building-2-line"></i>
                         Project
                     </th>
                     <th>
-                        <i class="ri-time-line"></i>
-                        Days
+                        <i class="ri-hospital-line"></i>
+                        Hospital
                     </th>
                     <th>
-                        <i class="ri-alert-line"></i>
-                        Severity
+                        <i class="ri-time-line"></i>
+                        Days
                     </th>
                 </tr>
             </thead>
 
             <tbody>
-                @foreach($recentCritical as $row)
+                @foreach($recentDelayedDepts as $row)
                 <tr>
-                    <td>
-                        <div class="delay-title">
-                            {{ $row['title'] }}
-                        </div>
-                    </td>
-
-                    <td>
-                        <span class="project-name">
-                            {{ $row['project'] }}
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="days-badge">
-                            {{ $row['days'] }} Days
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="severity-badge">
-                            {{ $row['severity'] }}
-                        </span>
-                    </td>
+                    <td><div class="delay-title">{{ $row['department'] }}</div></td>
+                    <td><span class="project-name">{{ $row['project'] }}</span></td>
+                    <td>{{ $row['hospital'] }}</td>
+                    <td><span class="days-badge">{{ $row['days'] }} Days</span></td>
                 </tr>
                 @endforeach
             </tbody>
@@ -303,7 +282,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     </div>
 </div>
             @else
-            <p class="text-muted mb-0 py-4 text-center">No critical or showstopper delays recorded.</p>
+            <p class="text-muted mb-0 py-4 text-center">No delayed departments right now.</p>
             @endif
         </div>
     </div>
@@ -311,230 +290,24 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
 </div>
 @endif
 
-@if(modulePermissionExists('delay_registers'))
+@if(modulePermissionExists('projects'))
 <div class="row mb-4">
     <div class="col-12">
         <div class="quick-actions">
-
-    <a href="{{ getProjectUrl('delay-registers-list') }}" class="quick-btn quick-primary">
-        <i class="ri-file-list-3-line"></i>
-        <span>Delay Register</span>
-    </a>
-
-    <a href="{{ getProjectUrl('projects-list') }}" class="quick-btn quick-project">
-        <i class="ri-building-2-line"></i>
-        <span>Projects</span>
-    </a>
-
-    <a href="{{ getProjectUrl('delay-mitigations-list') }}" class="quick-btn quick-mitigation">
-        <i class="ri-shield-check-fill"></i>
-        <span>Mitigations</span>
-    </a>
-
-    <a href="{{ getProjectUrl('delay-financial-impacts-list') }}" class="quick-btn quick-finance">
-        <i class="ri-money-dollar-circle-line"></i>
-        <span>Financial Impact</span>
-    </a>
-
-    <a href="{{ getProjectUrl('delay-attachments-list') }}" class="quick-btn quick-attachment">
-        <i class="ri-attachment-2"></i>
-        <span>Attachments</span>
-    </a>
-
-</div>
-    </div>
-</div>
-@endif
-@endif
-
-@if($showModule3)
-<div class="row mb-2">
-    <div class="col-12">
-        <h5 class="mb-0 text-primary"><i class="ri-hospital-line me-1"></i> Renovation Monitoring</h5>
-    </div>
-</div>
-
-@if($w('m3_kpis'))
-<div class="row mb-3">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="stat-card primary">
-            <div class="stat-card-Inner">
-                <div class="stat-icon"><i class="ri-hospital-line"></i></div>
-                <div class="stat-value">{{ number_format($renoKpis['total_projects'] ?? 0) }}</div>
-            </div>
-            <p class="stat-label">Renovation projects</p>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="stat-card info">
-            <div class="stat-card-Inner">
-                <div class="stat-icon"><i class="ri-task-line"></i></div>
-                <div class="stat-value">{{ number_format($renoKpis['total_tasks'] ?? 0) }}</div>
-            </div>
-            <p class="stat-label">Renovation tasks</p>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="stat-card danger">
-            <div class="stat-card-Inner">
-                <div class="stat-icon"><i class="ri-alarm-warning-line"></i></div>
-                <div class="stat-value">{{ number_format($renoKpis['escalated_projects'] ?? 0) }}</div>
-            </div>
-            <p class="stat-label">Escalated projects</p>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="stat-card warning">
-            <div class="stat-card-Inner">
-                <div class="stat-icon"><i class="ri-time-line"></i></div>
-                <div class="stat-value">{{ number_format($renoKpis['delayed_tasks'] ?? 0) }}</div>
-            </div>
-            <p class="stat-label">Delayed tasks</p>
-        </div>
-    </div>
-</div>
-<div class="row mb-3">
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="mini-stat-card primary">
-            <div class="mini-stat-value">{{ number_format($renoKpis['in_progress_projects'] ?? 0) }}</div>
-            <div class="mini-stat-label">In-progress projects</div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="mini-stat-card info">
-            <div class="mini-stat-value">{{ number_format($renoKpis['avg_task_completion'] ?? 0, 1) }}%</div>
-            <div class="mini-stat-label">Avg task completion</div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="mini-stat-card warning">
-            <div class="mini-stat-value">{{ number_format($renoKpis['daily_delay_logs'] ?? 0) }}</div>
-            <div class="mini-stat-label">Daily delay logs</div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-md-6 mb-3">
-        <div class="mini-stat-card danger">
-            <div class="mini-stat-value">{{ number_format($renoKpis['avg_cost_overrun_percent'] ?? 0, 1) }}%</div>
-            <div class="mini-stat-label">Avg cost overrun</div>
-        </div>
-    </div>
-</div>
-@endif
-
-@if($w('m3_chart_project_status') || $w('m3_chart_type'))
-<div class="row mb-3">
-    @if($w('m3_chart_project_status'))
-    <div class="col-lg-6 mb-3">
-        <div class="chart-card">
-            <h6><i class="ri-donut-chart-line me-1"></i> Renovation project status</h6>
-            <div id="chart-reno-project-status"></div>
-        </div>
-    </div>
-    @endif
-    @if($w('m3_chart_type'))
-    <div class="col-lg-6 mb-3">
-        <div class="chart-card">
-            <h6><i class="ri-bar-chart-horizontal-line me-1"></i> Renovation type</h6>
-            <div id="chart-reno-type"></div>
-        </div>
-    </div>
-    @endif
-</div>
-@endif
-
-@if($w('m3_chart_task_status') || $w('m3_chart_task_risk') || $w('m3_chart_escalation'))
-<div class="row mb-3">
-    @if($w('m3_chart_task_status'))
-    <div class="col-lg-4 mb-3">
-        <div class="chart-card">
-            <h6><i class="ri-task-line me-1"></i> Task status</h6>
-            <div id="chart-reno-task-status"></div>
-        </div>
-    </div>
-    @endif
-    @if($w('m3_chart_task_risk'))
-    <div class="col-lg-4 mb-3">
-        <div class="chart-card">
-            <h6><i class="ri-alert-line me-1"></i> Task risk level</h6>
-            <div id="chart-reno-task-risk"></div>
-        </div>
-    </div>
-    @endif
-    @if($w('m3_chart_escalation'))
-    <div class="col-lg-4 mb-3">
-        <div class="chart-card">
-            <h6><i class="ri-arrow-up-circle-line me-1"></i> Escalation status</h6>
-            <div id="chart-reno-escalation"></div>
-        </div>
-    </div>
-    @endif
-</div>
-@endif
-
-@if($w('m3_chart_tasks_category') || $w('m3_chart_delay_trend'))
-<div class="row mb-3">
-    @if($w('m3_chart_tasks_category'))
-    <div class="col-lg-6 mb-3">
-        <div class="chart-card">
-            <h6><i class="ri-bar-chart-horizontal-line me-1"></i> Tasks by category</h6>
-            <div id="chart-reno-task-category"></div>
-        </div>
-    </div>
-    @endif
-    @if($w('m3_chart_delay_trend'))
-    <div class="col-lg-6 mb-3">
-        <div class="chart-card">
-            <h6><i class="ri-line-chart-line me-1"></i> Renovation daily delays — last 6 months</h6>
-            <div id="chart-reno-delay-trend"></div>
-        </div>
-    </div>
-    @endif
-</div>
-@endif
-
-@if($w('m3_table_escalated'))
-<div class="row mb-3">
-    <div class="col-12 mb-3">
-        <div class="chart-card dashboardTable">
-            <h6><i class="ri-error-warning-line me-1"></i> Escalated / delayed renovation projects</h6>
-            @if(!empty($recentEscalated))
-            <div class="table-responsive">
-                <table class="table table-sm table-bordered mb-0">
-                    <thead>
-                        <tr>
-                            <th>Project</th>
-                            <th>Zone / Dept</th>
-                            <th>Status</th>
-                            <th>Escalation</th>
-                            <th>Handover</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($recentEscalated as $row)
-                        <tr>
-                            <td><strong>{{ $row['code'] }}</strong> — {{ $row['name'] }}</td>
-                            <td>{{ $row['zone'] }}</td>
-                            <td>{{ $row['status'] }}</td>
-                            <td><span class="badge rounded-pill badge-soft-danger">{{ $row['escalation'] }}</span></td>
-                            <td>{{ $row['handover'] }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            @else
-            <p class="text-muted mb-0 py-4 text-center">No escalated or delayed renovation projects.</p>
+            <a href="{{ getProjectUrl('projects/wizard/new') }}" class="quick-btn quick-primary">
+                <i class="ri-add-circle-line"></i>
+                <span>New Project</span>
+            </a>
+            <a href="{{ getProjectUrl('projects-list') }}" class="quick-btn quick-project">
+                <i class="ri-building-2-line"></i>
+                <span>Projects</span>
+            </a>
+            @if(modulePermissionExists('departments'))
+            <a href="{{ getProjectUrl('departments-list') }}" class="quick-btn quick-mitigation">
+                <i class="ri-stack-line"></i>
+                <span>Departments</span>
+            </a>
             @endif
-        </div>
-    </div>
-</div>
-@endif
-
-@if(modulePermissionExists('renovation_projects'))
-<div class="row mb-3">
-    <div class="col-12">
-        <div class="d-flex flex-wrap gap-2">
-            <a href="{{ getProjectUrl('renovation-projects-list') }}" class="btn btn-primary btn-sm">Renovation Projects</a>
         </div>
     </div>
 </div>
@@ -566,7 +339,7 @@ $recentEscalated = $analytics['renovation']['recent_escalated_projects'] ?? [];
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <p class="text-muted mb-0">Dashboard widgets will appear when your role has the matching dashboard widget permissions under <strong>Dashboard — Module 1</strong> or <strong>Dashboard — Module 3</strong> in role management.</p>
+                <p class="text-muted mb-0">Dashboard widgets will appear when your role has the matching permissions under <strong>Dashboard — Project Tracking</strong> in role management.</p>
             </div>
         </div>
     </div>

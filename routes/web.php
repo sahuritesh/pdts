@@ -11,13 +11,9 @@ use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\CronController;
-use App\Http\Controllers\DelayCategoriesController;
+use App\Http\Controllers\DepartmentsController;
 use App\Http\Controllers\ProjectsController;
-use App\Http\Controllers\DelayRegistersController;
-use App\Http\Controllers\DelayMitigationsController;
-use App\Http\Controllers\DelayFinancialImpactsController;
-use App\Http\Controllers\DelayAttachmentsController;
-use App\Http\Controllers\RenovationProjectsController;
+use App\Http\Controllers\ProjectWizardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,53 +46,29 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::get('role-management-list', [RoleManagement::class, 'role_management_list']);
     Route::post('get_role_management_list', [RoleManagement::class, 'get_role_management_list']);
 
-    Route::match(array('GET', 'POST'), '/delay-categories/add', [DelayCategoriesController::class, 'delay_category_form']);
-    Route::match(array('GET', 'POST'), '/delay-categories/edit/{id}', [DelayCategoriesController::class, 'delay_category_form']);
-    Route::post('insert_update_delay_category', [DelayCategoriesController::class, 'insert_update_delay_category']);
-    Route::get('delay-categories-list', [DelayCategoriesController::class, 'delay_category_list']);
-    Route::post('get_delay_category_list', [DelayCategoriesController::class, 'get_delay_category_list']);
+    Route::match(array('GET', 'POST'), '/departments/add', [DepartmentsController::class, 'department_form']);
+    Route::match(array('GET', 'POST'), '/departments/edit/{id}', [DepartmentsController::class, 'department_form']);
+    Route::post('insert_update_department', [DepartmentsController::class, 'insert_update_department']);
+    Route::get('departments-list', [DepartmentsController::class, 'department_list']);
+    Route::post('get_department_list', [DepartmentsController::class, 'get_department_list']);
 
-    Route::match(array('GET', 'POST'), '/projects/add', [ProjectsController::class, 'project_form']);
-    Route::match(array('GET', 'POST'), '/projects/edit/{id}', [ProjectsController::class, 'project_form']);
-    Route::post('insert_update_project', [ProjectsController::class, 'insert_update_project']);
     Route::get('projects-list', [ProjectsController::class, 'project_list']);
     Route::post('get_project_list', [ProjectsController::class, 'get_project_list']);
 
-    Route::match(array('GET', 'POST'), '/delay-registers/add', [DelayRegistersController::class, 'delay_register_form']);
-    Route::match(array('GET', 'POST'), '/delay-registers/edit/{id}', [DelayRegistersController::class, 'delay_register_form']);
-    Route::post('insert_update_delay_register', [DelayRegistersController::class, 'insert_update_delay_register']);
-    Route::get('delay-registers-list', [DelayRegistersController::class, 'delay_register_list']);
-    Route::post('get_delay_register_list', [DelayRegistersController::class, 'get_delay_register_list']);
-
-    Route::match(array('GET', 'POST'), '/delay-mitigations/add', [DelayMitigationsController::class, 'mitigation_add']);
-    Route::match(array('GET', 'POST'), '/delay-mitigations/add/{delayRegisterId}', [DelayMitigationsController::class, 'mitigation_add']);
-    Route::match(array('GET', 'POST'), '/delay-mitigations/edit/{id}', [DelayMitigationsController::class, 'mitigation_edit']);
-    Route::match(array('GET', 'POST'), '/delay-mitigations/panel/{delayRegisterId}', [DelayMitigationsController::class, 'mitigation_panel']);
-    Route::post('insert_update_mitigation', [DelayMitigationsController::class, 'insert_update_mitigation']);
-    Route::get('delay-mitigations-list/{delayRegisterId?}', [DelayMitigationsController::class, 'mitigation_list']);
-    Route::post('get_delay_mitigation_list', [DelayMitigationsController::class, 'get_delay_mitigation_list']);
-
-    Route::match(array('GET', 'POST'), '/delay-financial-impacts/add', [DelayFinancialImpactsController::class, 'financial_impact_add']);
-    Route::match(array('GET', 'POST'), '/delay-financial-impacts/add/{delayRegisterId}', [DelayFinancialImpactsController::class, 'financial_impact_add']);
-    Route::match(array('GET', 'POST'), '/delay-financial-impacts/edit/{id}', [DelayFinancialImpactsController::class, 'financial_impact_edit']);
-    Route::match(array('GET', 'POST'), '/delay-financial-impacts/panel/{delayRegisterId}', [DelayFinancialImpactsController::class, 'financial_impact_panel']);
-    Route::post('insert_update_financial_impact', [DelayFinancialImpactsController::class, 'insert_update_financial_impact']);
-    Route::get('delay-financial-impacts-list/{delayRegisterId?}', [DelayFinancialImpactsController::class, 'financial_impact_list']);
-    Route::post('get_delay_financial_impact_list', [DelayFinancialImpactsController::class, 'get_delay_financial_impact_list']);
-
-    Route::match(array('GET', 'POST'), '/delay-attachments/add', [DelayAttachmentsController::class, 'attachment_add']);
-    Route::match(array('GET', 'POST'), '/delay-attachments/add/{delayRegisterId}', [DelayAttachmentsController::class, 'attachment_add']);
-    Route::match(array('GET', 'POST'), '/delay-attachments/edit/{id}', [DelayAttachmentsController::class, 'attachment_edit']);
-    Route::match(array('GET', 'POST'), '/delay-attachments/panel/{delayRegisterId}', [DelayAttachmentsController::class, 'attachment_panel']);
-    Route::post('insert_update_delay_attachment', [DelayAttachmentsController::class, 'insert_update_delay_attachment']);
-    Route::get('delay-attachments-list/{delayRegisterId?}', [DelayAttachmentsController::class, 'attachment_list']);
-    Route::post('get_delay_attachment_list', [DelayAttachmentsController::class, 'get_delay_attachment_list']);
-
-    Route::match(array('GET', 'POST'), '/renovation-projects/add', [RenovationProjectsController::class, 'renovation_project_form']);
-    Route::match(array('GET', 'POST'), '/renovation-projects/edit/{id}', [RenovationProjectsController::class, 'renovation_project_form']);
-    Route::post('insert_update_renovation_project', [RenovationProjectsController::class, 'insert_update_renovation_project']);
-    Route::get('renovation-projects-list', [RenovationProjectsController::class, 'renovation_project_list']);
-    Route::post('get_renovation_project_list', [RenovationProjectsController::class, 'get_renovation_project_list']);
+    Route::match(array('GET', 'POST'), '/projects/wizard/panel/delay/{projectDepartmentId}', [ProjectWizardController::class, 'delay_panel']);
+    Route::match(array('GET', 'POST'), '/projects/wizard/panel/financial/{projectDepartmentId}', [ProjectWizardController::class, 'financial_panel']);
+    Route::match(array('GET', 'POST'), '/projects/wizard/panel/attachments/{projectDepartmentId}', [ProjectWizardController::class, 'attachment_panel']);
+    Route::match(array('GET', 'POST'), '/projects/wizard/new', [ProjectWizardController::class, 'wizard']);
+    Route::match(array('GET', 'POST'), '/projects/wizard/{id}', [ProjectWizardController::class, 'wizard']);
+    Route::post('save_wizard_step1', [ProjectWizardController::class, 'save_wizard_step1']);
+    Route::post('save_wizard_departments', [ProjectWizardController::class, 'save_wizard_departments']);
+    Route::post('save_wizard_finish', [ProjectWizardController::class, 'save_wizard_finish']);
+    Route::post('update_department_status', [ProjectWizardController::class, 'update_department_status']);
+    Route::post('save_project_department', [ProjectWizardController::class, 'save_project_department']);
+    Route::post('wizard_save_delay', [ProjectWizardController::class, 'wizard_save_delay']);
+    Route::post('wizard_save_mitigation', [ProjectWizardController::class, 'wizard_save_mitigation']);
+    Route::post('wizard_save_financial', [ProjectWizardController::class, 'wizard_save_financial']);
+    Route::post('wizard_save_attachment', [ProjectWizardController::class, 'wizard_save_attachment']);
 });
 
 Route::group(['prefix' => '',  'middleware' => ['Admin', 'SanitizePostData']], function () {

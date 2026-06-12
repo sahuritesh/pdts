@@ -126,7 +126,7 @@ class ProjectsController extends Controller
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
-        $pageTitle = 'Construction / Delay Projects';
+        $pageTitle = 'Projects';
         $statusOptions = array_map(function ($s) {
             return ['value' => $s['value'], 'label' => $s['label']];
         }, $this->getProjectStatuses());
@@ -135,7 +135,7 @@ class ProjectsController extends Controller
             'columns' => ['#', 'Project ID', 'Project Name', 'Hospital', 'Type', 'Zone', 'Area', 'SPOC', 'Status', 'Planned End', 'Actions'],
             'table' => 'tbl_projects',
             'dataurl' => 'get_project_list',
-            'addurl' => 'projects/add',
+            'addurl' => 'projects/wizard/new',
             'addurllabel' => 'Add Project',
             'filters' => [
                 $this->buildTextFilter('search', 'Search project, hospital, contractor', 'Search', 'col-md-3'),
@@ -197,7 +197,7 @@ class ProjectsController extends Controller
 
             foreach ($getRecordListing['data'] as $recordData) {
                 $id = Crypt::encrypt($recordData->id);
-                $editUrl = getProjectUrl('projects/edit/' . $id);
+                $editUrl = getProjectUrl('projects/wizard/' . $id);
 
                 $recordListing[] = [
                     $srNumber + 1,
@@ -210,7 +210,7 @@ class ProjectsController extends Controller
                     e($recordData->project_spoc_name ?? $recordData->responsibility_name ?? ''),
                     $this->formatProjectStatusBadge($recordData->project_status),
                     !empty($recordData->planned_completion_date) ? displayCustomDateTime($recordData->planned_completion_date) : '',
-                    '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Project\'); return false;" title="Edit"><i class="ri-edit-fill"></i></a>',
+                    '<a href="' . $editUrl . '" title="Open project wizard"><i class="ri-edit-fill"></i></a>',
                 ];
                 $srNumber++;
             }

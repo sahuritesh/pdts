@@ -307,10 +307,10 @@ Crafted with</i> bys RPWebapps.com
         offcanvas</button>
 
 
-    <div class="offcanvas offcanvas-end" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-        <div class="offcanvas-header">
-            <h5 id="offcanvasRightLabel" class="sidelayoutTitle">Title</h5>
-            <button type="button" class="btn-close text-reset popup-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    <div class="offcanvas offcanvas-end sidelayout-offcanvas" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+        <div class="offcanvas-header d-flex align-items-center">
+            <h5 id="offcanvasRightLabel" class="sidelayoutTitle mb-0">Title</h5>
+            <button type="button" class="btn-close popup-close flex-shrink-0" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
             <div id="dynamicSideLayoutContent"></div>

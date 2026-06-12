@@ -12,12 +12,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
-class DelayCategoriesController extends Controller
+class DepartmentsController extends Controller
 {
     use GridConfigTrait, WebResponseTrait;
 
-    public $module = 'delay_categories';
+    public $module = 'departments';
 
     protected AuditTrailService $auditTrail;
 
@@ -26,7 +27,17 @@ class DelayCategoriesController extends Controller
         $this->auditTrail = $auditTrail;
     }
 
-    public function delay_category_form(Request $request, $id = '')
+    private function tableName(): string
+    {
+        return Schema::hasTable('tbl_departments') ? 'tbl_departments' : 'tbl_delay_categories';
+    }
+
+    private function nameColumn(): string
+    {
+        return Schema::hasColumn($this->tableName(), 'department_name') ? 'department_name' : 'category_name';
+    }
+
+    public function department_form(Request $request, $id = '')
     {
         if (!modulePermissionExists($this->module)) {
             if ($request->input('postKey') == 'sidelayoutContent') {
@@ -35,14 +46,14 @@ class DelayCategoriesController extends Controller
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
-        $pageTitle = $id ? 'Edit Delay Category' : 'Create Delay Category';
-        $data = ['category' => ''];
+        $pageTitle = $id ? 'Edit Department' : 'Create Department';
+        $data = ['department' => ''];
 
         if ($id) {
             try {
                 $decryptedId = Crypt::decrypt($id);
                 $rows = Common_model::getDataFromTable(
-                    'tbl_delay_categories',
+                    $this->tableName(),
                     '*',
                     ['id' => $decryptedId, 'is_delete' => 0],
                     '',
@@ -55,22 +66,26 @@ class DelayCategoriesController extends Controller
                 );
                 if (!empty($rows[0])) {
                     $record = $rows[0];
-                    $record['category_id'] = $record['id'];
-                    $data['category'] = $record;
+                    $record['department_id'] = $record['id'];
+                    $nameCol = $this->nameColumn();
+                    if (!isset($record['department_name']) && isset($record[$nameCol])) {
+                        $record['department_name'] = $record[$nameCol];
+                    }
+                    $data['department'] = $record;
                 }
             } catch (\Exception $e) {
-                Log::error('Delay category edit decrypt error: ' . $e->getMessage());
+                Log::error('Department edit decrypt error: ' . $e->getMessage());
             }
         }
 
         if ($request->input('postKey') == 'sidelayoutContent') {
-            return view('delay_categories.create-delay-category-form', compact('pageTitle', 'data'));
+            return view('departments.create-department-form', compact('pageTitle', 'data'));
         }
 
-        return view('delay_categories.create-delay-category', compact('pageTitle', 'data'));
+        return view('departments.create-department', compact('pageTitle', 'data'));
     }
 
-    public function insert_update_delay_category(Request $request)
+    public function insert_update_department(Request $request)
     {
         if (!modulePermissionExists($this->module)) {
             $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
@@ -81,60 +96,61 @@ class DelayCategoriesController extends Controller
             $requestData = $request->post();
             parse_str(json_decode($requestData['data'], true), $postData);
 
-            $errMessage = $this->validateCategoryData($postData);
+            $errMessage = $this->validateDepartmentData($postData);
             if ($errMessage !== '') {
                 $this->sendValidationErrorResponse($errMessage);
                 return;
             }
 
-            $categoryId = $postData['category_id'] ?? null;
-            $operation = ($categoryId && $categoryId !== '') ? 'Update' : 'Add';
-            $payload = $this->prepareCategoryData($postData, $operation);
+            $departmentId = $postData['department_id'] ?? null;
+            $operation = ($departmentId && $departmentId !== '') ? 'Update' : 'Add';
+            $payload = $this->prepareDepartmentData($postData, $operation);
+            $table = $this->tableName();
 
             if ($operation === 'Add') {
-                $newId = Common_model::addDataIntoTable('tbl_delay_categories', $payload);
+                $newId = Common_model::addDataIntoTable($table, $payload);
                 if ($newId) {
-                    $this->auditTrail->log('delay_category', (int) $newId, 'create', null, $payload);
-                    $this->sendSuccessResponse('Delay category added successfully', $operation);
+                    $this->auditTrail->log('department', (int) $newId, 'create', null, $payload);
+                    $this->sendSuccessResponse('Department added successfully', $operation);
                 } else {
                     $this->sendErrorResponse('Something went wrong, try again later', 1);
                 }
             } else {
-                $old = Common_model::getDataFromTable('tbl_delay_categories', '*', ['id' => $categoryId], '', '', 'ASC', '', 0, true, '');
-                $result = Common_model::updateDataFromTable('tbl_delay_categories', $payload, 'id', $categoryId);
+                $old = Common_model::getDataFromTable($table, '*', ['id' => $departmentId], '', '', 'ASC', '', 0, true, '');
+                $result = Common_model::updateDataFromTable($table, $payload, 'id', $departmentId);
                 if ($result) {
-                    $this->auditTrail->log('delay_category', (int) $categoryId, 'update', $old[0] ?? null, $payload);
-                    $this->sendSuccessResponse('Delay category updated successfully', $operation);
+                    $this->auditTrail->log('department', (int) $departmentId, 'update', $old[0] ?? null, $payload);
+                    $this->sendSuccessResponse('Department updated successfully', $operation);
                 } else {
                     $this->sendErrorResponse('Something went wrong, try again later', 1);
                 }
             }
         } catch (\Exception $e) {
-            Log::error('Delay Category Error: ' . $e->getMessage());
+            Log::error('Department Error: ' . $e->getMessage());
             $this->sendErrorResponse($e->getMessage(), 2);
         }
     }
 
-    public function delay_category_list(Request $request)
+    public function department_list(Request $request)
     {
         if (!modulePermissionExists($this->module)) {
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
-        $pageTitle = 'Delay Categories';
+        $pageTitle = 'Departments';
         $statusOptions = [
             ['value' => ACTIVE, 'label' => 'Active'],
             ['value' => INACTIVE, 'label' => 'Inactive'],
         ];
 
         $grid_data = $this->buildGridConfig([
-            'columns' => ['#', 'Category Name', 'Primary Delay Driver', 'Status', 'Created On', 'Actions'],
-            'table' => 'tbl_delay_categories',
-            'dataurl' => 'get_delay_category_list',
-            'addurl' => 'delay-categories/add',
-            'addurllabel' => 'Add Delay Category',
+            'columns' => ['#', 'Department Name', 'Description', 'Status', 'Created On', 'Actions'],
+            'table' => $this->tableName(),
+            'dataurl' => 'get_department_list',
+            'addurl' => 'departments/add',
+            'addurllabel' => 'Add Department',
             'filters' => [
-                $this->buildTextFilter('search', 'Search category', 'Search', 'col-md-3'),
+                $this->buildTextFilter('search', 'Search department', 'Search', 'col-md-3'),
                 $this->buildSelectFilter('status_filter', $statusOptions, 'Status', 'Select status', true, true, 'col-md-2'),
             ],
         ]);
@@ -142,7 +158,7 @@ class DelayCategoriesController extends Controller
         return view('gridviews.gridviews', compact('pageTitle', 'grid_data'));
     }
 
-    public function get_delay_category_list(Request $request)
+    public function get_department_list(Request $request)
     {
         try {
             $table = $request->table;
@@ -151,6 +167,7 @@ class DelayCategoriesController extends Controller
             $filters = $request->filters ?? [];
             $search = $filters['search'] ?? '';
             $status = $filters['status_filter'] ?? '';
+            $nameCol = $this->nameColumn();
 
             $wherecondition = [
                 ['column' => 'tb.is_delete', 'operator' => '', 'value' => 0, 'condition' => 'and'],
@@ -162,13 +179,13 @@ class DelayCategoriesController extends Controller
             $searchColumns = [];
             $search_param = '';
             if (!empty($search)) {
-                $searchColumns = ['tb.category_name', 'tb.description'];
+                $searchColumns = ["tb.$nameCol", 'tb.description'];
                 $search_param = $search;
             }
 
             $getRecordListing = Datatables_model::getDataTableResult(
                 ['tb.*'],
-                ['', 'tb.category_name', 'tb.description', 'tb.status', 'tb.created_on'],
+                ['', "tb.$nameCol", 'tb.description', 'tb.status', 'tb.created_on'],
                 "$table as tb",
                 [],
                 $wherecondition,
@@ -186,7 +203,8 @@ class DelayCategoriesController extends Controller
 
             foreach ($getRecordListing['data'] as $recordData) {
                 $id = Crypt::encrypt($recordData->id);
-                $editUrl = getProjectUrl('delay-categories/edit/' . $id);
+                $editUrl = getProjectUrl('departments/edit/' . $id);
+                $name = $recordData->$nameCol ?? '';
                 $desc = $recordData->description ?? '';
                 if (strlen($desc) > 80) {
                     $desc = substr($desc, 0, 80) . '…';
@@ -194,11 +212,11 @@ class DelayCategoriesController extends Controller
 
                 $recordListing[] = [
                     $srNumber + 1,
-                    e($recordData->category_name),
+                    e($name),
                     e($desc),
                     $this->formatStatusBadge($recordData->status),
                     displayCustomDateTime($recordData->created_on),
-                    '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Delay Category\'); return false;" title="Edit"><i class="ri-edit-fill"></i></a>',
+                    '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Department\'); return false;" title="Edit"><i class="ri-edit-fill"></i></a>',
                 ];
                 $srNumber++;
             }
@@ -210,7 +228,7 @@ class DelayCategoriesController extends Controller
                 'data' => $recordListing,
             ]);
         } catch (\Exception $e) {
-            Log::error('Get Delay Category List Error: ' . $e->getMessage());
+            Log::error('Get Department List Error: ' . $e->getMessage());
             return response()->json([
                 'draw' => (int) ($request->draw ?? 0),
                 'recordsTotal' => 0,
@@ -220,35 +238,37 @@ class DelayCategoriesController extends Controller
         }
     }
 
-    private function validateCategoryData(array $postData): string
+    private function validateDepartmentData(array $postData): string
     {
         $errMessage = '';
-        $name = trim($postData['category_name'] ?? '');
+        $name = trim($postData['department_name'] ?? '');
         if ($name === '') {
-            $errMessage .= '<li>Please enter category name</li>';
+            $errMessage .= '<li>Please enter department name</li>';
         }
 
-        $categoryId = $postData['category_id'] ?? null;
+        $departmentId = $postData['department_id'] ?? null;
+        $nameCol = $this->nameColumn();
         if ($name !== '') {
-            $query = DB::table('tbl_delay_categories')
-                ->where('category_name', $name)
+            $query = DB::table($this->tableName())
+                ->where($nameCol, $name)
                 ->where('is_delete', 0);
-            if ($categoryId) {
-                $query->where('id', '!=', $categoryId);
+            if ($departmentId) {
+                $query->where('id', '!=', $departmentId);
             }
             if ($query->exists()) {
-                $errMessage .= '<li>Category name already exists</li>';
+                $errMessage .= '<li>Department name already exists</li>';
             }
         }
 
         return $errMessage;
     }
 
-    private function prepareCategoryData(array $postData, string $operation): array
+    private function prepareDepartmentData(array $postData, string $operation): array
     {
         $userId = Auth::id();
+        $nameCol = $this->nameColumn();
         $data = [
-            'category_name' => trim($postData['category_name']),
+            $nameCol => trim($postData['department_name']),
             'description' => trim($postData['description'] ?? ''),
             'status' => isset($postData['status']) ? (int) $postData['status'] : ACTIVE,
             'updated_by' => $userId,

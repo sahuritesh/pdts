@@ -19,7 +19,7 @@ class PdtsMasterDataSeeder extends Seeder
         $this->seedProjectTypes($now, $userId);
         $this->seedZones($now, $userId);
         $this->seedRootCauses($now, $userId);
-        $this->seedDelayCategories($now, $userId);
+        $this->seedDepartments($now, $userId);
         $this->seedSeverityRules($now, $userId);
         $this->seedAlertLevels($now, $userId);
         $this->seedEscalationMatrix($now, $userId);
@@ -126,28 +126,30 @@ class PdtsMasterDataSeeder extends Seeder
         }
     }
 
-    private function seedDelayCategories($now, int $userId): void
+    private function seedDepartments($now, int $userId): void
     {
-        // From Excel Sheet1 + Construction tab (unified category buckets)
-        $categories = [
-            ['Regulatory & Permitting', 'Long wait times for environmental, fire safety, PCPNDT, AERB approvals'],
-            ['MEP', 'Mechanical, electrical, and plumbing delays affecting critical path'],
-            ['Supply Chain & Procurement', 'Long-lead items (MRI, custom AHUs) delayed by vendor halting final inspection'],
-            ['Design & Scope', 'Mid-construction changes; late-stage clinician requests for layout or equipment'],
-            ['Medical Equipment Installations', 'Delays in medical equipment delivery, installation, or commissioning'],
-            ['Specialized Labor', 'Shortage of certified manpower (e.g. lead-shielding installers)'],
-            ['Logistical Challenges', 'Material movement blocked by active patient traffic; night-work delays'],
-            ['Site Condition Surprises', 'Unplanned structural, plumbing, or site discovery issues'],
-            ['Operational Readiness', 'Staff hiring/training delays; IT systems not ready for go-live'],
-            ['Infection Control Compliance', 'Dust barriers, air pressure, or infection control clearance delays'],
+        $table = \Illuminate\Support\Facades\Schema::hasTable('tbl_departments') ? 'tbl_departments' : 'tbl_delay_categories';
+        $nameCol = \Illuminate\Support\Facades\Schema::hasColumn($table, 'department_name') ? 'department_name' : 'category_name';
+        $hasSort = \Illuminate\Support\Facades\Schema::hasColumn($table, 'default_sort_order');
+
+        $departments = [
+            [1, 'Design & Planning', 'Architectural, structural, and layout design approvals'],
+            [2, 'Fire Safety / NOC', 'Fire NOC, safety compliance, and statutory clearances'],
+            [3, 'Civil', 'Civil works, structure, and finishing'],
+            [4, 'MEP', 'Mechanical, electrical, plumbing, and HVAC'],
+            [5, 'Medical Equipment', 'Equipment delivery, installation, and commissioning'],
+            [6, 'Regulatory & Licensing', 'PCPNDT, AERB, pollution, and other licenses'],
+            [7, 'Procurement', 'Long-lead materials and vendor coordination'],
+            [8, 'Infection Control', 'Dust barriers, pressure regimes, and IC clearance'],
+            [9, 'IT & Operational Readiness', 'IT, HR, training, and go-live readiness'],
+            [10, 'Commissioning & Handover', 'Testing, snagging, and handover to operations'],
         ];
 
-        $excelNames = array_column($categories, 0);
+        $names = array_column($departments, 1);
 
-        // Deactivate legacy generic categories not in Excel framework
-        DB::table('tbl_delay_categories')
+        DB::table($table)
             ->where('is_delete', 0)
-            ->whereNotIn('category_name', $excelNames)
+            ->whereNotIn($nameCol, $names)
             ->update([
                 'status' => 0,
                 'is_delete' => 1,
@@ -155,28 +157,30 @@ class PdtsMasterDataSeeder extends Seeder
                 'updated_on' => $now,
             ]);
 
-        foreach ($categories as [$name, $description]) {
-            $row = DB::table('tbl_delay_categories')->where('category_name', $name)->first();
-            if ($row) {
-                DB::table('tbl_delay_categories')->where('id', $row->id)->update([
-                    'description' => $description,
-                    'status' => 1,
-                    'is_delete' => 0,
-                    'updated_by' => $userId,
-                    'updated_on' => $now,
-                ]);
-                continue;
-            }
-            DB::table('tbl_delay_categories')->insert([
-                'category_name' => $name,
+        foreach ($departments as [$sort, $name, $description]) {
+            $row = DB::table($table)->where($nameCol, $name)->first();
+            $payload = [
                 'description' => $description,
                 'status' => 1,
-                'created_by' => $userId,
-                'created_on' => $now,
+                'is_delete' => 0,
                 'updated_by' => $userId,
                 'updated_on' => $now,
-                'is_delete' => 0,
+            ];
+            if ($hasSort) {
+                $payload['default_sort_order'] = $sort;
+            }
+
+            if ($row) {
+                DB::table($table)->where('id', $row->id)->update($payload);
+                continue;
+            }
+
+            $insert = array_merge($payload, [
+                $nameCol => $name,
+                'created_by' => $userId,
+                'created_on' => $now,
             ]);
+            DB::table($table)->insert($insert);
         }
     }
 

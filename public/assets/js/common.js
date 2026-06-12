@@ -1201,7 +1201,7 @@ function openSideLayout(data, url, title, width = 75) {
     }
     
     // Set width and trigger offcanvas
-    $('.offcanvas-end').css("width", width + '%');
+    $('.offcanvas-end').css({ width: width + '%', maxWidth: 'none' });
     $('#sidelayoutTriggerButton').trigger('click');
     
     // Set title

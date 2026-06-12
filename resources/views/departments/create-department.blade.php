@@ -1,4 +1,4 @@
 @extends('layouts.template_v1')
 @section('content')
-@include('renovation_projects.create-renovation-project-form')
+@include('departments.create-department-form')
 @endsection

@@ -267,16 +267,9 @@ class RoleManagement extends Controller
                 ['label' => 'Roles', 'value' => 'roles'],
                 ['label' => 'Users', 'value' => 'users'],
             ],
-            'Delay Tracking' => [
-                ['label' => 'Delay Categories', 'value' => 'delay_categories'],
+            'Project Tracking' => [
+                ['label' => 'Departments', 'value' => 'departments'],
                 ['label' => 'Projects', 'value' => 'projects'],
-                ['label' => 'Delay Register', 'value' => 'delay_registers'],
-                ['label' => 'Mitigations', 'value' => 'mitigations'],
-                ['label' => 'Financial Impact', 'value' => 'financial_impacts'],
-                ['label' => 'Attachments', 'value' => 'delay_attachments'],
-            ],
-            'Renovation Monitoring' => [
-                ['label' => 'Renovation Projects', 'value' => 'renovation_projects'],
             ],
         ]);
     }
@@ -290,12 +283,8 @@ class RoleManagement extends Controller
     {
         return [
             'users' => ['users_creation', 'users_list'],
-            'delay_categories' => ['delay_categories_list'],
-            'projects' => ['projects_list', 'projects_create'],
-            'delay_registers' => ['delay_registers_list', 'delay_registers_create'],
-            'mitigations' => ['mitigations_list'],
-            'financial_impacts' => ['financial_impacts_list'],
-            'renovation_projects' => ['renovation_projects_list', 'renovation_projects_create'],
+            'departments' => ['delay_categories', 'delay_categories_list'],
+            'projects' => ['projects_list', 'projects_create', 'delay_registers', 'mitigations', 'financial_impacts', 'delay_attachments'],
         ];
     }
 
@@ -306,13 +295,8 @@ class RoleManagement extends Controller
             'dashboard_view',
             'roles',
             'users',
-            'delay_categories',
+            'departments',
             'projects',
-            'delay_registers',
-            'mitigations',
-            'financial_impacts',
-            'delay_attachments',
-            'renovation_projects',
         ];
     }
 
@@ -450,7 +434,7 @@ class RoleManagement extends Controller
             'm1_chart_category' => [
                 'permission' => 'dashboard_m1_chart_category',
                 'module' => 1,
-                'label' => 'Delays by category chart',
+                'label' => 'Delayed departments chart',
             ],
             'm1_chart_project_status' => [
                 'permission' => 'dashboard_m1_chart_project_status',
@@ -460,7 +444,7 @@ class RoleManagement extends Controller
             'm1_chart_mitigation' => [
                 'permission' => 'dashboard_m1_chart_mitigation',
                 'module' => 1,
-                'label' => 'Mitigation status chart',
+                'label' => 'Department execution status chart',
             ],
             'm1_chart_financial' => [
                 'permission' => 'dashboard_m1_chart_financial',
@@ -480,52 +464,7 @@ class RoleManagement extends Controller
             'm1_table_critical' => [
                 'permission' => 'dashboard_m1_table_critical',
                 'module' => 1,
-                'label' => 'Critical delays table',
-            ],
-            'm3_kpis' => [
-                'permission' => 'dashboard_m3_kpis',
-                'module' => 3,
-                'label' => 'Overview KPI cards',
-            ],
-            'm3_chart_project_status' => [
-                'permission' => 'dashboard_m3_chart_project_status',
-                'module' => 3,
-                'label' => 'Renovation project status chart',
-            ],
-            'm3_chart_type' => [
-                'permission' => 'dashboard_m3_chart_type',
-                'module' => 3,
-                'label' => 'Renovation type chart',
-            ],
-            'm3_chart_task_status' => [
-                'permission' => 'dashboard_m3_chart_task_status',
-                'module' => 3,
-                'label' => 'Task status chart',
-            ],
-            'm3_chart_task_risk' => [
-                'permission' => 'dashboard_m3_chart_task_risk',
-                'module' => 3,
-                'label' => 'Task risk level chart',
-            ],
-            'm3_chart_escalation' => [
-                'permission' => 'dashboard_m3_chart_escalation',
-                'module' => 3,
-                'label' => 'Escalation status chart',
-            ],
-            'm3_chart_tasks_category' => [
-                'permission' => 'dashboard_m3_chart_tasks_category',
-                'module' => 3,
-                'label' => 'Tasks by category chart',
-            ],
-            'm3_chart_delay_trend' => [
-                'permission' => 'dashboard_m3_chart_delay_trend',
-                'module' => 3,
-                'label' => 'Daily delay trend chart',
-            ],
-            'm3_table_escalated' => [
-                'permission' => 'dashboard_m3_table_escalated',
-                'module' => 3,
-                'label' => 'Escalated projects table',
+                'label' => 'Delayed departments table',
             ],
         ];
     }
@@ -536,17 +475,14 @@ class RoleManagement extends Controller
     public static function getDashboardPermissionGroups(): array
     {
         $groups = [
-            'Dashboard — Module 1 (Delay Tracking)' => [],
-            'Dashboard — Module 3 (Renovation Monitoring)' => [],
+            'Dashboard — Project Tracking' => [],
         ];
 
         foreach (self::getDashboardWidgets() as $widget) {
-            $entry = ['label' => $widget['label'], 'value' => $widget['permission']];
-            if ((int) $widget['module'] === 1) {
-                $groups['Dashboard — Module 1 (Delay Tracking)'][] = $entry;
-            } elseif ((int) $widget['module'] === 3) {
-                $groups['Dashboard — Module 3 (Renovation Monitoring)'][] = $entry;
-            }
+            $groups['Dashboard — Project Tracking'][] = [
+                'label' => $widget['label'],
+                'value' => $widget['permission'],
+            ];
         }
 
         return $groups;

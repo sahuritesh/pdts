@@ -53,10 +53,8 @@ class FinancialImpactService
         }
 
         $total = DB::table('tbl_delay_financial_impacts as fi')
-            ->join('tbl_delay_registers as dr', 'dr.id', '=', 'fi.delay_register_id')
             ->where('fi.is_delete', 0)
-            ->where('dr.is_delete', 0)
-            ->where('dr.project_id', $projectId)
+            ->where('fi.project_id', $projectId)
             ->sum('fi.total_project_delay_cost');
 
         DB::table('tbl_projects')
