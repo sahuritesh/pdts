@@ -48,7 +48,7 @@ class RolesSeeder extends Seeder
                 'role_name' => 'Manager',
                 'role_description' => 'Manage projects, departments, and reports',
                 'permission_types' => implode(',', array_merge(
-                    ['dashboard_view', 'users', 'departments', 'projects'],
+                    ['dashboard_view', 'users', 'departments', 'locations', 'projects'],
                     RoleManagement::allDashboardPermissionKeys()
                 )),
                 'status' => 1,
@@ -64,6 +64,26 @@ class RolesSeeder extends Seeder
                 'permission_types' => implode(',', array_merge(
                     ['dashboard_view', 'departments', 'projects'],
                     RoleManagement::allDashboardPermissionKeys()
+                )),
+                'status' => 1,
+                'created_by' => 1,
+                'created_on' => $now,
+                'updated_by' => 1,
+                'updated_on' => $now,
+                'is_delete' => 0,
+            ],
+            [
+                'role_name' => 'Department SPOC',
+                'role_description' => 'Department-scoped dashboard and task access',
+                'permission_types' => implode(',', array_merge(
+                    ['dashboard_view', 'spoc_department_access', 'spoc_tasks'],
+                    [
+                        'dashboard_m1_kpis',
+                        'dashboard_m1_chart_category',
+                        'dashboard_m1_chart_mitigation',
+                        'dashboard_m1_table_critical',
+                        'dashboard_m1_chart_zone',
+                    ]
                 )),
                 'status' => 1,
                 'created_by' => 1,

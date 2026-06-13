@@ -6,7 +6,9 @@ use App\Models\Common_model;
 use App\Services\DashboardAnalyticsService;
 use Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 
 class DashboardController extends Controller
@@ -83,12 +85,31 @@ class DashboardController extends Controller
         $data['has_dashboard_widgets'] = RoleManagement::dashboardHasAnyWidget($widgets);
 
         if ($data['has_dashboard_widgets']) {
-            $data['analytics'] = $this->dashboardAnalytics->getDashboardAnalytics($widgets);
+            $zoneId = $request->query('zone_id');
+            $zoneId = ($zoneId !== null && $zoneId !== '' && $zoneId !== 'all') ? (int) $zoneId : null;
+            $data['selected_zone_id'] = $zoneId;
+            $data['zones'] = $this->getZones();
+            $data['analytics'] = $this->dashboardAnalytics->getDashboardAnalytics($widgets, $zoneId);
         }
 
         return response()->view('dashboard.dashboard', compact(
             'pageTitle',
             'data'
         ))->header('Cache-Control', 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+    }
+
+    private function getZones(): array
+    {
+        if (!Schema::hasTable('tbl_zones')) {
+            return [];
+        }
+
+        return DB::table('tbl_zones')
+            ->where('is_delete', 0)
+            ->where('status', 1)
+            ->orderBy('zone_name')
+            ->get(['id', 'zone_name'])
+            ->map(fn ($r) => ['id' => $r->id, 'label' => $r->zone_name])
+            ->all();
     }
 }

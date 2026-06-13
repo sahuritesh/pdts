@@ -81,6 +81,19 @@
                     @endif
                 </select>
             </div>
+            @if(!empty($data['departments']))
+            <div class="col-md-12 mb-3">
+                <label>Assigned Departments <small class="text-muted">(for Department SPOC users)</small></label>
+                <select name="department_ids[]" id="department_ids" class="form-select" multiple="multiple">
+                    @foreach($data['departments'] as $dept)
+                    <option value="{{ $dept['id'] }}"
+                        @if(in_array($dept['id'], $data['assigned_department_ids'] ?? [])) selected @endif>
+                        {{ $dept['label'] }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
         </div>
     </div>                  
    <div class="formfooter">
@@ -106,6 +119,9 @@ $(document).ready(function() {
         select2Options.dropdownParent = $("#offcanvasRight");
     }
     $('.userRoles').select2(select2Options);
+    if ($('#department_ids').length && $.fn.select2) {
+        $('#department_ids').select2(Object.assign({}, select2Options, { placeholder: 'Select departments' }));
+    }
 
     $('#adduser').unbind('click').click(function(e) {
         e.preventDefault();

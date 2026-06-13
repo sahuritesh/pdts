@@ -7,13 +7,24 @@ use Illuminate\Support\Facades\Schema;
 
 class DashboardAnalyticsService
 {
+    protected ProjectDepartmentService $projectDepartmentService;
+    protected UserScopeService $userScope;
+    protected ?int $zoneFilter = null;
+
+    public function __construct(ProjectDepartmentService $projectDepartmentService, UserScopeService $userScope)
+    {
+        $this->projectDepartmentService = $projectDepartmentService;
+        $this->userScope = $userScope;
+    }
+
     /**
      * Load only analytics datasets for widgets the role may see.
      *
      * @param array<string, bool> $visibleWidgets
      */
-    public function getDashboardAnalytics(array $visibleWidgets): array
+    public function getDashboardAnalytics(array $visibleWidgets, ?int $zoneId = null): array
     {
+        $this->zoneFilter = $zoneId;
         $data = [];
 
         if (!empty($visibleWidgets['m1_kpis'])) {
@@ -43,6 +54,11 @@ class DashboardAnalyticsService
         if (!empty($visibleWidgets['m1_table_critical'])) {
             $data['recent_delayed_departments'] = $this->getRecentDelayedDepartments(8);
         }
+        if (!empty($visibleWidgets['m1_chart_zone'])) {
+            $data['zone_metrics'] = $this->getZoneMetrics();
+        }
+
+        $this->zoneFilter = null;
 
         return $data;
     }
@@ -123,21 +139,47 @@ class DashboardAnalyticsService
 
     private function getKpis(): array
     {
+        if (Schema::hasTable('tbl_project_departments')) {
+            $this->projectDepartmentService->syncAllProjectRollupStatuses();
+        }
+
+        $projectIds = $this->scopedProjectIds();
         $projectQuery = DB::table('tbl_projects')->where('is_delete', 0);
+        if ($projectIds !== null) {
+            $projectQuery->whereIn('id', $projectIds ?: [0]);
+        }
+
         $delayQuery = DB::table('tbl_delay_registers')->where('is_delete', 0);
+        if ($projectIds !== null && Schema::hasTable('tbl_project_departments')) {
+            $delayQuery->where(function ($q) use ($projectIds) {
+                $q->whereIn('project_id', $projectIds ?: [0])
+                    ->orWhereIn('project_department_id', function ($sub) use ($projectIds) {
+                        $sub->select('id')
+                            ->from('tbl_project_departments')
+                            ->whereIn('project_id', $projectIds ?: [0])
+                            ->where('is_delete', 0);
+                    });
+            });
+        }
+
         $pdQuery = DB::table('tbl_project_departments')->where('is_delete', 0);
+        if ($projectIds !== null) {
+            $pdQuery->whereIn('project_id', $projectIds ?: [0]);
+        }
+        $pdQuery = $this->applyDepartmentScope($pdQuery);
 
         $totalProjects = (clone $projectQuery)->count();
-        $activeProjects = (clone $projectQuery)->where('project_status', 'active')->count();
-        $delayedProjects = (clone $projectQuery)->where('project_status', 'delayed')->count();
-        $completedProjects = (clone $projectQuery)->where('project_status', 'completed')->count();
+        $rollup = $this->getProjectRollupCounts();
+        $activeProjects = $rollup['active'];
+        $delayedProjects = $rollup['delayed'];
+        $completedProjects = $rollup['completed'];
 
         $totalDepartments = (clone $pdQuery)->count();
         $departmentsDelayed = (clone $pdQuery)->where('department_status', 'delay')->count();
         $departmentsInProgress = (clone $pdQuery)->whereIn('department_status', ['start', 'in_progress'])->count();
         $departmentsCompleted = (clone $pdQuery)->where('department_status', 'completed')->count();
 
-        $openDelays = (clone $delayQuery)->whereIn('register_status', ['open', 'in_progress'])->count();
+        $openDelays = $this->countOpenDelayEntries();
         $totalDelays = (clone $delayQuery)->count();
         $avgDelayDays = round((float) ((clone $pdQuery)->avg('delay_days') ?? 0), 1);
         $criticalCount = (clone $delayQuery)->whereIn('severity', ['critical', 'showstopper'])->count();
@@ -225,6 +267,11 @@ class DashboardAnalyticsService
                 ->join("$deptTable as d", 'd.id', '=', 'pd.department_id')
                 ->where('pd.is_delete', 0)
                 ->where('pd.department_status', 'delay')
+                ->when($this->scopedProjectIds() !== null, function ($q) {
+                    $ids = $this->scopedProjectIds() ?: [0];
+                    $q->whereIn('pd.project_id', $ids);
+                })
+                ->tap(fn ($q) => $this->applyDepartmentScope($q, 'pd'))
                 ->select(DB::raw("d.$nameCol as label"), DB::raw('COUNT(*) as total'))
                 ->groupBy('label')
                 ->orderByDesc('total')
@@ -278,6 +325,8 @@ class DashboardAnalyticsService
         $rows = DB::table('tbl_project_departments')
             ->select('department_status', DB::raw('COUNT(*) as total'))
             ->where('is_delete', 0)
+            ->when($this->scopedProjectIds() !== null, fn ($q) => $q->whereIn('project_id', $this->scopedProjectIds() ?: [0]))
+            ->tap(fn ($q) => $this->applyDepartmentScope($q))
             ->groupBy('department_status')
             ->pluck('total', 'department_status');
 
@@ -298,34 +347,129 @@ class DashboardAnalyticsService
 
     private function getProjectStatusBreakdown(): array
     {
-        $labelsMap = [
-            'active' => 'Active',
-            'delayed' => 'Delayed',
-            'completed' => 'Completed',
-            'on_hold' => 'On Hold',
-        ];
-
-        $rows = DB::table('tbl_projects')
-            ->select('project_status', DB::raw('COUNT(*) as total'))
-            ->where('is_delete', 0)
-            ->groupBy('project_status')
-            ->pluck('total', 'project_status');
+        $rollup = $this->getProjectRollupCounts();
+        $onHoldQuery = DB::table('tbl_projects')->where('is_delete', 0)->where('project_status', 'on_hold');
+        if ($this->scopedProjectIds() !== null) {
+            $onHoldQuery->whereIn('id', $this->scopedProjectIds() ?: [0]);
+        }
+        $onHold = (int) $onHoldQuery->count();
 
         $labels = [];
         $series = [];
-        foreach ($labelsMap as $key => $label) {
-            $count = (int) ($rows[$key] ?? 0);
-            if ($count > 0) {
-                $labels[] = $label;
-                $series[] = $count;
+        $colors = ['#1cbb8c', '#fcb92c', '#4aa3ff', '#adb5bd'];
+        $buckets = [
+            ['label' => 'Active', 'count' => $rollup['active']],
+            ['label' => 'Delayed', 'count' => $rollup['delayed']],
+            ['label' => 'Completed', 'count' => $rollup['completed']],
+            ['label' => 'On Hold', 'count' => $onHold],
+        ];
+
+        foreach ($buckets as $i => $bucket) {
+            if ($bucket['count'] > 0) {
+                $labels[] = $bucket['label'];
+                $series[] = $bucket['count'];
             }
         }
 
+        return compact('labels', 'series', 'colors');
+    }
+
+    /**
+     * Project delayed = any department has department_status = delay.
+     * Project completed = has departments and all are completed.
+     */
+    private function getProjectRollupCounts(): array
+    {
+        $baseQuery = DB::table('tbl_projects as tp')->where('tp.is_delete', 0);
+        $this->applyProjectScope($baseQuery, 'tp');
+        $total = (int) (clone $baseQuery)->count();
+
+        if (!Schema::hasTable('tbl_project_departments')) {
+            $delayed = (int) (clone $baseQuery)->where('tp.project_status', 'delayed')->count();
+            $completed = (int) (clone $baseQuery)->where('tp.project_status', 'completed')->count();
+            $onHold = (int) (clone $baseQuery)->where('tp.project_status', 'on_hold')->count();
+
+            return [
+                'delayed' => $delayed,
+                'completed' => $completed,
+                'active' => max(0, $total - $delayed - $completed - $onHold),
+            ];
+        }
+
+        $delayed = (int) (clone $baseQuery)
+            ->where('tp.project_status', '!=', 'on_hold')
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('tbl_project_departments as pd')
+                    ->whereColumn('pd.project_id', 'tp.id')
+                    ->where('pd.is_delete', 0)
+                    ->where('pd.department_status', 'delay');
+                $this->applyDepartmentScope($query, 'pd');
+            })
+            ->count();
+
+        $completed = (int) (clone $baseQuery)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('tbl_project_departments as pd')
+                    ->whereColumn('pd.project_id', 'tp.id')
+                    ->where('pd.is_delete', 0);
+                $this->applyDepartmentScope($query, 'pd');
+            })
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('tbl_project_departments as pd')
+                    ->whereColumn('pd.project_id', 'tp.id')
+                    ->where('pd.is_delete', 0)
+                    ->where('pd.department_status', '!=', 'completed');
+                $this->applyDepartmentScope($query, 'pd');
+            })
+            ->count();
+
+        $onHold = (int) (clone $baseQuery)->where('tp.project_status', 'on_hold')->count();
+        $active = max(0, $total - $delayed - $completed - $onHold);
+
         return [
-            'labels' => $labels,
-            'series' => $series,
-            'colors' => ['#1cbb8c', '#fcb92c', '#4aa3ff', '#adb5bd'],
+            'delayed' => $delayed,
+            'completed' => $completed,
+            'active' => $active,
         ];
+    }
+
+    /**
+     * Open delay logs on departments that are currently marked delayed.
+     * Excludes legacy/sample register rows not linked to an active delayed department.
+     */
+    private function countOpenDelayEntries(): int
+    {
+        $query = DB::table('tbl_delay_registers as dr')
+            ->where('dr.is_delete', 0)
+            ->whereIn('dr.register_status', ['open', 'in_progress']);
+
+        if (
+            Schema::hasTable('tbl_project_departments')
+            && Schema::hasColumn('tbl_delay_registers', 'project_department_id')
+        ) {
+            return (int) $query
+                ->whereNotNull('dr.project_department_id')
+                ->whereExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('tbl_project_departments as pd')
+                        ->whereColumn('pd.id', 'dr.project_department_id')
+                        ->where('pd.is_delete', 0)
+                        ->where('pd.department_status', 'delay');
+                    $this->applyDepartmentScope($sub, 'pd');
+                    if ($this->scopedProjectIds() !== null) {
+                        $sub->whereIn('pd.project_id', $this->scopedProjectIds() ?: [0]);
+                    }
+                })
+                ->when($this->scopedProjectIds() !== null, function ($q) {
+                    $q->whereIn('dr.project_id', $this->scopedProjectIds() ?: [0]);
+                })
+                ->count();
+        }
+
+        return (int) $query->count();
     }
 
     private function getDelayTrendByMonth(int $months = 6): array
@@ -709,6 +853,9 @@ class DashboardAnalyticsService
             ->where('pd.is_delete', 0)
             ->where('tp.is_delete', 0)
             ->where('pd.department_status', 'delay')
+            ->when($this->scopedProjectIds() !== null, fn ($q) => $q->whereIn('pd.project_id', $this->scopedProjectIds() ?: [0]))
+            ->tap(fn ($q) => $this->applyProjectScope($q, 'tp'))
+            ->tap(fn ($q) => $this->applyDepartmentScope($q, 'pd'))
             ->orderByDesc('pd.delay_days')
             ->orderByDesc('pd.id')
             ->limit($limit)
@@ -740,5 +887,98 @@ class DashboardAnalyticsService
         $table = $this->departmentsTable();
 
         return Schema::hasColumn($table, 'department_name') ? 'department_name' : 'category_name';
+    }
+
+    /** @return int[]|null null = no scope restriction */
+    private function scopedProjectIds(): ?array
+    {
+        if (!$this->zoneFilter && !$this->userScope->isScopedUser()) {
+            return null;
+        }
+
+        $query = DB::table('tbl_projects as tp')->where('tp.is_delete', 0);
+        $this->applyProjectScope($query, 'tp');
+
+        return $query->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    private function applyProjectScope($query, string $alias = 'tp'): void
+    {
+        if ($this->zoneFilter) {
+            $query->where($alias . '.zone_id', $this->zoneFilter);
+        }
+        $this->userScope->applyProjectScope($query, $alias);
+    }
+
+    private function applyDepartmentScope($query, string $alias = 'pd'): void
+    {
+        if ($this->userScope->isScopedUser()) {
+            $this->userScope->applyProjectDepartmentScope($query, $alias);
+        }
+    }
+
+    private function getZoneMetrics(): array
+    {
+        if (!Schema::hasTable('tbl_zones')) {
+            return ['labels' => [], 'projects' => [], 'delayed_projects' => [], 'departments_delayed' => []];
+        }
+
+        $zones = DB::table('tbl_zones')
+            ->where('is_delete', 0)
+            ->where('status', 1)
+            ->orderBy('zone_name')
+            ->get();
+
+        $labels = [];
+        $projects = [];
+        $delayedProjects = [];
+        $departmentsDelayed = [];
+
+        foreach ($zones as $zone) {
+            if ($this->zoneFilter && (int) $zone->id !== $this->zoneFilter) {
+                continue;
+            }
+
+            $labels[] = $zone->zone_name;
+
+            $projectQuery = DB::table('tbl_projects as tp')
+                ->where('tp.is_delete', 0)
+                ->where('tp.zone_id', $zone->id);
+            $this->userScope->applyProjectScope($projectQuery, 'tp');
+            $projectIds = $projectQuery->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+
+            $projects[] = count($projectIds);
+
+            $delayedCount = 0;
+            $deptDelayedCount = 0;
+
+            if (!empty($projectIds) && Schema::hasTable('tbl_project_departments')) {
+                $delayedCount = (int) DB::table('tbl_projects as tp')
+                    ->whereIn('tp.id', $projectIds)
+                    ->where('tp.is_delete', 0)
+                    ->where('tp.project_status', '!=', 'on_hold')
+                    ->whereExists(function ($sub) {
+                        $sub->select(DB::raw(1))
+                            ->from('tbl_project_departments as pd')
+                            ->whereColumn('pd.project_id', 'tp.id')
+                            ->where('pd.is_delete', 0)
+                            ->where('pd.department_status', 'delay');
+                        $this->applyDepartmentScope($sub, 'pd');
+                    })
+                    ->count();
+
+                $deptQuery = DB::table('tbl_project_departments as pd')
+                    ->whereIn('pd.project_id', $projectIds)
+                    ->where('pd.is_delete', 0)
+                    ->where('pd.department_status', 'delay');
+                $this->applyDepartmentScope($deptQuery, 'pd');
+                $deptDelayedCount = (int) $deptQuery->count();
+            }
+
+            $delayedProjects[] = $delayedCount;
+            $departmentsDelayed[] = $deptDelayedCount;
+        }
+
+        return compact('labels', 'projects', 'delayed_projects', 'departments_delayed');
     }
 }

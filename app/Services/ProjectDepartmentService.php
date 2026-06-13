@@ -180,6 +180,14 @@ class ProjectDepartmentService
         return $this->canEditDepartment($row) || $status === self::STATUS_COMPLETED;
     }
 
+    public function syncAllProjectRollupStatuses(): void
+    {
+        $projectIds = DB::table('tbl_projects')->where('is_delete', 0)->pluck('id');
+        foreach ($projectIds as $projectId) {
+            $this->syncProjectRollupStatus((int) $projectId);
+        }
+    }
+
     public function syncProjectRollupStatus(int $projectId): void
     {
         $rows = DB::table('tbl_project_departments')
@@ -188,6 +196,18 @@ class ProjectDepartmentService
             ->get();
 
         if ($rows->isEmpty()) {
+            $project = DB::table('tbl_projects')->where('id', $projectId)->where('is_delete', 0)->first();
+            if ($project && ($project->project_status ?? '') !== 'on_hold') {
+                DB::table('tbl_projects')
+                    ->where('id', $projectId)
+                    ->where('is_delete', 0)
+                    ->update([
+                        'project_status' => 'active',
+                        'updated_by' => Auth::id(),
+                        'updated_on' => current_datetime(),
+                    ]);
+            }
+
             return;
         }
 

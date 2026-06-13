@@ -102,5 +102,33 @@
         if (isVisible('m1_chart_hospital')) {
             renderBar('#chart-delays-hospital', data.delays_by_hospital, true, 'No hospital delay data yet.');
         }
+        if (isVisible('m1_chart_zone')) {
+            renderZoneMetrics('#chart-zone-metrics', data.zone_metrics);
+        }
     });
+
+    function renderZoneMetrics(elId, chartData) {
+        var el = document.querySelector(elId);
+        if (!el) {
+            return;
+        }
+        if (!chartData || !chartData.labels || !chartData.labels.length) {
+            el.innerHTML = '<p class="text-muted text-center py-5 mb-0">No zone data yet.</p>';
+            return;
+        }
+        new ApexCharts(el, {
+            chart: { type: 'bar', height: 320, toolbar: { show: false } },
+            series: [
+                { name: 'Projects', data: chartData.projects || [] },
+                { name: 'Delayed projects', data: chartData.delayed_projects || [] },
+                { name: 'Departments delayed', data: chartData.departments_delayed || [] }
+            ],
+            xaxis: { categories: chartData.labels },
+            plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4 } },
+            colors: ['#003e6b', '#fcb92c', '#ff3d60'],
+            dataLabels: { enabled: false },
+            grid: { strokeDashArray: 4 },
+            legend: { position: 'bottom' }
+        }).render();
+    }
 })();

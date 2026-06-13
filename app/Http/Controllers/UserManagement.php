@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Traits\GridConfigTrait;
 use App\Http\Traits\WebResponseTrait;
 use App\Http\Traits\EmailTrait;
+use App\Services\UserScopeService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Crypt;
@@ -19,6 +20,13 @@ class UserManagement extends Controller
     use GridConfigTrait, WebResponseTrait, EmailTrait;
 
     public $module = 'users';
+
+    protected UserScopeService $userScope;
+
+    public function __construct(UserScopeService $userScope)
+    {
+        $this->userScope = $userScope;
+    }
 
     /**
      * Display user create/edit form
@@ -38,6 +46,8 @@ class UserManagement extends Controller
         $data = [
             'user' => '',
             'roles' => $this->getActiveRoles(),
+            'departments' => $this->getActiveDepartments(),
+            'assigned_department_ids' => [],
             'status' => [
                 ['id' => ACTIVE, 'status_name' => 'Active'],
                 ['id' => INACTIVE, 'status_name' => 'Inactive']
@@ -69,6 +79,7 @@ class UserManagement extends Controller
                         $userRecord['user_id'] = $userRecord['id'];
                     }
                     $data['user'] = $userRecord;
+                    $data['assigned_department_ids'] = $this->userScope->getUserDepartmentIds((int) $userRecord['user_id']);
                     $data['exclude_roles'] = [];
                 } else {
                     Log::warning('User not found for edit. Decrypted ID: ' . $decryptedId);
@@ -116,11 +127,16 @@ class UserManagement extends Controller
             $prepared = $this->prepareUserData($postData, $operation);
             $data = $prepared['data'];
             $plainPassword = $prepared['plain_password'] ?? null;
+            $departmentIds = $postData['department_ids'] ?? [];
+            if (!is_array($departmentIds)) {
+                $departmentIds = array_filter(explode(',', (string) $departmentIds));
+            }
 
             if ($operation == 'Add') {
                 $result = $this->createUser($data, $plainPassword);
                 $succ_msg = 'User added successfully';
                 if ($result) {
+                    $this->userScope->syncUserDepartments((int) $result, $departmentIds);
                     $serialNumber = $this->generateSerialNumber($result);
                     $qrcodepath   = Common_model::generateQRCode($serialNumber, $serialNumber);
 
@@ -133,6 +149,9 @@ class UserManagement extends Controller
                 }
             } else {
                 $result = $this->updateUser($user_id, $data);
+                if ($result) {
+                    $this->userScope->syncUserDepartments((int) $user_id, $departmentIds);
+                }
                 $succ_msg = 'User updated successfully';
             }
 
@@ -560,6 +579,7 @@ class UserManagement extends Controller
     private function prepareUserData($postData, $operation)
     {
         unset($postData['_token']);
+        unset($postData['department_ids']);
 
         $plainPassword = isset($postData['password']) ? $postData['password'] : '';
         $user_id = $postData['user_id'] ?? $postData['id'] ?? null;
@@ -713,6 +733,20 @@ class UserManagement extends Controller
             true,
             ''
         );
+    }
+
+    private function getActiveDepartments(): array
+    {
+        $table = DB::getSchemaBuilder()->hasTable('tbl_departments') ? 'tbl_departments' : 'tbl_delay_categories';
+        $nameCol = DB::getSchemaBuilder()->hasColumn($table, 'department_name') ? 'department_name' : 'category_name';
+
+        return DB::table($table)
+            ->where('is_delete', 0)
+            ->where('status', 1)
+            ->orderBy($nameCol)
+            ->get(['id', $nameCol])
+            ->map(fn ($r) => ['id' => (int) $r->id, 'label' => $r->$nameCol])
+            ->all();
     }
 
     /**

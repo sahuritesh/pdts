@@ -12,8 +12,10 @@ use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\CronController;
 use App\Http\Controllers\DepartmentsController;
+use App\Http\Controllers\LocationsController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ProjectWizardController;
+use App\Http\Controllers\SpocTasksController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +53,16 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::post('insert_update_department', [DepartmentsController::class, 'insert_update_department']);
     Route::get('departments-list', [DepartmentsController::class, 'department_list']);
     Route::post('get_department_list', [DepartmentsController::class, 'get_department_list']);
+
+    Route::match(array('GET', 'POST'), '/locations/add', [LocationsController::class, 'location_form']);
+    Route::match(array('GET', 'POST'), '/locations/edit/{id}', [LocationsController::class, 'location_form']);
+    Route::post('insert_update_location', [LocationsController::class, 'insert_update_location']);
+    Route::get('locations-list', [LocationsController::class, 'location_list']);
+    Route::post('get_location_list', [LocationsController::class, 'get_location_list']);
+    Route::post('get_locations_by_zone', [LocationsController::class, 'get_locations_by_zone']);
+
+    Route::get('spoc-tasks-list', [SpocTasksController::class, 'task_list']);
+    Route::post('get_spoc_task_list', [SpocTasksController::class, 'get_spoc_task_list']);
 
     Route::get('projects-list', [ProjectsController::class, 'project_list']);
     Route::post('get_project_list', [ProjectsController::class, 'get_project_list']);

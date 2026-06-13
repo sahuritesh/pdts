@@ -50,9 +50,8 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
 @if($hasWidgets && !empty($analytics))
 
 @if($showModule1)
-<div class="row mb-2">
-    <div class="col-12">
-        <!-- <h5 class="mb-0 text-primary"><i class="ri-building-2-line me-1"></i> Delay Tracking</h5> -->
+<div class="row mb-2 align-items-center">
+    <div class="col-md-6">
          <h5 class="dashboard-title mb-0">
     <span class="title-icon">
         <i class="ri-building-2-line"></i>
@@ -60,6 +59,19 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
     Project Tracking
 </h5>
     </div>
+    @if(!empty($data['zones']))
+    <div class="col-md-6 text-md-end">
+        <form method="get" action="{{ getProjectUrl('dashboard') }}" class="d-inline-flex align-items-center gap-2">
+            <label for="zone_id" class="mb-0 me-1 text-muted small">Zone:</label>
+            <select name="zone_id" id="zone_id" class="form-select form-select-sm" style="width:auto; min-width:180px;" onchange="this.form.submit()">
+                <option value="all" @if(empty($data['selected_zone_id'])) selected @endif>All zones</option>
+                @foreach($data['zones'] as $zone)
+                <option value="{{ $zone['id'] }}" @if(($data['selected_zone_id'] ?? '') == $zone['id']) selected @endif>{{ $zone['label'] }}</option>
+                @endforeach
+            </select>
+        </form>
+    </div>
+    @endif
 </div>
 
 @if($w('m1_kpis'))
@@ -81,7 +93,7 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
                 <div class="stat-icon"><i class="ri-time-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['open_delays'] ?? 0) }}</div>
             </div>
-            <p class="stat-label">Open delay entries</p>
+            <p class="stat-label">Open delay logs (delayed departments)</p>
         </div>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
@@ -229,6 +241,17 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
 </div>
 @endif
 
+@if($w('m1_chart_zone'))
+<div class="row mb-3">
+    <div class="col-12 mb-3">
+        <div class="chart-card">
+            <h6><span class="chart-icon"><i class="ri-map-pin-line me-1"></i></span> Zone-wise metrics</h6>
+            <div id="chart-zone-metrics"></div>
+        </div>
+    </div>
+</div>
+@endif
+
 @if($w('m1_chart_hospital') || $w('m1_table_critical'))
 <div class="row mb-3">
     @if($w('m1_chart_hospital'))
@@ -308,6 +331,25 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
                 <span>Departments</span>
             </a>
             @endif
+            @if(modulePermissionExists('spoc_tasks') || permissionexists('spoc_department_access') === '1')
+            <a href="{{ getProjectUrl('spoc-tasks-list') }}" class="quick-btn quick-mitigation">
+                <i class="ri-task-line"></i>
+                <span>My Tasks</span>
+            </a>
+            @endif
+        </div>
+    </div>
+</div>
+@endif
+
+@if((modulePermissionExists('spoc_tasks') || permissionexists('spoc_department_access') === '1') && !modulePermissionExists('projects'))
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="quick-actions">
+            <a href="{{ getProjectUrl('spoc-tasks-list') }}" class="quick-btn quick-primary">
+                <i class="ri-task-line"></i>
+                <span>My Department Tasks</span>
+            </a>
         </div>
     </div>
 </div>

@@ -46,6 +46,7 @@
                 }
                 $masterDataItems = [
                     ['label' => 'Departments', 'value' => 'departments', 'route' => 'departments-list'],
+                    ['label' => 'Locations', 'value' => 'locations', 'route' => 'locations-list'],
                     ['label' => 'Projects', 'value' => 'projects', 'route' => 'projects-list'],
                 ];
                 $masterDataVisible = false;
@@ -55,7 +56,8 @@
                         break;
                     }
                 }
-                if ($masterDataVisible) {
+                $spocTasksVisible = modulePermissionExists('spoc_tasks') || permissionexists('spoc_department_access') === '1';
+                if ($masterDataVisible || $spocTasksVisible) {
                 @endphp
                 <li>
                     <a href="javascript: void(0);" class="has-arrow waves-effect">
@@ -66,7 +68,10 @@
                         @php foreach ($masterDataItems as $value) {
                             if (modulePermissionExists($value['value'])) { @endphp
                         <li><a href="{{ getProjectUrl($value['route']) }}">{{ $value['label'] }}</a></li>
-                        @php } } @endphp
+                        @php } }
+                        if ($spocTasksVisible) { @endphp
+                        <li><a href="{{ getProjectUrl('spoc-tasks-list') }}">My Department Tasks</a></li>
+                        @php } @endphp
                     </ul>
                 </li>
                 @php

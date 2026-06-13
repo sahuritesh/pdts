@@ -27,7 +27,17 @@ $gridConfigJson = json_encode($grid_data);
             @php
                 $addTitle = isset($grid_data['addurllabel']) ? $grid_data['addurllabel'] : 'Add ' . ($pageTitle ?? 'Record');
                 $addUrl = getProjectUrl($grid_data['addurl']);
+                $addRedirect = !empty($grid_data['addurl_redirect']);
             @endphp
+            @if($addRedirect)
+            <a href="{{ $addUrl }}"
+               data-bs-toggle="tooltip"
+               data-bs-placement="top"
+               title="{{ $addTitle }}"
+               class="btn btn-primary waves-effect waves-light me-1 createTask mt">
+                <i class="fas fa-plus fa-fw"></i>
+            </a>
+            @else
             <a href="javascript:void(0)" 
                onclick="openSideLayout({}, '{{ $addUrl }}', '{{ $addTitle }}'); return false;"
                data-bs-toggle="tooltip" 
@@ -36,6 +46,7 @@ $gridConfigJson = json_encode($grid_data);
                class="btn btn-primary waves-effect waves-light me-1 createTask mt">
                 <i class="fas fa-plus fa-fw"></i>
             </a>
+            @endif
         @elseif(isset($grid_data['addjsform']) && $grid_data['addjsform'] != '')
             <a href="javascript:void(0)" 
                onclick="{{ $grid_data['addjsform'] }}" 

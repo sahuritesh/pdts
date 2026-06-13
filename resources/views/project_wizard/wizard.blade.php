@@ -10,6 +10,7 @@
     $zones = $data['zones'] ?? [];
     $selectedDeptIds = array_column($projectDepartments, 'department_id');
     $selectedZoneId = $project['zone_id'] ?? '';
+    $selectedLocationId = $project['location_id'] ?? '';
     $enableClick = !empty($projectId);
     $initialStep = $enableClick ? max(0, min(2, (int) ($project['wizard_step'] ?? 1) - 1)) : 0;
     $activeExpand = null;
@@ -83,7 +84,7 @@
                             </div>
                             <div class="col-md-4 mb-2">
                                 <label>Zone</label>
-                                <select name="zone_id" class="form-control dd-select">
+                                <select name="zone_id" id="wizard_zone_id" class="form-control dd-select">
                                     <option value="">Select zone</option>
                                     @foreach($zones as $zone)
                                     <option value="{{ $zone['id'] }}" @if($selectedZoneId == $zone['id']) selected @endif>{{ $zone['label'] }}</option>
@@ -96,7 +97,10 @@
                             </div>
                             <div class="col-md-4 mb-2">
                                 <label>Location</label>
-                                <input type="text" class="form-control" name="location" value="{{ $project['location'] ?? '' }}">
+                                <select name="location_id" id="wizard_location_id" class="form-control dd-select" data-selected="{{ $selectedLocationId }}">
+                                    <option value="">Select location</option>
+                                </select>
+                                <input type="hidden" name="location" id="wizard_location_text" value="{{ $project['location'] ?? '' }}">
                             </div>
                             <div class="col-md-4 mb-2">
                                 <label>Project SPOC</label>
@@ -606,7 +610,41 @@ function bindExecutionPanelHandlers() {
 }
 
 $(function() {
+    function loadWizardLocations(zoneId, selectedId) {
+        var $loc = $('#wizard_location_id');
+        $loc.html('<option value="">Select location</option>');
+        if (!zoneId) {
+            if ($.fn.select2) { $loc.trigger('change.select2'); }
+            return;
+        }
+        $.post("{{ getProjectUrl('get_locations_by_zone') }}", {
+            _token: '{{ csrf_token() }}',
+            zone_id: zoneId
+        }).done(function(res) {
+            (res.locations || []).forEach(function(loc) {
+                var sel = (String(selectedId) === String(loc.id)) ? ' selected' : '';
+                $loc.append('<option value="' + loc.id + '"' + sel + '>' + loc.location_name + '</option>');
+            });
+            if ($.fn.select2) { $loc.trigger('change.select2'); }
+        });
+    }
+
+    $('#wizard_zone_id').on('change', function() {
+        loadWizardLocations($(this).val(), '');
+    });
+
+    $('#wizard_location_id').on('change', function() {
+        var text = $(this).find('option:selected').text();
+        $('#wizard_location_text').val($(this).val() ? text : '');
+    });
+
     if ($.fn.select2) { $('.dd-select').select2({ width: '100%' }); }
+
+    var initZone = $('#wizard_zone_id').val();
+    var initLoc = $('#wizard_location_id').data('selected') || '';
+    if (initZone) {
+        loadWizardLocations(initZone, initLoc);
+    }
 
     if (projectWizardEnableClick) {
         for (var i = 0; i <= 2; i++) {

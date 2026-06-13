@@ -12,7 +12,6 @@ class DatabaseSeeder extends Seeder
             RolesSeeder::class,
             AdminUserSeeder::class,
             PdtsMasterDataSeeder::class,
-            PdtsFrameworkSampleDataSeeder::class,
         ]);
     }
 }

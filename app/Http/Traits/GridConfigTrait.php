@@ -136,6 +136,7 @@ trait GridConfigTrait
      *   - table: database table name
      *   - dataurl: URL endpoint for data fetching
      *   - addurl: URL for add button (optional)
+     *   - addurl_redirect: when true, navigate to addurl as full page instead of sidelayout (optional)
      *   - addurllabel: Label for add button (optional)
      *   - filters: array of filter configurations
      *   - page_length: default page length (optional)

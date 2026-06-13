@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Common_model;
 use App\Models\Datatables_model;
 use App\Services\AuditTrailService;
+use App\Services\UserScopeService;
 use App\Http\Traits\GridConfigTrait;
 use App\Http\Traits\WebResponseTrait;
 use Illuminate\Http\Request;
@@ -20,10 +21,12 @@ class ProjectsController extends Controller
     public $module = 'projects';
 
     protected AuditTrailService $auditTrail;
+    protected UserScopeService $userScope;
 
-    public function __construct(AuditTrailService $auditTrail)
+    public function __construct(AuditTrailService $auditTrail, UserScopeService $userScope)
     {
         $this->auditTrail = $auditTrail;
+        $this->userScope = $userScope;
     }
 
     public function project_form(Request $request, $id = '')
@@ -122,7 +125,7 @@ class ProjectsController extends Controller
 
     public function project_list(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!modulePermissionExists($this->module) && !$this->userScope->isScopedUser()) {
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
@@ -136,6 +139,7 @@ class ProjectsController extends Controller
             'table' => 'tbl_projects',
             'dataurl' => 'get_project_list',
             'addurl' => 'projects/wizard/new',
+            'addurl_redirect' => true,
             'addurllabel' => 'Add Project',
             'filters' => [
                 $this->buildTextFilter('search', 'Search project, hospital, contractor', 'Search', 'col-md-3'),
@@ -191,11 +195,23 @@ class ProjectsController extends Controller
                 ''
             );
 
-            $recordsFiltered = $getRecordListing['recordsFiltered'];
+            $scopedProjectIds = null;
+            if ($this->userScope->isScopedUser()) {
+                $scopedQuery = DB::table('tbl_projects as tp')->where('tp.is_delete', 0);
+                $this->userScope->applyProjectScope($scopedQuery, 'tp');
+                $scopedProjectIds = $scopedQuery->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+            }
+
+            $recordsFiltered = 0;
             $recordListing = [];
             $srNumber = $start;
 
             foreach ($getRecordListing['data'] as $recordData) {
+                if ($scopedProjectIds !== null && !in_array((int) $recordData->id, $scopedProjectIds, true)) {
+                    continue;
+                }
+
+                $recordsFiltered++;
                 $id = Crypt::encrypt($recordData->id);
                 $editUrl = getProjectUrl('projects/wizard/' . $id);
 
@@ -312,13 +328,26 @@ class ProjectsController extends Controller
             $zoneName = DB::table('tbl_zones')->where('id', $zoneId)->value('zone_name');
         }
 
+        $locationId = !empty($postData['location_id']) ? (int) $postData['location_id'] : null;
+        $locationName = trim($postData['location'] ?? '');
+        if ($locationId && DB::getSchemaBuilder()->hasTable('tbl_locations')) {
+            $locRow = DB::table('tbl_locations')->where('id', $locationId)->where('is_delete', 0)->first();
+            if ($locRow) {
+                $locationName = $locRow->location_name;
+                if (!$zoneId) {
+                    $zoneId = (int) $locRow->zone_id;
+                    $zoneName = DB::table('tbl_zones')->where('id', $zoneId)->value('zone_name');
+                }
+            }
+        }
+
         $spoc = trim($postData['project_spoc_name'] ?? '');
 
         $data = [
             'project_code' => trim($postData['project_code']),
             'project_name' => trim($postData['project_name']),
             'project_scope' => trim($postData['project_scope'] ?? ''),
-            'location' => trim($postData['location'] ?? ''),
+            'location' => $locationName,
             'hospital_name' => trim($postData['hospital_name'] ?? ''),
             'contractor_name' => trim($postData['contractor_name'] ?? ''),
             'zone_id' => $zoneId,
@@ -337,6 +366,10 @@ class ProjectsController extends Controller
             'updated_by' => $userId,
             'updated_on' => current_datetime(),
         ];
+
+        if (DB::getSchemaBuilder()->hasColumn('tbl_projects', 'location_id')) {
+            $data['location_id'] = $locationId;
+        }
 
         if ($operation === 'Add') {
             $data['total_delay_cost'] = 0;

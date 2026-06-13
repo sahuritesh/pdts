@@ -269,7 +269,10 @@ class RoleManagement extends Controller
             ],
             'Project Tracking' => [
                 ['label' => 'Departments', 'value' => 'departments'],
+                ['label' => 'Locations', 'value' => 'locations'],
                 ['label' => 'Projects', 'value' => 'projects'],
+                ['label' => 'Department SPOC access (scoped data)', 'value' => 'spoc_department_access'],
+                ['label' => 'My department tasks', 'value' => 'spoc_tasks'],
             ],
         ]);
     }
@@ -284,7 +287,10 @@ class RoleManagement extends Controller
         return [
             'users' => ['users_creation', 'users_list'],
             'departments' => ['delay_categories', 'delay_categories_list'],
+            'locations' => [],
             'projects' => ['projects_list', 'projects_create', 'delay_registers', 'mitigations', 'financial_impacts', 'delay_attachments'],
+            'spoc_tasks' => [],
+            'spoc_department_access' => [],
         ];
     }
 
@@ -296,7 +302,10 @@ class RoleManagement extends Controller
             'roles',
             'users',
             'departments',
+            'locations',
             'projects',
+            'spoc_department_access',
+            'spoc_tasks',
         ];
     }
 
@@ -465,6 +474,11 @@ class RoleManagement extends Controller
                 'permission' => 'dashboard_m1_table_critical',
                 'module' => 1,
                 'label' => 'Delayed departments table',
+            ],
+            'm1_chart_zone' => [
+                'permission' => 'dashboard_m1_chart_zone',
+                'module' => 1,
+                'label' => 'Zone-wise metrics chart',
             ],
         ];
     }

@@ -18,6 +18,7 @@ class PdtsMasterDataSeeder extends Seeder
 
         $this->seedProjectTypes($now, $userId);
         $this->seedZones($now, $userId);
+        $this->seedLocations($now, $userId);
         $this->seedRootCauses($now, $userId);
         $this->seedDepartments($now, $userId);
         $this->seedSeverityRules($now, $userId);
@@ -83,6 +84,47 @@ class PdtsMasterDataSeeder extends Seeder
                 'zone_code' => $code,
                 'zone_name' => $name,
                 'description' => $desc,
+                'status' => 1,
+                'created_by' => $userId,
+                'created_on' => $now,
+                'updated_by' => $userId,
+                'updated_on' => $now,
+                'is_delete' => 0,
+            ]);
+        }
+    }
+
+    private function seedLocations($now, int $userId): void
+    {
+        if (!DB::getSchemaBuilder()->hasTable('tbl_locations') || !DB::getSchemaBuilder()->hasTable('tbl_zones')) {
+            return;
+        }
+
+        $zoneMap = DB::table('tbl_zones')->where('is_delete', 0)->pluck('id', 'zone_code');
+
+        $locations = [
+            ['north_hq', 'North HQ Campus', 'north'],
+            ['north_site_a', 'North Site A', 'north'],
+            ['south_hq', 'South HQ Campus', 'south'],
+            ['south_site_a', 'South Site A', 'south'],
+            ['east_hq', 'East HQ Campus', 'east'],
+            ['west_hq', 'West HQ Campus', 'west'],
+            ['central_hq', 'Central HQ Campus', 'central'],
+        ];
+
+        foreach ($locations as [$code, $name, $zoneCode]) {
+            if (DB::table('tbl_locations')->where('location_code', $code)->exists()) {
+                continue;
+            }
+            $zoneId = $zoneMap[$zoneCode] ?? null;
+            if (!$zoneId) {
+                continue;
+            }
+            DB::table('tbl_locations')->insert([
+                'location_code' => $code,
+                'location_name' => $name,
+                'zone_id' => $zoneId,
+                'description' => $name . ' — ' . ucfirst(str_replace('_', ' ', $zoneCode)) . ' zone',
                 'status' => 1,
                 'created_by' => $userId,
                 'created_on' => $now,

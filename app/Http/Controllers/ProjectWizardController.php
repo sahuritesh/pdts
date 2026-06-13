@@ -8,6 +8,7 @@ use App\Services\AuditTrailService;
 use App\Services\DelayRegisterService;
 use App\Services\FinancialImpactService;
 use App\Services\ProjectDepartmentService;
+use App\Services\UserScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -25,22 +26,47 @@ class ProjectWizardController extends Controller
     protected ProjectDepartmentService $projectDepartmentService;
     protected DelayRegisterService $delayRegisterService;
     protected FinancialImpactService $financialImpactService;
+    protected UserScopeService $userScope;
 
     public function __construct(
         AuditTrailService $auditTrail,
         ProjectDepartmentService $projectDepartmentService,
         DelayRegisterService $delayRegisterService,
-        FinancialImpactService $financialImpactService
+        FinancialImpactService $financialImpactService,
+        UserScopeService $userScope
     ) {
         $this->auditTrail = $auditTrail;
         $this->projectDepartmentService = $projectDepartmentService;
         $this->delayRegisterService = $delayRegisterService;
         $this->financialImpactService = $financialImpactService;
+        $this->userScope = $userScope;
+    }
+
+    private function canAccessModule(): bool
+    {
+        return modulePermissionExists($this->module)
+            || permissionexists('spoc_department_access') === '1';
+    }
+
+    private function canAccessProject(int $projectId): bool
+    {
+        if (modulePermissionExists($this->module)) {
+            return true;
+        }
+        if (!$this->userScope->isScopedUser()) {
+            return false;
+        }
+
+        $query = DB::table('tbl_projects as tp')
+            ->where('tp.id', $projectId)
+            ->where('tp.is_delete', 0);
+
+        return $this->userScope->applyProjectScope($query, 'tp')->exists();
     }
 
     public function wizard(Request $request, $id = 'new')
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canAccessModule()) {
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
@@ -51,6 +77,9 @@ class ProjectWizardController extends Controller
         if ($id !== 'new') {
             try {
                 $projectId = (int) Crypt::decrypt($id);
+                if (!$this->canAccessProject($projectId)) {
+                    return redirect(getProjectUrl('spoc-tasks-list'))->with('error', 'You do not have access to this project');
+                }
                 $project = DB::table('tbl_projects')->where('id', $projectId)->where('is_delete', 0)->first();
                 if (!$project) {
                     return redirect(getProjectUrl('projects-list'))->with('error', 'Project not found');
@@ -59,6 +88,10 @@ class ProjectWizardController extends Controller
             } catch (\Exception $e) {
                 return redirect(getProjectUrl('projects-list'))->with('error', 'Invalid project');
             }
+        }
+
+        if ($id === 'new' && !modulePermissionExists($this->module)) {
+            return redirect(getProjectUrl('spoc-tasks-list'))->with('error', 'You do not have permission to create projects');
         }
 
         $pageTitle = $project ? 'Project Wizard — ' . $project->project_code : 'New Project';
@@ -214,12 +247,19 @@ class ProjectWizardController extends Controller
                 return;
             }
 
-            $this->projectDepartmentService->updateDepartmentRow($pdId, [
+            $deptUpdate = [
                 'spoc_name' => trim($postData['spoc_name'] ?? ''),
                 'planned_start_date' => $this->nullableDate($postData['planned_start_date'] ?? ''),
                 'planned_end_date' => $this->nullableDate($postData['planned_end_date'] ?? ''),
                 'remarks' => trim($postData['remarks'] ?? ''),
-            ]);
+            ];
+            if (!empty($postData['spoc_user_id'])) {
+                $deptUpdate['spoc_user_id'] = (int) $postData['spoc_user_id'];
+            } elseif ($this->userScope->isScopedUser()) {
+                $deptUpdate['spoc_user_id'] = Auth::id();
+            }
+
+            $this->projectDepartmentService->updateDepartmentRow($pdId, $deptUpdate);
 
             $this->sendSuccessResponse('Department details saved', 'Update');
         } catch (\Exception $e) {
@@ -772,13 +812,25 @@ class ProjectWizardController extends Controller
         $typeLabel = $typeId ? DB::table('tbl_project_types')->where('id', $typeId)->value('type_name') : null;
         $zoneId = !empty($postData['zone_id']) ? (int) $postData['zone_id'] : null;
         $zoneName = ($zoneId && Schema::hasTable('tbl_zones')) ? DB::table('tbl_zones')->where('id', $zoneId)->value('zone_name') : null;
+        $locationId = !empty($postData['location_id']) ? (int) $postData['location_id'] : null;
+        $locationName = trim($postData['location'] ?? '');
+        if ($locationId && Schema::hasTable('tbl_locations')) {
+            $locRow = DB::table('tbl_locations')->where('id', $locationId)->where('is_delete', 0)->first();
+            if ($locRow) {
+                $locationName = $locRow->location_name;
+                if (!$zoneId) {
+                    $zoneId = (int) $locRow->zone_id;
+                    $zoneName = DB::table('tbl_zones')->where('id', $zoneId)->value('zone_name');
+                }
+            }
+        }
         $spoc = trim($postData['project_spoc_name'] ?? '');
 
         $data = [
             'project_code' => trim($postData['project_code']),
             'project_name' => trim($postData['project_name']),
             'project_scope' => trim($postData['project_scope'] ?? ''),
-            'location' => trim($postData['location'] ?? ''),
+            'location' => $locationName,
             'hospital_name' => trim($postData['hospital_name'] ?? ''),
             'contractor_name' => trim($postData['contractor_name'] ?? ''),
             'zone_id' => $zoneId,
@@ -794,6 +846,10 @@ class ProjectWizardController extends Controller
             'updated_by' => $userId,
             'updated_on' => current_datetime(),
         ];
+
+        if (Schema::hasColumn('tbl_projects', 'location_id')) {
+            $data['location_id'] = $locationId;
+        }
 
         if ($operation === 'Add') {
             $data['project_status'] = 'active';
