@@ -145,28 +145,28 @@ class DashboardAnalyticsService
 
         $projectIds = $this->scopedProjectIds();
         $projectQuery = DB::table('tbl_projects')->where('is_delete', 0);
-        if ($projectIds !== null) {
-            $projectQuery->whereIn('id', $projectIds ?: [0]);
-        }
+        $this->applyProjectIdFilter($projectQuery, 'id', $projectIds);
 
         $delayQuery = DB::table('tbl_delay_registers')->where('is_delete', 0);
         if ($projectIds !== null && Schema::hasTable('tbl_project_departments')) {
             $delayQuery->where(function ($q) use ($projectIds) {
-                $q->whereIn('project_id', $projectIds ?: [0])
+                if (empty($projectIds)) {
+                    $q->whereRaw('1 = 0');
+                    return;
+                }
+                $q->whereIn('project_id', $projectIds)
                     ->orWhereIn('project_department_id', function ($sub) use ($projectIds) {
                         $sub->select('id')
                             ->from('tbl_project_departments')
-                            ->whereIn('project_id', $projectIds ?: [0])
+                            ->whereIn('project_id', $projectIds)
                             ->where('is_delete', 0);
                     });
             });
         }
 
         $pdQuery = DB::table('tbl_project_departments')->where('is_delete', 0);
-        if ($projectIds !== null) {
-            $pdQuery->whereIn('project_id', $projectIds ?: [0]);
-        }
-        $pdQuery = $this->applyDepartmentScope($pdQuery);
+        $this->applyProjectIdFilter($pdQuery, 'project_id', $projectIds);
+        $this->applyDepartmentScope($pdQuery);
 
         $totalProjects = (clone $projectQuery)->count();
         $rollup = $this->getProjectRollupCounts();
@@ -268,8 +268,7 @@ class DashboardAnalyticsService
                 ->where('pd.is_delete', 0)
                 ->where('pd.department_status', 'delay')
                 ->when($this->scopedProjectIds() !== null, function ($q) {
-                    $ids = $this->scopedProjectIds() ?: [0];
-                    $q->whereIn('pd.project_id', $ids);
+                    $this->applyProjectIdFilter($q, 'pd.project_id', $this->scopedProjectIds());
                 })
                 ->tap(fn ($q) => $this->applyDepartmentScope($q, 'pd'))
                 ->select(DB::raw("d.$nameCol as label"), DB::raw('COUNT(*) as total'))
@@ -325,7 +324,9 @@ class DashboardAnalyticsService
         $rows = DB::table('tbl_project_departments')
             ->select('department_status', DB::raw('COUNT(*) as total'))
             ->where('is_delete', 0)
-            ->when($this->scopedProjectIds() !== null, fn ($q) => $q->whereIn('project_id', $this->scopedProjectIds() ?: [0]))
+            ->when($this->scopedProjectIds() !== null, function ($q) {
+                $this->applyProjectIdFilter($q, 'project_id', $this->scopedProjectIds());
+            })
             ->tap(fn ($q) => $this->applyDepartmentScope($q))
             ->groupBy('department_status')
             ->pluck('total', 'department_status');
@@ -350,7 +351,7 @@ class DashboardAnalyticsService
         $rollup = $this->getProjectRollupCounts();
         $onHoldQuery = DB::table('tbl_projects')->where('is_delete', 0)->where('project_status', 'on_hold');
         if ($this->scopedProjectIds() !== null) {
-            $onHoldQuery->whereIn('id', $this->scopedProjectIds() ?: [0]);
+            $this->applyProjectIdFilter($onHoldQuery, 'id', $this->scopedProjectIds());
         }
         $onHold = (int) $onHoldQuery->count();
 
@@ -460,11 +461,11 @@ class DashboardAnalyticsService
                         ->where('pd.department_status', 'delay');
                     $this->applyDepartmentScope($sub, 'pd');
                     if ($this->scopedProjectIds() !== null) {
-                        $sub->whereIn('pd.project_id', $this->scopedProjectIds() ?: [0]);
+                        $this->applyProjectIdFilter($sub, 'pd.project_id', $this->scopedProjectIds());
                     }
                 })
                 ->when($this->scopedProjectIds() !== null, function ($q) {
-                    $q->whereIn('dr.project_id', $this->scopedProjectIds() ?: [0]);
+                    $this->applyProjectIdFilter($q, 'dr.project_id', $this->scopedProjectIds());
                 })
                 ->count();
         }
@@ -853,7 +854,9 @@ class DashboardAnalyticsService
             ->where('pd.is_delete', 0)
             ->where('tp.is_delete', 0)
             ->where('pd.department_status', 'delay')
-            ->when($this->scopedProjectIds() !== null, fn ($q) => $q->whereIn('pd.project_id', $this->scopedProjectIds() ?: [0]))
+            ->when($this->scopedProjectIds() !== null, function ($q) {
+                $this->applyProjectIdFilter($q, 'pd.project_id', $this->scopedProjectIds());
+            })
             ->tap(fn ($q) => $this->applyProjectScope($q, 'tp'))
             ->tap(fn ($q) => $this->applyDepartmentScope($q, 'pd'))
             ->orderByDesc('pd.delay_days')
@@ -902,6 +905,21 @@ class DashboardAnalyticsService
         return $query->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
     }
 
+    /** Restrict a query to scoped project ids; empty scope yields no rows. */
+    private function applyProjectIdFilter($query, string $column, ?array $projectIds): void
+    {
+        if ($projectIds === null) {
+            return;
+        }
+
+        if (empty($projectIds)) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereIn($column, $projectIds);
+    }
+
     private function applyProjectScope($query, string $alias = 'tp'): void
     {
         if ($this->zoneFilter) {
@@ -910,7 +928,7 @@ class DashboardAnalyticsService
         $this->userScope->applyProjectScope($query, $alias);
     }
 
-    private function applyDepartmentScope($query, string $alias = 'pd'): void
+    private function applyDepartmentScope($query, string $alias = ''): void
     {
         if ($this->userScope->isScopedUser()) {
             $this->userScope->applyProjectDepartmentScope($query, $alias);
@@ -931,8 +949,8 @@ class DashboardAnalyticsService
 
         $labels = [];
         $projects = [];
-        $delayedProjects = [];
-        $departmentsDelayed = [];
+        $delayed_projects = [];
+        $departments_delayed = [];
 
         foreach ($zones as $zone) {
             if ($this->zoneFilter && (int) $zone->id !== $this->zoneFilter) {
@@ -975,8 +993,8 @@ class DashboardAnalyticsService
                 $deptDelayedCount = (int) $deptQuery->count();
             }
 
-            $delayedProjects[] = $delayedCount;
-            $departmentsDelayed[] = $deptDelayedCount;
+            $delayed_projects[] = $delayedCount;
+            $departments_delayed[] = $deptDelayedCount;
         }
 
         return compact('labels', 'projects', 'delayed_projects', 'departments_delayed');

@@ -15,6 +15,11 @@ class UserScopeService
             return false;
         }
 
+        // Full project access always wins — admins/managers are never department-scoped.
+        if (permissionexists('projects') === '1') {
+            return false;
+        }
+
         if (permissionexists('spoc_department_access') === '1') {
             return true;
         }
@@ -62,6 +67,9 @@ class UserScopeService
         $userId = (int) Auth::id();
 
         return $query->where(function ($q) use ($deptIds, $userId, $projectAlias) {
+            $hasSpocColumn = Schema::hasTable('tbl_project_departments')
+                && Schema::hasColumn('tbl_project_departments', 'spoc_user_id');
+
             if (!empty($deptIds) && Schema::hasTable('tbl_project_departments')) {
                 $q->whereExists(function ($sub) use ($deptIds, $projectAlias) {
                     $sub->select(DB::raw(1))
@@ -72,20 +80,28 @@ class UserScopeService
                 });
             }
 
-            if (Schema::hasTable('tbl_project_departments') && Schema::hasColumn('tbl_project_departments', 'spoc_user_id')) {
-                $q->orWhereExists(function ($sub) use ($userId, $projectAlias) {
+            if ($hasSpocColumn) {
+                $spocExists = function ($sub) use ($userId, $projectAlias) {
                     $sub->select(DB::raw(1))
                         ->from('tbl_project_departments as pd2')
                         ->whereColumn('pd2.project_id', $projectAlias . '.id')
                         ->where('pd2.is_delete', 0)
                         ->where('pd2.spoc_user_id', $userId);
-                });
+                };
+
+                if (!empty($deptIds)) {
+                    $q->orWhereExists($spocExists);
+                } else {
+                    $q->whereExists($spocExists);
+                }
+            } elseif (empty($deptIds)) {
+                $q->whereRaw('1 = 0');
             }
         });
     }
 
     /** Scope project_department rows for SPOC task views. */
-    public function applyProjectDepartmentScope(Builder $query, string $pdAlias = 'pd'): Builder
+    public function applyProjectDepartmentScope(Builder $query, string $pdAlias = ''): Builder
     {
         if (!$this->isScopedUser()) {
             return $query;
@@ -93,15 +109,29 @@ class UserScopeService
 
         $deptIds = $this->getAssignedDepartmentIds();
         $userId = (int) Auth::id();
+        $hasSpocColumn = Schema::hasTable('tbl_project_departments')
+            && Schema::hasColumn('tbl_project_departments', 'spoc_user_id');
 
-        return $query->where(function ($q) use ($deptIds, $userId, $pdAlias) {
+        return $query->where(function ($q) use ($deptIds, $userId, $pdAlias, $hasSpocColumn) {
             if (!empty($deptIds)) {
-                $q->whereIn($pdAlias . '.department_id', $deptIds);
+                $q->whereIn($this->qualify($pdAlias, 'department_id'), $deptIds);
             }
-            if (Schema::hasColumn('tbl_project_departments', 'spoc_user_id')) {
-                $q->orWhere($pdAlias . '.spoc_user_id', $userId);
+
+            if ($hasSpocColumn) {
+                if (!empty($deptIds)) {
+                    $q->orWhere($this->qualify($pdAlias, 'spoc_user_id'), $userId);
+                } else {
+                    $q->where($this->qualify($pdAlias, 'spoc_user_id'), $userId);
+                }
+            } elseif (empty($deptIds)) {
+                $q->whereRaw('1 = 0');
             }
         });
+    }
+
+    private function qualify(string $alias, string $column): string
+    {
+        return $alias === '' ? $column : "{$alias}.{$column}";
     }
 
     public function syncUserDepartments(int $userId, array $departmentIds): void
