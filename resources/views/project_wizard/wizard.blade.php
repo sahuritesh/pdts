@@ -27,10 +27,21 @@
     <div class="col-lg-12">
         <div class="card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="card-title mb-0">{{ $pageTitle }}</h4>
-                    <a href="{{ getProjectUrl('projects-list') }}" class="text-muted small"><i class="ri-arrow-left-line"></i> Back to projects</a>
-                </div>
+               <div class="d-flex justify-content-between align-items-center mb-3">
+
+    <h4 class="page-heading mb-0">
+        <span class="page-heading-icon">
+            <i class="ri-building-2-line"></i>
+        </span>
+        {{ $pageTitle }}
+    </h4>
+
+    <a href="{{ getProjectUrl('projects-list') }}" class="back-project-btn">
+        <i class="ri-arrow-left-line"></i>
+        Back to Projects
+    </a>
+
+</div>
 
                 <input type="hidden" id="hdnForeignKeyId" value="{{ $projectId }}">
                 <a id="commonActionButton" href="{{ getProjectUrl('projects-list') }}" style="display:none"></a>
@@ -40,15 +51,15 @@
                         <ul role="tablist">
                             <li role="tab" class="first customWizard customWizard-0 @if($initialStep === 0) current @else disabled @endif"
                                 @if($enableClick) onclick="enableDisableSections(0)" @endif>
-                                <a class="customWizardSteps"><span class="number">1.</span> General</a>
+                                <a class="customWizardSteps"><span class="number"></span> General</a>
                             </li>
                             <li role="tab" class="customWizard customWizard-1 @if($initialStep === 1) current @else disabled @endif"
                                 @if($enableClick) onclick="enableDisableSections(1)" @endif>
-                                <a class="customWizardSteps"><span class="number">2.</span> Departments</a>
+                                <a class="customWizardSteps"><span class="number"></span> Departments</a>
                             </li>
                             <li role="tab" class="customWizard customWizard-2 @if($initialStep === 2) current @else disabled @endif"
                                 @if($enableClick) onclick="enableDisableSections(2)" @endif>
-                                <a class="customWizardSteps"><span class="number">3.</span> Execution</a>
+                                <a class="customWizardSteps"><span class="number"></span> Execution</a>
                             </li>
                         </ul>
                     </div>
@@ -260,121 +271,233 @@
 
 @push('styles')
 <style>
-/* Project wizard — step nav (matches CI form-wizard pattern) */
-#basic-example.wizard {
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #e9ecef;
+/* ==========================================
+   MODERN DIRECTION WIZARD
+========================================== */
+
+#basic-example.wizard{
+    background:#fff;
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:25px;
 }
-#basic-example .steps > ul {
-    display: flex;
-    flex-wrap: wrap;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    gap: 0;
+
+#basic-example .steps > ul{
+    display:flex;
+    gap:15px;
+    list-style:none;
+    padding:0;
+    margin:0;
 }
-#basic-example .steps > ul > li {
-    flex: 1 1 0;
-    min-width: 0;
-    position: relative;
-    text-align: center;
+
+#basic-example .steps > ul > li{
+    flex:1;
+    position:relative;
 }
-#basic-example .steps > ul > li:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    top: 22px;
-    left: calc(50% + 28px);
-    right: calc(-50% + 28px);
-    height: 3px;
-    background: #d6dee8;
-    z-index: 0;
+
+/* Remove old line */
+
+#basic-example .steps > ul > li::after{
+    display:none !important;
 }
-#basic-example .steps > ul > li.current:not(:last-child)::after,
-#basic-example .steps > ul > li.stepsCompleted:not(:last-child)::after {
-    background: #49b96f;
+
+/* Step Card */
+
+#basic-example .steps > ul > li a.customWizardSteps{
+    position:relative;
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:16px 18px;
+
+    background:#f8fafc;
+
+    border:1px solid #e2e8f0;
+
+    border-radius:14px;
+
+    text-decoration:none;
+
+    color:#64748b;
+
+    font-weight:600;
+
+    min-height:72px;
+
+    transition:.3s;
 }
-#basic-example .steps > ul > li a.customWizardSteps {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 0.75rem 0.5rem 1rem;
-    color: #6c757d;
-    font-weight: 500;
-    text-decoration: none;
-    background: transparent;
-    position: relative;
-    z-index: 1;
+
+/* Arrow Direction */
+
+#basic-example .steps > ul > li:not(:last-child) a.customWizardSteps::after{
+    content:"➜";
+
+    position:absolute;
+
+    right:-22px;
+    top:50%;
+
+    transform:translateY(-50%);
+
+    width:32px;
+    height:32px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:50%;
+
+    background:#fff;
+
+    border:1px solid #e2e8f0;
+
+    color:#94a3b8;
+
+    z-index:10;
 }
-#basic-example .steps .number {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    line-height: 1;
-    margin: 0 auto 0.5rem;
-    border: 2px solid #b5c3cd;
-    color: #6c757d;
-    background: #fff;
-    border-radius: 50%;
-    font-size: 0.95rem;
-    font-weight: 600;
+
+/* Number */
+
+#basic-example .steps .number{
+    width:42px;
+    height:42px;
+
+    min-width:42px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:12px;
+
+    background:#fff;
+
+    border:1px solid #dbeafe;
+
+    color:#64748b;
+
+    font-size:20px;
+    font-weight:700;
+
+    margin:0;
 }
-#basic-example .steps > ul > li.current a {
-    color: #405189;
-    font-weight: 600;
+
+/* Hover */
+
+#basic-example .steps > ul > li:hover a.customWizardSteps{
+    transform:translateY(-2px);
+
+    border-color:#93c5fd;
+
+    background:#f8fbff;
 }
-#basic-example .steps > ul > li.current .number {
-    border-color: #405189;
-    background: #405189;
-    color: #fff;
+
+/* Current */
+
+#basic-example .steps > ul > li.current a.customWizardSteps{
+
+    background:linear-gradient(
+        135deg,
+        #1F8EF1,
+        #00A99D
+    );
+
+    border:none;
+
+    color:#fff;
+
+    box-shadow:
+        0 10px 25px rgba(31,142,241,.20);
 }
-#basic-example .steps > ul > li.stepsCompleted .number,
-#basic-example .steps > ul > li:not(.current):not(.disabled) .number {
-    border-color: #49b96f;
-    background: #49b96f;
-    color: #fff;
+
+#basic-example .steps > ul > li.current .number{
+
+    background:rgba(255,255,255,.18);
+
+    border:none;
+
+    color:#fff;
 }
-#basic-example .steps > ul > li.stepsCompleted a,
-#basic-example .steps > ul > li:not(.current):not(.disabled) a {
-    color: #2e7d4a;
+
+/* Completed */
+
+#basic-example .steps > ul > li.stepsCompleted a.customWizardSteps{
+
+    background:#ecfdf5;
+
+    border:1px solid #10b981;
+
+    color:#047857;
 }
-#basic-example .steps > ul > li.disabled a {
-    color: #adb5bd;
-    cursor: default;
+
+#basic-example .steps > ul > li.stepsCompleted .number{
+
+    background:#10b981;
+
+    color:#fff;
+
+    border:none;
 }
-#basic-example .steps > ul > li.disabled .number {
-    border-color: #dee2e6;
-    background: #f8f9fa;
-    color: #adb5bd;
+
+/* Completed Arrow */
+
+#basic-example .steps > ul > li.stepsCompleted a.customWizardSteps::after{
+    background:#10b981;
+    color:#fff;
+    border:none;
 }
-#basic-example .steps > ul > li.disabled:not([onclick]) {
-    pointer-events: none;
+
+/* Disabled */
+
+#basic-example .steps > ul > li.disabled .number{
+    background:#fff;
+    color:#94a3b8;
+    border-color:#e2e8f0;
 }
-#basic-example .steps > ul > li[onclick] {
-    cursor: pointer;
+
+#basic-example .steps > ul > li.disabled a{
+    color:#94a3b8;
 }
-@media (max-width: 767.98px) {
-    #basic-example .steps > ul {
-        flex-direction: column;
-        gap: 0.25rem;
+
+/* Mobile */
+
+@media(max-width:768px){
+
+    #basic-example .steps > ul{
+        flex-direction:column;
     }
-    #basic-example .steps > ul > li:not(:last-child)::after {
-        display: none;
+
+    #basic-example .steps > ul > li{
+        width:100%;
     }
-    #basic-example .steps > ul > li a.customWizardSteps {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        text-align: left;
-        padding: 0.5rem 0;
-    }
-    #basic-example .steps .number {
-        margin: 0;
-        flex-shrink: 0;
+
+    #basic-example .steps > ul > li a.customWizardSteps::after{
+        display:none;
     }
 }
+/* icon css */
+/* General */
+.customWizard-0 .number::before{
+    content:"📋";
+    margin-right:4px;
+}
+
+/* Departments */
+.customWizard-1 .number::before{
+    content:"🏢";
+    margin-right:4px;
+}
+
+/* Execution */
+.customWizard-2 .number::before{
+    content:"⚙️";
+    margin-right:4px;
+}
+/* End icon */
 
 /* Wizard footer buttons */
 .commonSections .wizard > .actions > ul {
@@ -409,108 +532,641 @@
     pointer-events: none;
     cursor: not-allowed;
 }
+/* ===================================
+   FORM SECTION
+=================================== */
 
-.dept-sortable li { cursor: move; }
-.dept-accordion-item.pending .accordion-button { pointer-events: none; opacity: .65; }
+.commonSections{
+    background:#fff;
 
-/* Department execution — right-side action cards */
-.dept-panel-actions {
-    background: #f8fafc;
-    border: 1px solid #e9ecef;
-    border-radius: 10px;
-    padding: 0.85rem;
-    height: 100%;
+    border:1px solid #e2e8f0;
+
+    border-radius:18px;
+
+    padding:25px;
+
+    margin-bottom:20px;
 }
-.dept-panel-actions-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #878a99;
-    margin: 0 0 0.65rem 0.25rem;
+
+/* Heading */
+
+.commonSections h5{
+    position:relative;
+
+    margin-bottom:25px;
+
+    padding-bottom:15px;
+
+    font-size:17px;
+
+    font-weight:700;
+
+    color:#1e293b;
+
+    border-bottom:1px solid #e2e8f0;
 }
-.dept-panel-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    text-align: left;
-    padding: 0.7rem 0.85rem;
-    margin-bottom: 0.5rem;
-    border: 1px solid #e3e8ef;
-    border-radius: 8px;
-    background: #fff;
-    color: #495057;
-    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
-    cursor: pointer;
+
+.commonSections h5::before{
+    content:"";
+
+    position:absolute;
+
+    left:0;
+    bottom:-1px;
+
+    width:70px;
+    height:3px;
+
+    border-radius:10px;
+
+    background:linear-gradient(
+        90deg,
+        #1F8EF1,
+        #00A99D
+    );
 }
-.dept-panel-card:last-child { margin-bottom: 0; }
-.dept-panel-card:hover:not(:disabled) {
-    border-color: #c5cdd8;
-    box-shadow: 0 4px 12px rgba(64, 81, 137, 0.1);
-    transform: translateY(-1px);
+
+/* Labels */
+
+.commonSections label{
+    font-size:13px;
+
+    font-weight:600;
+
+    color:#475569;
+
+    margin-bottom:7px;
+
+    display:block;
 }
-.dept-panel-card:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    background: #f1f3f5;
+
+/* Required Label */
+
+.required-label::after{
+    content:" *";
+
+    color:#ef4444;
 }
-.dept-panel-icon {
-    flex-shrink: 0;
-    width: 38px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    font-size: 1.15rem;
+
+/* Inputs */
+
+.commonSections .form-control,
+.commonSections .dd-select{
+
+    height:48px;
+
+    border:1px solid #dbe2ea;
+
+    border-radius:12px;
+
+    background:#fff;
+
+    font-size:14px;
+
+    transition:.3s ease;
 }
-.dept-panel-delay .dept-panel-icon {
-    background: rgba(247, 184, 75, 0.15);
-    color: #e8a317;
+
+.commonSections textarea.form-control{
+    height:auto;
+    min-height:110px;
 }
-.dept-panel-financial .dept-panel-icon {
-    background: rgba(20, 157, 164, 0.12);
-    color: #149da4;
+
+/* Focus */
+
+.commonSections .form-control:focus,
+.commonSections .dd-select:focus{
+
+    border-color:#1F8EF1;
+
+    box-shadow:
+        0 0 0 4px rgba(31,142,241,.08);
+
+    outline:none;
 }
-.dept-panel-attachments .dept-panel-icon {
-    background: rgba(64, 81, 137, 0.1);
-    color: #405189;
+
+/* Row Gap */
+
+.commonSections .row{
+    row-gap:10px;
 }
-.dept-panel-text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    line-height: 1.25;
+
+/* Input Hover */
+
+.commonSections .form-control:hover,
+.commonSections .dd-select:hover{
+    border-color:#93c5fd;
 }
-.dept-panel-text strong {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #343a40;
+
+/* Footer Buttons */
+
+.commonSections .wizard .actions{
+    margin-top:25px;
+
+    border-top:1px solid #e2e8f0;
+
+    padding-top:20px;
 }
-.dept-panel-text small {
-    font-size: 0.75rem;
-    color: #878a99;
-    margin-top: 0.15rem;
+
+.commonSections .wizard .actions ul{
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:10px;
+
+    padding:0;
+    margin:0;
+
+    list-style:none;
 }
-.dept-panel-arrow {
-    flex-shrink: 0;
-    font-size: 1.1rem;
-    color: #adb5bd;
-    transition: color 0.2s, transform 0.2s;
+
+.commonSections .wizard .actions a{
+
+    min-width:120px;
+
+    height:46px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:12px;
+
+    text-decoration:none;
+
+    font-weight:600;
+
+    transition:.3s ease;
 }
-.dept-panel-card:hover:not(:disabled) .dept-panel-arrow {
-    color: #405189;
-    transform: translateX(2px);
+
+/* Previous */
+
+.commonSections .wizard .actions li:first-child a{
+
+    background:#f8fafc;
+
+    color:#64748b !important;
+
+    border:1px solid #dbe2ea;
 }
-.dept-panel-delay:hover:not(:disabled) { border-color: rgba(232, 163, 23, 0.45); }
-.dept-panel-financial:hover:not(:disabled) { border-color: rgba(20, 157, 164, 0.45); }
-.dept-panel-attachments:hover:not(:disabled) { border-color: rgba(64, 81, 137, 0.35); }
-@media (max-width: 767.98px) {
-    .dept-panel-actions {
-        margin-top: 1rem;
+
+/* Next */
+
+.commonSections .wizard .actions li:last-child a{
+
+    background:linear-gradient(
+        135deg,
+        #1F8EF1,
+        #00A99D
+    );
+
+    color:#fff !important;
+
+    border:none;
+
+    box-shadow:
+        0 8px 20px rgba(31,142,241,.18);
+}
+
+.commonSections .wizard .actions li:last-child a:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 12px 25px rgba(31,142,241,.25);
+}
+
+/* Disabled */
+
+.commonSections .wizard .actions .disabled a{
+
+    background:#f1f5f9;
+
+    color:#94a3b8 !important;
+
+    border:1px solid #e2e8f0;
+}
+
+/* Mobile */
+
+@media(max-width:768px){
+
+    .commonSections{
+        padding:18px;
     }
+
+    .commonSections h5{
+        font-size:18px;
+    }
+
+    .commonSections .wizard .actions ul{
+        flex-direction:column;
+    }
+
+    .commonSections .wizard .actions a{
+        width:100%;
+    }
+}
+/* ======================================
+   MODERN DEPARTMENT ACCORDION
+====================================== */
+
+.dept-accordion-item{
+    border:none !important;
+
+    border-radius:16px !important;
+
+    overflow:hidden;
+
+    background:#fff;
+
+    margin-bottom:16px !important;
+
+    box-shadow:
+        0 2px 12px rgba(15,23,42,.05);
+
+    transition:.3s ease;
+}
+
+.dept-accordion-item:hover{
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 10px 25px rgba(15,23,42,.08);
+}
+
+/* Header */
+
+.dept-accordion-item .accordion-button{
+
+    background:#fff;
+
+    padding:18px 22px;
+
+    border:none;
+
+    box-shadow:none;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    color:#1e293b;
+}
+
+.dept-accordion-item .accordion-button:not(.collapsed){
+
+    background:#f8fbff;
+
+    color:#0f172a;
+
+    box-shadow:none;
+}
+
+/* Number */
+
+.dept-accordion-item .accordion-button span:first-child{
+
+    width:34px;
+    height:34px;
+
+    border-radius:10px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:#eff6ff;
+
+    color:#2563eb;
+
+    font-size:13px;
+    font-weight:700;
+}
+
+/* Arrow */
+
+.accordion-button::after{
+    background-size:16px;
+}
+
+/* Body */
+
+.dept-accordion-item .accordion-body{
+
+    padding:22px;
+
+    border-top:1px solid #eef2f7;
+
+    background:#fff;
+}
+
+/* Description */
+
+.dept-accordion-item .text-muted.small{
+
+    background:#f8fafc;
+
+    padding:12px 15px;
+
+    border-radius:10px;
+
+    border-left:3px solid #2563eb;
+
+    margin-bottom:18px;
+}
+
+/* Status Badges */
+
+.badge{
+    border-radius:30px !important;
+
+    padding:7px 12px !important;
+
+    font-size:11px !important;
+
+    font-weight:600 !important;
+}
+
+/* Action Buttons */
+
+.btn-group-sm .btn{
+
+    border-radius:10px !important;
+
+    padding:8px 15px;
+
+    font-weight:600;
+
+    margin-right:8px;
+}
+
+/* Right Action Panel */
+
+.dept-panel-actions{
+
+    background:#f8fafc;
+
+    border:1px solid #e2e8f0;
+
+    border-radius:16px;
+
+    padding:18px;
+}
+
+.dept-panel-actions-label{
+
+    font-size:11px;
+
+    text-transform:uppercase;
+
+    letter-spacing:1px;
+
+    color:#64748b;
+
+    font-weight:700;
+
+    margin-bottom:15px;
+}
+
+/* Cards */
+
+.dept-panel-card{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    width:100%;
+
+    padding:14px;
+
+    margin-bottom:12px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:#fff;
+
+    transition:.3s ease;
+
+    box-shadow:
+        0 2px 10px rgba(15,23,42,.04);
+}
+
+.dept-panel-card:last-child{
+    margin-bottom:0;
+}
+
+.dept-panel-card:hover:not(:disabled){
+
+    transform:translateX(5px);
+
+    box-shadow:
+        0 8px 20px rgba(15,23,42,.08);
+}
+
+/* Icons */
+
+.dept-panel-icon{
+
+    width:48px;
+    height:48px;
+
+    border-radius:14px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:20px;
+}
+
+/* Delay */
+
+.dept-panel-delay .dept-panel-icon{
+
+    background:rgba(245,158,11,.12);
+
+    color:#f59e0b;
+}
+
+/* Financial */
+
+.dept-panel-financial .dept-panel-icon{
+
+    background:rgba(14,165,233,.12);
+
+    color:#0ea5e9;
+}
+
+/* Attachments */
+
+.dept-panel-attachments .dept-panel-icon{
+
+    background:rgba(99,102,241,.12);
+
+    color:#6366f1;
+}
+
+/* Text */
+
+.dept-panel-text strong{
+
+    display:block;
+
+    color:#0f172a;
+
+    font-size:14px;
+
+    font-weight:700;
+}
+
+.dept-panel-text small{
+
+    color:#64748b;
+
+    font-size:12px;
+}
+
+/* Arrow */
+
+.dept-panel-arrow{
+
+    margin-left:auto;
+
+    font-size:22px;
+
+    color:#94a3b8;
+
+    transition:.3s;
+}
+
+.dept-panel-card:hover .dept-panel-arrow{
+
+    color:#2563eb;
+
+    transform:translateX(4px);
+}
+
+/* Disabled */
+
+.dept-panel-card:disabled{
+
+    opacity:.55;
+
+    cursor:not-allowed;
+
+    background:#f1f5f9;
+}
+
+/* Responsive */
+
+@media(max-width:991px){
+
+    .dept-panel-actions{
+        margin-top:20px;
+    }
+
+    .dept-accordion-item .accordion-button{
+        padding:15px;
+    }
+
+    .dept-accordion-item .accordion-body{
+        padding:15px;
+    }
+}
+
+@media(max-width:576px){
+
+    .dept-panel-card{
+        padding:12px;
+    }
+
+    .dept-panel-icon{
+        width:42px;
+        height:42px;
+        font-size:18px;
+    }
+
+    .dept-panel-text strong{
+        font-size:13px;
+    }
+
+    .dept-panel-text small{
+        font-size:11px;
+    }
+}
+.page-heading{
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    font-size:18px;
+    font-weight:700;
+
+    color:#1e293b;
+}
+
+.page-heading-icon{
+
+    width:36px;
+    height:36px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:12px;
+
+    background:linear-gradient(
+        135deg,
+        #1F8EF1,
+        #00A99D
+    );
+
+    color:#fff;
+
+    font-size:16px;
+
+    box-shadow:
+        0 8px 20px rgba(31,142,241,.20);
+}
+
+.back-project-btn{
+
+    display:flex;
+    align-items:center;
+    gap:6px;
+
+    padding:8px 14px;
+
+    border-radius:10px;
+
+    background:#f8fafc;
+
+    border:1px solid #e2e8f0;
+
+    color:#64748b;
+
+    text-decoration:none;
+
+    font-size:13px;
+    font-weight:600;
+
+    transition:.3s ease;
+}
+
+.back-project-btn:hover{
+
+    background:#eff6ff;
+
+    border-color:#bfdbfe;
+
+    color:#2563eb;
 }
 </style>
 @endpush
