@@ -165,5 +165,17 @@ trait GridConfigTrait
 
         return array_merge($defaultConfig, $config);
     }
+
+    /**
+     * Build a sidelayout action link for DataTables grids (matches assets/js/common.js pattern).
+     */
+    protected function buildSideLayoutLink(string $url, string $title, string $iconClass = 'ri-edit-fill', ?string $tooltip = null): string
+    {
+        $tooltip = $tooltip ?? $title;
+        $urlJs = addslashes($url);
+        $titleJs = addslashes($title);
+
+        return '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $urlJs . '\', \'' . $titleJs . '\'); return false;" title="' . e($tooltip) . '"><i class="' . $iconClass . '"></i></a>';
+    }
 }
 

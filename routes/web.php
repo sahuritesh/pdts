@@ -62,6 +62,7 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::post('get_locations_by_zone', [LocationsController::class, 'get_locations_by_zone']);
 
     Route::get('spoc-tasks-list', [SpocTasksController::class, 'task_list']);
+    Route::match(array('GET', 'POST'), '/spoc-tasks/view/{id}', [SpocTasksController::class, 'task_detail']);
     Route::post('get_spoc_task_list', [SpocTasksController::class, 'get_spoc_task_list']);
 
     Route::get('projects-list', [ProjectsController::class, 'project_list']);

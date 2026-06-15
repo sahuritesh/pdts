@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -22,6 +23,155 @@ class ProjectDepartmentService
     public function departmentNameColumn(): string
     {
         return Schema::hasColumn($this->departmentsTable(), 'department_name') ? 'department_name' : 'category_name';
+    }
+
+    public function statusLabels(): array
+    {
+        return [
+            self::STATUS_PENDING => 'Pending',
+            self::STATUS_START => 'Ready to Start',
+            self::STATUS_IN_PROGRESS => 'In Progress',
+            self::STATUS_DELAY => 'Delayed',
+            self::STATUS_COMPLETED => 'Completed',
+        ];
+    }
+
+    public function statusFilterOptions(): array
+    {
+        return [
+            ['value' => self::STATUS_PENDING, 'label' => 'Pending'],
+            ['value' => self::STATUS_START, 'label' => 'Ready'],
+            ['value' => self::STATUS_IN_PROGRESS, 'label' => 'In Progress'],
+            ['value' => self::STATUS_DELAY, 'label' => 'Delayed'],
+            ['value' => self::STATUS_COMPLETED, 'label' => 'Completed'],
+        ];
+    }
+
+    public function statusBadgeHtml(?string $status): string
+    {
+        $map = [
+            self::STATUS_PENDING => ['Pending', 'badge-soft-secondary'],
+            self::STATUS_START => ['Ready', 'badge-soft-info'],
+            self::STATUS_IN_PROGRESS => ['In Progress', 'badge-soft-primary'],
+            self::STATUS_DELAY => ['Delayed', 'badge-soft-warning'],
+            self::STATUS_COMPLETED => ['Completed', 'badge-soft-success'],
+        ];
+        $info = $map[$status] ?? [ucfirst((string) $status), 'badge-soft-secondary'];
+
+        return '<label class="badge rounded-pill ' . $info[1] . '">' . e($info[0]) . '</label>';
+    }
+
+    /**
+     * Department workflow panels (delay, financial, attachments) — shared by wizard and SPOC task grid.
+     *
+     * @return array<string, array{route:string,title_prefix:string,icon:string,label:string,subtitle:string,css_class:string}>
+     */
+    public function workflowPanels(): array
+    {
+        return [
+            'delay' => [
+                'route' => 'projects/wizard/panel/delay',
+                'title_prefix' => 'Delay',
+                'icon' => 'ri-alarm-warning-line',
+                'label' => 'Delay Register',
+                'subtitle' => 'Log delays & mitigations',
+                'css_class' => 'dept-panel-delay',
+            ],
+            'financial' => [
+                'route' => 'projects/wizard/panel/financial',
+                'title_prefix' => 'Financial',
+                'icon' => 'ri-money-dollar-circle-line',
+                'label' => 'Financial Impact',
+                'subtitle' => 'Cost & budget impact',
+                'css_class' => 'dept-panel-financial',
+            ],
+            'attachments' => [
+                'route' => 'projects/wizard/panel/attachments',
+                'title_prefix' => 'Attachments',
+                'icon' => 'ri-attachment-2-line',
+                'label' => 'Attachments',
+                'subtitle' => 'Documents & files',
+                'css_class' => 'dept-panel-attachments',
+            ],
+        ];
+    }
+
+    public function panelUrl(string $type, string $encPdId): string
+    {
+        $panel = $this->workflowPanels()[$type] ?? null;
+        if (!$panel) {
+            return '';
+        }
+
+        return getProjectUrl($panel['route'] . '/' . $encPdId);
+    }
+
+    public function panelTitle(string $type, string $departmentName): string
+    {
+        $panel = $this->workflowPanels()[$type] ?? null;
+        if (!$panel) {
+            return $departmentName;
+        }
+
+        return $panel['title_prefix'] . ' — ' . $departmentName;
+    }
+
+    public function resolveDepartment($encryptedOrId, bool $withProjectContext = false): ?array
+    {
+        $id = is_numeric($encryptedOrId) ? (int) $encryptedOrId : null;
+        if (!$id) {
+            try {
+                $id = (int) Crypt::decrypt($encryptedOrId);
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        $nameCol = $this->departmentNameColumn();
+        $deptTable = $this->departmentsTable();
+
+        $query = DB::table('tbl_project_departments as pd')
+            ->join("$deptTable as d", 'd.id', '=', 'pd.department_id')
+            ->join('tbl_projects as tp', 'tp.id', '=', 'pd.project_id')
+            ->leftJoin('tbl_zones as tz', 'tz.id', '=', 'tp.zone_id')
+            ->where('pd.id', $id)
+            ->where('pd.is_delete', 0)
+            ->where('tp.is_delete', 0);
+
+        if (Schema::hasTable('tbl_locations')) {
+            $query->leftJoin('tbl_locations as tl', 'tl.id', '=', 'tp.location_id');
+        }
+
+        $columns = [
+            'pd.*',
+            DB::raw("d.$nameCol as department_name"),
+            'd.description as department_description',
+            'tp.project_code',
+            'tp.project_name',
+            'tp.hospital_name',
+            'tz.zone_name',
+            Schema::hasTable('tbl_locations') ? 'tl.location_name' : DB::raw("'' as location_name"),
+        ];
+
+        $row = $query->first($columns);
+        if (!$row) {
+            return null;
+        }
+
+        if (!$withProjectContext) {
+            return (array) $row;
+        }
+
+        return [
+            'department' => (array) $row,
+            'project' => [
+                'project_code' => $row->project_code,
+                'project_name' => $row->project_name,
+                'hospital_name' => $row->hospital_name,
+                'zone_name' => $row->zone_name ?? '',
+                'location_name' => $row->location_name ?? '',
+            ],
+        ];
     }
 
     public function getProjectDepartments(int $projectId): array

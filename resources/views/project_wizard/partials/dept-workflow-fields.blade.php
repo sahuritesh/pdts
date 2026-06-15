@@ -1,0 +1,65 @@
+@php
+    $pd = $pd ?? [];
+    $status = $status ?? ($pd['department_status'] ?? 'pending');
+    $showSpoc = $showSpoc ?? false;
+    $spocUsers = $spocUsers ?? [];
+    $formMarginClass = $formMarginClass ?? 'mb-2';
+    $actionsMarginClass = $actionsMarginClass ?? 'mb-2';
+    $saveButtonLabel = $saveButtonLabel ?? 'Save';
+    $showRemarks = $showRemarks ?? false;
+    $inProgressLabel = $inProgressLabel ?? 'In Progress';
+    $completeLabel = $completeLabel ?? 'Complete';
+@endphp
+@if(($status ?? 'pending') !== 'pending')
+<div class="dept-meta-form row g-2 {{ $formMarginClass }}" data-pd-id="{{ $pd['id'] }}">
+    <input type="hidden" name="project_department_id" value="{{ $pd['id'] }}">
+    @if($showSpoc)
+    <div class="col-md-6">
+        @include('project_wizard.partials.spoc-user-field', ['pd' => $pd, 'spocUsers' => $spocUsers])
+    </div>
+    <div class="col-md-3">
+        <label class="small text-muted">Planned start</label>
+        <input type="date" class="form-control form-control-sm" name="planned_start_date"
+            value="{{ !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '' }}">
+    </div>
+    <div class="col-md-3">
+        <label class="small text-muted">Planned end</label>
+        <input type="date" class="form-control form-control-sm" name="planned_end_date"
+            value="{{ !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '' }}">
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary save-dept-meta w-100">{{ $saveButtonLabel }}</button>
+    </div>
+    @else
+    <div class="col-md-6">
+        <label class="small text-muted">Planned start</label>
+        <input type="date" class="form-control form-control-sm" name="planned_start_date"
+            value="{{ !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '' }}">
+    </div>
+    <div class="col-md-6">
+        <label class="small text-muted">Planned end</label>
+        <input type="date" class="form-control form-control-sm" name="planned_end_date"
+            value="{{ !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '' }}">
+    </div>
+    @if($showRemarks)
+    <div class="col-12">
+        <label class="small text-muted">Remarks</label>
+        <textarea class="form-control form-control-sm" name="remarks" rows="2">{{ $pd['remarks'] ?? '' }}</textarea>
+    </div>
+    <div class="col-12">
+        <button type="button" class="btn btn-sm btn-outline-primary save-dept-meta">{{ $saveButtonLabel }}</button>
+    </div>
+    @else
+    <div class="col-md-2 d-flex align-items-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary save-dept-meta w-100">{{ $saveButtonLabel }}</button>
+    </div>
+    @endif
+    @endif
+</div>
+@if(in_array($status, ['start', 'in_progress', 'delay']))
+<div class="btn-group btn-group-sm {{ $actionsMarginClass }}">
+    <button type="button" class="btn btn-outline-primary dept-action" data-id="{{ $pd['id'] }}" data-action="in_progress">{{ $inProgressLabel }}</button>
+    <button type="button" class="btn btn-outline-success dept-action" data-id="{{ $pd['id'] }}" data-action="complete">{{ $completeLabel }}</button>
+</div>
+@endif
+@endif

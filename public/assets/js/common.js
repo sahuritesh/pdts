@@ -1249,6 +1249,53 @@ function clearSideLayout() {
     $('#dynamicSideLayoutContent').html('');
 }
 
+function bindDepartmentWorkflowHandlers(options) {
+    options = $.extend({
+        saveUrl: '',
+        statusUrl: '',
+        csrfToken: '',
+        reloadMode: 'page',
+        sidelayoutUrl: '',
+        onSuccess: null
+    }, options || {});
+
+    $('.save-dept-meta').off('click.deptWorkflow').on('click.deptWorkflow', function() {
+        var $btn = $(this);
+        var $block = $btn.closest('.dept-meta-form');
+        var payload = new FormData();
+        $block.find('input, select, textarea').each(function() {
+            if (this.name) {
+                payload.append(this.name, $(this).val());
+            }
+        });
+        payload.append('_token', options.csrfToken);
+        ajaxRequestWithPromise(options.saveUrl, payload, 'save_project_department', 1, '', $btn)
+            .then(function(res) { parseFormErrors(res, res.error == 0 ? 'success' : 'error'); });
+    });
+
+    $('.dept-action').off('click.deptWorkflow').on('click.deptWorkflow', function() {
+        var $btn = $(this);
+        var payload = 'project_department_id=' + $btn.data('id') + '&action=' + $btn.data('action') + '&_token=' + options.csrfToken;
+        ajaxRequestWithPromise(options.statusUrl, payload, 'update_department_status', 0, '', $btn)
+            .then(function(res) {
+                parseFormErrors(res, res.error == 0 ? 'success' : 'error');
+                if (res.error == 0) {
+                    if (typeof options.onSuccess === 'function') {
+                        options.onSuccess(res);
+                        return;
+                    }
+                    setTimeout(function() {
+                        if (options.reloadMode === 'sidelayout' && options.sidelayoutUrl) {
+                            openSideLayout({}, options.sidelayoutUrl, $('.sidelayoutTitle').text());
+                        } else if (options.reloadMode === 'page') {
+                            window.location.reload();
+                        }
+                    }, options.reloadMode === 'page' ? 600 : 500);
+                }
+            });
+    });
+}
+
 /**
  * Helper function to generate sidelayout edit link HTML
  * Usage: generateSideLayoutEditLink(url, title, iconClass)

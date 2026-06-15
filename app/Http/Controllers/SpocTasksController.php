@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Datatables_model;
 use App\Http\Traits\GridConfigTrait;
+use App\Http\Traits\WebResponseTrait;
+use App\Services\ProjectDepartmentService;
 use App\Services\UserScopeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -13,15 +16,17 @@ use Illuminate\Support\Facades\Schema;
 
 class SpocTasksController extends Controller
 {
-    use GridConfigTrait;
+    use GridConfigTrait, WebResponseTrait;
 
     public $module = 'spoc_tasks';
 
     protected UserScopeService $userScope;
+    protected ProjectDepartmentService $projectDepartmentService;
 
-    public function __construct(UserScopeService $userScope)
+    public function __construct(UserScopeService $userScope, ProjectDepartmentService $projectDepartmentService)
     {
         $this->userScope = $userScope;
+        $this->projectDepartmentService = $projectDepartmentService;
     }
 
     private function canAccess(): bool
@@ -37,16 +42,13 @@ class SpocTasksController extends Controller
         }
 
         $pageTitle = 'My Department Tasks';
-        $statusOptions = [
-            ['value' => 'pending', 'label' => 'Pending'],
-            ['value' => 'start', 'label' => 'Ready'],
-            ['value' => 'in_progress', 'label' => 'In Progress'],
-            ['value' => 'delay', 'label' => 'Delayed'],
-            ['value' => 'completed', 'label' => 'Completed'],
-        ];
+        $statusOptions = $this->projectDepartmentService->statusFilterOptions();
 
         $grid_data = $this->buildGridConfig([
-            'columns' => ['#', 'Project', 'Hospital', 'Zone', 'Location', 'Department', 'Status', 'Delay Days', 'Planned End', 'Actions'],
+            'columns' => array_merge(
+                ['#', 'Project', 'Hospital', 'Zone', 'Location', 'Department', 'Status', 'Delay Days', 'Planned End', 'Task'],
+                array_map(fn ($panel) => $panel['label'], $this->projectDepartmentService->workflowPanels())
+            ),
             'table' => 'tbl_project_departments',
             'dataurl' => 'get_spoc_task_list',
             'filters' => [
@@ -56,6 +58,53 @@ class SpocTasksController extends Controller
         ]);
 
         return view('gridviews.gridviews', compact('pageTitle', 'grid_data'));
+    }
+
+    public function task_detail(Request $request, $id = '')
+    {
+        if (!$this->canAccess()) {
+            if ($request->input('postKey') == 'sidelayoutContent') {
+                return response()->json(['error' => 1, 'msg' => 'You dont have permission to access this page']);
+            }
+            return redirect()->back()->with('error', 'You dont have permission to access this page');
+        }
+
+        try {
+            $pdId = (int) Crypt::decrypt($id);
+        } catch (\Exception $e) {
+            if ($request->input('postKey') == 'sidelayoutContent') {
+                return response()->json(['error' => 1, 'msg' => 'Invalid task']);
+            }
+            return redirect(getProjectUrl('spoc-tasks-list'))->with('error', 'Invalid task');
+        }
+
+        if (!$this->userScope->canAccessProjectDepartment($pdId)) {
+            if ($request->input('postKey') == 'sidelayoutContent') {
+                return response()->json(['error' => 1, 'msg' => 'You do not have access to this department task']);
+            }
+            return redirect(getProjectUrl('spoc-tasks-list'))->with('error', 'You do not have access to this department task');
+        }
+
+        $this->claimTaskIfUnassigned($pdId);
+
+        $detail = $this->projectDepartmentService->resolveDepartment($pdId, true);
+        if (!$detail) {
+            if ($request->input('postKey') == 'sidelayoutContent') {
+                return response()->json(['error' => 1, 'msg' => 'Task not found']);
+            }
+            return redirect(getProjectUrl('spoc-tasks-list'))->with('error', 'Task not found');
+        }
+
+        $pageTitle = 'My Task — ' . ($detail['department']['department_name'] ?? 'Department');
+        $data = array_merge($detail, [
+            'status_labels' => $this->projectDepartmentService->statusLabels(),
+        ]);
+
+        if ($request->input('postKey') == 'sidelayoutContent') {
+            return view('spoc_tasks.task-detail', compact('pageTitle', 'data'));
+        }
+
+        return redirect(getProjectUrl('spoc-tasks-list'));
     }
 
     public function get_spoc_task_list(Request $request)
@@ -140,21 +189,41 @@ class SpocTasksController extends Controller
                 }
 
                 $recordsFiltered++;
-                $projectId = Crypt::encrypt($recordData->project_id);
-                $wizardUrl = getProjectUrl('projects/wizard/' . $projectId);
+                $encPdId = Crypt::encrypt($recordData->id);
+                $deptName = $recordData->department_name ?? 'Department';
+                $status = $recordData->department_status ?? 'pending';
+                $isPending = $status === 'pending';
 
-                $recordListing[] = [
+                $row = [
                     $srNumber + 1,
                     e(trim(($recordData->project_code ?? '') . ' — ' . ($recordData->project_name ?? ''))),
                     e($recordData->hospital_name ?? ''),
                     e($recordData->zone_name ?? ''),
                     e($recordData->location_name ?? ''),
-                    e($recordData->department_name ?? ''),
-                    $this->formatStatusBadge($recordData->department_status),
+                    e($deptName),
+                    $this->projectDepartmentService->statusBadgeHtml($status),
                     (int) ($recordData->delay_days ?? 0),
                     !empty($recordData->planned_end_date) ? displayCustomDateTime($recordData->planned_end_date) : '',
-                    '<a href="' . $wizardUrl . '" title="Open project"><i class="ri-external-link-line"></i></a>',
+                    $this->buildSideLayoutLink(
+                        getProjectUrl('spoc-tasks/view/' . $encPdId),
+                        'Manage Task',
+                        'ri-edit-box-line',
+                        'Manage task'
+                    ),
                 ];
+
+                foreach ($this->projectDepartmentService->workflowPanels() as $type => $panel) {
+                    $row[] = $isPending
+                        ? '—'
+                        : $this->buildSideLayoutLink(
+                            $this->projectDepartmentService->panelUrl($type, $encPdId),
+                            $this->projectDepartmentService->panelTitle($type, $deptName),
+                            $panel['icon'],
+                            $panel['label']
+                        );
+                }
+
+                $recordListing[] = $row;
                 $srNumber++;
             }
 
@@ -175,17 +244,27 @@ class SpocTasksController extends Controller
         }
     }
 
-    private function formatStatusBadge(?string $status): string
+    private function claimTaskIfUnassigned(int $pdId): void
     {
-        $map = [
-            'pending' => ['Pending', 'badge-soft-secondary'],
-            'start' => ['Ready', 'badge-soft-info'],
-            'in_progress' => ['In Progress', 'badge-soft-primary'],
-            'delay' => ['Delayed', 'badge-soft-warning'],
-            'completed' => ['Completed', 'badge-soft-success'],
-        ];
-        $info = $map[$status] ?? [ucfirst((string) $status), 'badge-soft-secondary'];
+        if (!$this->userScope->isScopedUser()) {
+            return;
+        }
 
-        return '<label class="badge rounded-pill ' . $info[1] . '">' . e($info[0]) . '</label>';
+        $row = DB::table('tbl_project_departments')->where('id', $pdId)->where('is_delete', 0)->first();
+        if (!$row || !empty($row->spoc_user_id)) {
+            return;
+        }
+
+        $user = Auth::user();
+        $this->projectDepartmentService->updateDepartmentRow($pdId, [
+            'spoc_user_id' => Auth::id(),
+            'spoc_name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+        ]);
+
+        $deptIds = $this->userScope->getAssignedDepartmentIds();
+        if (!empty($deptIds) || (int) $row->department_id > 0) {
+            $merged = array_values(array_unique(array_merge($deptIds, [(int) $row->department_id])));
+            $this->userScope->syncUserDepartments((int) Auth::id(), $merged);
+        }
     }
 }

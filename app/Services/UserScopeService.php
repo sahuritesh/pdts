@@ -113,20 +113,58 @@ class UserScopeService
             && Schema::hasColumn('tbl_project_departments', 'spoc_user_id');
 
         return $query->where(function ($q) use ($deptIds, $userId, $pdAlias, $hasSpocColumn) {
-            if (!empty($deptIds)) {
-                $q->whereIn($this->qualify($pdAlias, 'department_id'), $deptIds);
+            if ($hasSpocColumn) {
+                $q->where($this->qualify($pdAlias, 'spoc_user_id'), $userId);
             }
 
-            if ($hasSpocColumn) {
-                if (!empty($deptIds)) {
-                    $q->orWhere($this->qualify($pdAlias, 'spoc_user_id'), $userId);
-                } else {
-                    $q->where($this->qualify($pdAlias, 'spoc_user_id'), $userId);
-                }
-            } elseif (empty($deptIds)) {
+            if (!empty($deptIds)) {
+                $q->orWhere(function ($sub) use ($deptIds, $pdAlias, $hasSpocColumn) {
+                    $sub->whereIn($this->qualify($pdAlias, 'department_id'), $deptIds);
+                    if ($hasSpocColumn) {
+                        $sub->whereNull($this->qualify($pdAlias, 'spoc_user_id'));
+                    }
+                });
+            }
+
+            if (!$hasSpocColumn && empty($deptIds)) {
                 $q->whereRaw('1 = 0');
             }
         });
+    }
+
+    public function canAccessProjectDepartment(int $projectDepartmentId): bool
+    {
+        if (!$this->isScopedUser()) {
+            return true;
+        }
+
+        if (!Schema::hasTable('tbl_project_departments')) {
+            return false;
+        }
+
+        $userId = (int) Auth::id();
+        $deptIds = $this->getAssignedDepartmentIds();
+
+        $row = DB::table('tbl_project_departments')
+            ->where('id', $projectDepartmentId)
+            ->where('is_delete', 0)
+            ->first(['department_id', 'spoc_user_id']);
+
+        if (!$row) {
+            return false;
+        }
+
+        if (Schema::hasColumn('tbl_project_departments', 'spoc_user_id') && (int) ($row->spoc_user_id ?? 0) === $userId) {
+            return true;
+        }
+
+        if (!empty($deptIds)
+            && in_array((int) $row->department_id, $deptIds, true)
+            && empty($row->spoc_user_id)) {
+            return true;
+        }
+
+        return false;
     }
 
     private function qualify(string $alias, string $column): string

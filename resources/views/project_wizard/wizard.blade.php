@@ -219,67 +219,20 @@
                                             <div class="col-md-8">
                                                 <p class="text-muted small">{{ $pd['department_description'] ?? '' }}</p>
                                                 @if(!$isPending)
-                                                <div class="dept-meta-form row g-2 mb-2" data-pd-id="{{ $pd['id'] }}">
-                                                    <input type="hidden" name="project_department_id" value="{{ $pd['id'] }}">
-                                                    <div class="col-md-6">
-                                                        @include('project_wizard.partials.spoc-user-field', ['pd' => $pd, 'spocUsers' => $spocUsers])
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <label class="small text-muted">Planned start</label>
-                                                        <input type="date" class="form-control form-control-sm" name="planned_start_date"
-                                                            value="{{ !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '' }}">
-                                                    </div>
-                                                    <div class="col-md-3">
-                                                        <label class="small text-muted">Planned end</label>
-                                                        <input type="date" class="form-control form-control-sm" name="planned_end_date"
-                                                            value="{{ !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '' }}">
-                                                    </div>
-                                                    <div class="col-md-2 d-flex align-items-end">
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary save-dept-meta w-100">Save</button>
-                                                    </div>
-                                                </div>
-                                                @endif
-                                                @if(in_array($status, ['start', 'in_progress', 'delay']))
-                                                <div class="btn-group btn-group-sm mb-2">
-                                                    <button type="button" class="btn btn-outline-primary dept-action" data-id="{{ $pd['id'] }}" data-action="in_progress">In Progress</button>
-                                                    <button type="button" class="btn btn-outline-success dept-action" data-id="{{ $pd['id'] }}" data-action="complete">Complete</button>
-                                                </div>
+                                                @include('project_wizard.partials.dept-workflow-fields', [
+                                                    'pd' => $pd,
+                                                    'status' => $status,
+                                                    'showSpoc' => true,
+                                                    'spocUsers' => $spocUsers,
+                                                ])
                                                 @endif
                                             </div>
                                             <div class="col-md-4">
-                                                <div class="dept-panel-actions">
-                                                    <p class="dept-panel-actions-label">Department actions</p>
-                                                    <button type="button" class="dept-panel-card wizard-panel-btn dept-panel-delay"
-                                                        data-url="{{ getProjectUrl('projects/wizard/panel/delay/' . $encPdId) }}"
-                                                        data-title="Delay — {{ $pd['department_name'] }}" @if($isPending) disabled @endif>
-                                                        <span class="dept-panel-icon"><i class="ri-alarm-warning-line"></i></span>
-                                                        <span class="dept-panel-text">
-                                                            <strong>Delay Register</strong>
-                                                            <small>Log delays &amp; mitigations</small>
-                                                        </span>
-                                                        <i class="ri-arrow-right-s-line dept-panel-arrow"></i>
-                                                    </button>
-                                                    <button type="button" class="dept-panel-card wizard-panel-btn dept-panel-financial"
-                                                        data-url="{{ getProjectUrl('projects/wizard/panel/financial/' . $encPdId) }}"
-                                                        data-title="Financial — {{ $pd['department_name'] }}" @if($isPending) disabled @endif>
-                                                        <span class="dept-panel-icon"><i class="ri-money-dollar-circle-line"></i></span>
-                                                        <span class="dept-panel-text">
-                                                            <strong>Financial Impact</strong>
-                                                            <small>Cost &amp; budget impact</small>
-                                                        </span>
-                                                        <i class="ri-arrow-right-s-line dept-panel-arrow"></i>
-                                                    </button>
-                                                    <button type="button" class="dept-panel-card wizard-panel-btn dept-panel-attachments"
-                                                        data-url="{{ getProjectUrl('projects/wizard/panel/attachments/' . $encPdId) }}"
-                                                        data-title="Attachments — {{ $pd['department_name'] }}" @if($isPending) disabled @endif>
-                                                        <span class="dept-panel-icon"><i class="ri-attachment-2-line"></i></span>
-                                                        <span class="dept-panel-text">
-                                                            <strong>Attachments</strong>
-                                                            <small>Documents &amp; files</small>
-                                                        </span>
-                                                        <i class="ri-arrow-right-s-line dept-panel-arrow"></i>
-                                                    </button>
-                                                </div>
+                                                @include('project_wizard.partials.dept-panel-actions', [
+                                                    'pd' => $pd,
+                                                    'encPdId' => $encPdId,
+                                                    'isPending' => $isPending,
+                                                ])
                                             </div>
                                         </div>
                                     </div>
@@ -584,29 +537,12 @@ function bindExecutionPanelHandlers() {
         if ($(this).prop('disabled')) return;
         openSideLayout({}, $(this).data('url'), $(this).data('title'));
     });
-    $('.dept-action').off('click').on('click', function() {
-        var $btn = $(this);
-        var payload = 'project_department_id=' + $btn.data('id') + '&action=' + $btn.data('action') + '&_token={{ csrf_token() }}';
-        ajaxRequestWithPromise("{{ getProjectUrl('update_department_status') }}", payload, 'update_department_status', 0, '', $btn)
-            .then(function(res) {
-                parseFormErrors(res, res.error == 0 ? 'success' : 'error');
-                if (res.error == 0) { setTimeout(function() { window.location.reload(); }, 600); }
-            });
-    });
 
-    $('.save-dept-meta').off('click').on('click', function() {
-        var $btn = $(this);
-        var $block = $btn.closest('.dept-meta-form');
-        var payload = new FormData();
-        $block.find('input, select, textarea').each(function() {
-            var name = this.name;
-            if (name) {
-                payload.append(name, $(this).val());
-            }
-        });
-        payload.append('_token', '{{ csrf_token() }}');
-        ajaxRequestWithPromise("{{ getProjectUrl('save_project_department') }}", payload, 'save_project_department', 1, '', $btn)
-            .then(function(res) { parseFormErrors(res, res.error == 0 ? 'success' : 'error'); });
+    bindDepartmentWorkflowHandlers({
+        saveUrl: "{{ getProjectUrl('save_project_department') }}",
+        statusUrl: "{{ getProjectUrl('update_department_status') }}",
+        csrfToken: '{{ csrf_token() }}',
+        reloadMode: 'page'
     });
 
     initSpocUserControls();

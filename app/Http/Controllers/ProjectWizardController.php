@@ -65,8 +65,28 @@ class ProjectWizardController extends Controller
         return $this->userScope->applyProjectScope($query, 'tp')->exists();
     }
 
+    private function canManageDepartmentWorkflow(): bool
+    {
+        return modulePermissionExists($this->module)
+            || permissionexists('spoc_department_access') === '1';
+    }
+
+    private function assertDepartmentAccess(int $projectDepartmentId): bool
+    {
+        if (modulePermissionExists($this->module)) {
+            return true;
+        }
+
+        return $this->userScope->canAccessProjectDepartment($projectDepartmentId);
+    }
+
     public function wizard(Request $request, $id = 'new')
     {
+        if ($this->userScope->hasOnlySpocAccess()) {
+            return redirect(getProjectUrl('spoc-tasks-list'))
+                ->with('error', 'Use My Department Tasks to manage your assigned work.');
+        }
+
         if (!$this->canAccessModule()) {
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
@@ -105,7 +125,7 @@ class ProjectWizardController extends Controller
             'zones' => $this->getZones(),
             'master_departments' => $this->getActiveDepartments(),
             'project_departments' => $projectId ? $this->projectDepartmentService->getProjectDepartments($projectId) : [],
-            'status_labels' => $this->departmentStatusLabels(),
+            'status_labels' => $this->projectDepartmentService->statusLabels(),
             'spoc_users' => $this->getSpocUserOptions(),
         ];
 
@@ -235,7 +255,7 @@ class ProjectWizardController extends Controller
 
     public function save_project_department(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canManageDepartmentWorkflow()) {
             $this->sendErrorResponse('Permission missing.', 1);
             return;
         }
@@ -246,6 +266,11 @@ class ProjectWizardController extends Controller
             $row = DB::table('tbl_project_departments')->where('id', $pdId)->where('is_delete', 0)->first();
             if (!$row) {
                 $this->sendErrorResponse('Department not found', 1);
+                return;
+            }
+
+            if (!$this->assertDepartmentAccess($pdId)) {
+                $this->sendErrorResponse('You do not have access to this department task', 1);
                 return;
             }
 
@@ -281,7 +306,7 @@ class ProjectWizardController extends Controller
 
     public function update_department_status(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canManageDepartmentWorkflow()) {
             $this->sendErrorResponse('Permission missing.', 1);
             return;
         }
@@ -295,6 +320,11 @@ class ProjectWizardController extends Controller
             $row = DB::table('tbl_project_departments')->where('id', $pdId)->where('is_delete', 0)->first();
             if (!$row) {
                 $this->sendErrorResponse('Department not found', 1);
+                return;
+            }
+
+            if (!$this->assertDepartmentAccess($pdId)) {
+                $this->sendErrorResponse('You do not have access to this department task', 1);
                 return;
             }
 
@@ -333,13 +363,13 @@ class ProjectWizardController extends Controller
 
     public function delay_panel(Request $request, $projectDepartmentId)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canManageDepartmentWorkflow()) {
             return $this->panelDenied($request);
         }
 
-        $ctx = $this->resolveProjectDepartment($projectDepartmentId);
-        if (!$ctx) {
-            return $this->panelError($request, 'Department not found');
+        $ctx = $this->projectDepartmentService->resolveDepartment($projectDepartmentId);
+        if (!$ctx || !$this->assertDepartmentAccess((int) $ctx['id'])) {
+            return $this->panelError($request, 'You do not have access to this department task');
         }
 
         $delays = DB::table('tbl_delay_registers')
@@ -372,13 +402,13 @@ class ProjectWizardController extends Controller
 
     public function financial_panel(Request $request, $projectDepartmentId)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canManageDepartmentWorkflow()) {
             return $this->panelDenied($request);
         }
 
-        $ctx = $this->resolveProjectDepartment($projectDepartmentId);
-        if (!$ctx) {
-            return $this->panelError($request, 'Department not found');
+        $ctx = $this->projectDepartmentService->resolveDepartment($projectDepartmentId);
+        if (!$ctx || !$this->assertDepartmentAccess((int) $ctx['id'])) {
+            return $this->panelError($request, 'You do not have access to this department task');
         }
 
         $impact = DB::table('tbl_delay_financial_impacts')
@@ -394,13 +424,13 @@ class ProjectWizardController extends Controller
 
     public function attachment_panel(Request $request, $projectDepartmentId)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canManageDepartmentWorkflow()) {
             return $this->panelDenied($request);
         }
 
-        $ctx = $this->resolveProjectDepartment($projectDepartmentId);
-        if (!$ctx) {
-            return $this->panelError($request, 'Department not found');
+        $ctx = $this->projectDepartmentService->resolveDepartment($projectDepartmentId);
+        if (!$ctx || !$this->assertDepartmentAccess((int) $ctx['id'])) {
+            return $this->panelError($request, 'You do not have access to this department task');
         }
 
         $attachments = DB::table('tbl_delay_attachments')
@@ -421,7 +451,7 @@ class ProjectWizardController extends Controller
 
     public function wizard_save_delay(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canManageDepartmentWorkflow()) {
             $this->sendErrorResponse('Permission missing.', 1);
             return;
         }
@@ -431,9 +461,9 @@ class ProjectWizardController extends Controller
             parse_str(json_decode($requestData['data'], true), $postData);
 
             $pdId = (int) ($postData['project_department_id'] ?? 0);
-            $ctx = $this->resolveProjectDepartment($pdId);
-            if (!$ctx) {
-                $this->sendErrorResponse('Invalid department', 1);
+            $ctx = $this->projectDepartmentService->resolveDepartment($pdId);
+            if (!$ctx || !$this->assertDepartmentAccess((int) $ctx['id'])) {
+                $this->sendErrorResponse('You do not have access to this department task', 1);
                 return;
             }
 
@@ -495,7 +525,7 @@ class ProjectWizardController extends Controller
 
     public function wizard_save_mitigation(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canManageDepartmentWorkflow()) {
             $this->sendErrorResponse('Permission missing.', 1);
             return;
         }
@@ -508,6 +538,12 @@ class ProjectWizardController extends Controller
             $action = trim($postData['mitigation_action'] ?? '');
             if ($delayId <= 0 || $action === '') {
                 $this->sendValidationErrorResponse('<li>Delay and mitigation action are required</li>');
+                return;
+            }
+
+            $delayRow = DB::table('tbl_delay_registers')->where('id', $delayId)->where('is_delete', 0)->first();
+            if (!$delayRow || !$this->assertDepartmentAccess((int) ($delayRow->project_department_id ?? 0))) {
+                $this->sendErrorResponse('You do not have access to this department task', 1);
                 return;
             }
 
@@ -542,7 +578,7 @@ class ProjectWizardController extends Controller
 
     public function wizard_save_financial(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canManageDepartmentWorkflow()) {
             $this->sendErrorResponse('Permission missing.', 1);
             return;
         }
@@ -552,9 +588,9 @@ class ProjectWizardController extends Controller
             parse_str(json_decode($requestData['data'], true), $postData);
 
             $pdId = (int) ($postData['project_department_id'] ?? 0);
-            $ctx = $this->resolveProjectDepartment($pdId);
-            if (!$ctx) {
-                $this->sendErrorResponse('Invalid department', 1);
+            $ctx = $this->projectDepartmentService->resolveDepartment($pdId);
+            if (!$ctx || !$this->assertDepartmentAccess((int) $ctx['id'])) {
+                $this->sendErrorResponse('You do not have access to this department task', 1);
                 return;
             }
 
@@ -597,16 +633,16 @@ class ProjectWizardController extends Controller
 
     public function wizard_save_attachment(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
+        if (!$this->canManageDepartmentWorkflow()) {
             $this->sendErrorResponse('Permission missing.', 1);
             return;
         }
 
         try {
             $pdId = (int) $request->input('project_department_id');
-            $ctx = $this->resolveProjectDepartment($pdId);
-            if (!$ctx) {
-                $this->sendErrorResponse('Invalid department', 1);
+            $ctx = $this->projectDepartmentService->resolveDepartment($pdId);
+            if (!$ctx || !$this->assertDepartmentAccess((int) $ctx['id'])) {
+                $this->sendErrorResponse('You do not have access to this department task', 1);
                 return;
             }
 
@@ -666,35 +702,6 @@ class ProjectWizardController extends Controller
             Log::error('Wizard save attachment: ' . $e->getMessage());
             $this->sendErrorResponse($e->getMessage(), 2);
         }
-    }
-
-    private function resolveProjectDepartment($encryptedOrId): ?array
-    {
-        $id = is_numeric($encryptedOrId) ? (int) $encryptedOrId : null;
-        if (!$id) {
-            try {
-                $id = (int) Crypt::decrypt($encryptedOrId);
-            } catch (\Exception $e) {
-                return null;
-            }
-        }
-
-        $nameCol = $this->projectDepartmentService->departmentNameColumn();
-        $deptTable = $this->projectDepartmentService->departmentsTable();
-
-        $row = DB::table('tbl_project_departments as pd')
-            ->join("$deptTable as d", 'd.id', '=', 'pd.department_id')
-            ->join('tbl_projects as p', 'p.id', '=', 'pd.project_id')
-            ->where('pd.id', $id)
-            ->where('pd.is_delete', 0)
-            ->first([
-                'pd.*',
-                DB::raw("d.$nameCol as department_name"),
-                'p.project_code',
-                'p.project_name',
-            ]);
-
-        return $row ? (array) $row : null;
     }
 
     private function panelView(Request $request, string $view, array $data)
@@ -779,17 +786,6 @@ class ProjectWizardController extends Controller
             ['value' => 'vendor_communication', 'label' => 'Vendor Communication'],
             ['value' => 'change_order', 'label' => 'Change Order'],
             ['value' => 'other', 'label' => 'Other'],
-        ];
-    }
-
-    private function departmentStatusLabels(): array
-    {
-        return [
-            ProjectDepartmentService::STATUS_PENDING => 'Pending',
-            ProjectDepartmentService::STATUS_START => 'Ready to Start',
-            ProjectDepartmentService::STATUS_IN_PROGRESS => 'In Progress',
-            ProjectDepartmentService::STATUS_DELAY => 'Delayed',
-            ProjectDepartmentService::STATUS_COMPLETED => 'Completed',
         ];
     }
 
