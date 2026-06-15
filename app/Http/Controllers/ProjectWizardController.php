@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
@@ -105,6 +106,7 @@ class ProjectWizardController extends Controller
             'master_departments' => $this->getActiveDepartments(),
             'project_departments' => $projectId ? $this->projectDepartmentService->getProjectDepartments($projectId) : [],
             'status_labels' => $this->departmentStatusLabels(),
+            'spoc_users' => $this->getSpocUserOptions(),
         ];
 
         return view('project_wizard.wizard', compact('pageTitle', 'data'));
@@ -248,15 +250,24 @@ class ProjectWizardController extends Controller
             }
 
             $deptUpdate = [
-                'spoc_name' => trim($postData['spoc_name'] ?? ''),
                 'planned_start_date' => $this->nullableDate($postData['planned_start_date'] ?? ''),
                 'planned_end_date' => $this->nullableDate($postData['planned_end_date'] ?? ''),
                 'remarks' => trim($postData['remarks'] ?? ''),
             ];
+
             if (!empty($postData['spoc_user_id'])) {
-                $deptUpdate['spoc_user_id'] = (int) $postData['spoc_user_id'];
+                $spocUserId = (int) $postData['spoc_user_id'];
+                $spocUser = DB::table('tbl_user')->where('id', $spocUserId)->where('status', ACTIVE)->first();
+                if ($spocUser) {
+                    $deptUpdate['spoc_user_id'] = $spocUserId;
+                    $deptUpdate['spoc_name'] = trim(($spocUser->first_name ?? '') . ' ' . ($spocUser->last_name ?? ''));
+                    $this->assignUserToDepartment($spocUserId, (int) $row->department_id);
+                }
+            } elseif (!empty($postData['spoc_name'])) {
+                $deptUpdate['spoc_name'] = trim($postData['spoc_name']);
             } elseif ($this->userScope->isScopedUser()) {
                 $deptUpdate['spoc_user_id'] = Auth::id();
+                $deptUpdate['spoc_name'] = trim((Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? ''));
             }
 
             $this->projectDepartmentService->updateDepartmentRow($pdId, $deptUpdate);
@@ -867,6 +878,169 @@ class ProjectWizardController extends Controller
     {
         $value = trim((string) $value);
         return $value !== '' ? $value : null;
+    }
+
+    public function get_spoc_users(Request $request)
+    {
+        if (!$this->canAccessModule()) {
+            return response()->json(['error' => 1, 'users' => []]);
+        }
+
+        return response()->json([
+            'error' => 0,
+            'users' => $this->getSpocUserOptions(),
+        ]);
+    }
+
+    public function wizard_create_spoc_user(Request $request)
+    {
+        if (!modulePermissionExists($this->module) && !modulePermissionExists('users')) {
+            $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
+            return;
+        }
+
+        try {
+            $postData = $request->all();
+            $departmentId = (int) ($postData['department_id'] ?? 0);
+            $projectDepartmentId = (int) ($postData['project_department_id'] ?? 0);
+
+            $errMessage = $this->validateSpocUserData($postData);
+            if ($errMessage !== '') {
+                $this->sendValidationErrorResponse($errMessage);
+                return;
+            }
+
+            $spocRoleId = $this->getSpocRoleId();
+            if (!$spocRoleId) {
+                $this->sendErrorResponse('Department SPOC role is not configured. Run roles seeder.', 1);
+                return;
+            }
+
+            $plainPassword = $postData['password'];
+            $userId = Auth::id();
+            $payload = [
+                'first_name' => trim($postData['first_name']),
+                'last_name' => trim($postData['last_name']),
+                'email_id' => trim($postData['email_id']),
+                'mobile_no' => trim($postData['mobile_no']),
+                'password' => Hash::make($plainPassword),
+                'user_type' => $spocRoleId,
+                'status' => ACTIVE,
+                'created_by' => $userId,
+                'created_on' => current_datetime(),
+                'updated_by' => $userId,
+                'updated_on' => current_datetime(),
+            ];
+
+            $newUserId = Common_model::addDataIntoTable('tbl_user', $payload);
+            if (!$newUserId) {
+                $this->sendErrorResponse('Unable to create user. Try again later.', 1);
+                return;
+            }
+
+            if ($departmentId > 0) {
+                $this->assignUserToDepartment((int) $newUserId, $departmentId);
+            }
+
+            if ($projectDepartmentId > 0) {
+                $spocName = trim($payload['first_name'] . ' ' . $payload['last_name']);
+                $this->projectDepartmentService->updateDepartmentRow($projectDepartmentId, [
+                    'spoc_user_id' => (int) $newUserId,
+                    'spoc_name' => $spocName,
+                ]);
+            }
+
+            $userOption = [
+                'id' => (int) $newUserId,
+                'label' => trim($payload['first_name'] . ' ' . $payload['last_name']) . ' — ' . $payload['email_id'],
+                'name' => trim($payload['first_name'] . ' ' . $payload['last_name']),
+            ];
+
+            $this->sendSuccessResponse('SPOC user created successfully', 'Add', '', [
+                'user' => $userOption,
+                'users' => $this->getSpocUserOptions(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Wizard create SPOC user: ' . $e->getMessage());
+            $this->sendErrorResponse($e->getMessage(), 2);
+        }
+    }
+
+    private function getSpocUserOptions(): array
+    {
+        if (!Schema::hasTable('tbl_user')) {
+            return [];
+        }
+
+        $query = DB::table('tbl_user')->where('status', ACTIVE)->orderBy('first_name')->orderBy('last_name');
+
+        return $query
+            ->get(['id', 'first_name', 'last_name', 'email_id'])
+            ->map(fn ($user) => [
+                'id' => (int) $user->id,
+                'label' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) . ' — ' . ($user->email_id ?? ''),
+                'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+            ])
+            ->all();
+    }
+
+    private function getSpocRoleId(): ?int
+    {
+        $roleId = DB::table('tbl_roles')
+            ->where('role_name', 'Department SPOC')
+            ->where('status', ACTIVE)
+            ->value('id');
+
+        return $roleId ? (int) $roleId : null;
+    }
+
+    private function assignUserToDepartment(int $userId, int $departmentId): void
+    {
+        if ($departmentId <= 0) {
+            return;
+        }
+
+        $existing = $this->userScope->getUserDepartmentIds($userId);
+        if (!in_array($departmentId, $existing, true)) {
+            $this->userScope->syncUserDepartments($userId, array_merge($existing, [$departmentId]));
+        }
+    }
+
+    private function validateSpocUserData(array $postData): string
+    {
+        $errMessage = '';
+        $fields = [
+            'first_name' => 'First name',
+            'last_name' => 'Last name',
+            'email_id' => 'Email',
+            'mobile_no' => 'Mobile number',
+            'password' => 'Password',
+        ];
+
+        foreach ($fields as $field => $label) {
+            if (trim($postData[$field] ?? '') === '') {
+                $errMessage .= '<li>Please enter ' . $label . '</li>';
+            }
+        }
+
+        if (!empty($postData['email_id'])) {
+            if (Common_model::check_valid_email($postData['email_id']) == '0') {
+                $errMessage .= '<li>Please enter a valid email</li>';
+            }
+            if (Common_model::check_exists('tbl_user', 'email_id', trim($postData['email_id']), '', []) > 0) {
+                $errMessage .= '<li>User email already exists</li>';
+            }
+        }
+
+        if (!empty($postData['mobile_no']) && Common_model::check_exists('tbl_user', 'mobile_no', trim($postData['mobile_no']), '', []) > 0) {
+            $errMessage .= '<li>Mobile number already exists</li>';
+        }
+
+        if (!empty($postData['password']) && Common_model::check_valid_password($postData['password']) == '0') {
+            $errMessage .= '<li>Password must be at least 8 characters with upper, lower, number and special character</li>';
+        }
+
+        return $errMessage;
     }
 
     private function parseWizardPost(Request $request): array

@@ -8,6 +8,7 @@
     $statusLabels = $data['status_labels'] ?? [];
     $projectTypes = $data['project_types'] ?? [];
     $zones = $data['zones'] ?? [];
+    $spocUsers = $data['spoc_users'] ?? [];
     $selectedDeptIds = array_column($projectDepartments, 'department_id');
     $selectedZoneId = $project['zone_id'] ?? '';
     $selectedLocationId = $project['location_id'] ?? '';
@@ -220,9 +221,8 @@
                                                 @if(!$isPending)
                                                 <div class="dept-meta-form row g-2 mb-2" data-pd-id="{{ $pd['id'] }}">
                                                     <input type="hidden" name="project_department_id" value="{{ $pd['id'] }}">
-                                                    <div class="col-md-4">
-                                                        <label class="small text-muted">SPOC</label>
-                                                        <input type="text" class="form-control form-control-sm" name="spoc_name" value="{{ $pd['spoc_name'] ?? '' }}">
+                                                    <div class="col-md-6">
+                                                        @include('project_wizard.partials.spoc-user-field', ['pd' => $pd, 'spocUsers' => $spocUsers])
                                                     </div>
                                                     <div class="col-md-3">
                                                         <label class="small text-muted">Planned start</label>
@@ -564,6 +564,7 @@
 
 <script>
 var projectDeptMaster = @json($masterDepartments);
+var spocUserOptions = @json($spocUsers);
 var projectWizardInitialStep = {{ $initialStep }};
 var projectWizardEnableClick = {{ $enableClick ? 'true' : 'false' }};
 
@@ -606,6 +607,97 @@ function bindExecutionPanelHandlers() {
         payload.append('_token', '{{ csrf_token() }}');
         ajaxRequestWithPromise("{{ getProjectUrl('save_project_department') }}", payload, 'save_project_department', 1, '', $btn)
             .then(function(res) { parseFormErrors(res, res.error == 0 ? 'success' : 'error'); });
+    });
+
+    initSpocUserControls();
+}
+
+function renderSpocSelectOptions($select, selectedId) {
+    if ($.fn.select2 && $select.hasClass('select2-hidden-accessible')) {
+        $select.select2('destroy');
+    }
+    var html = '<option value="">Select SPOC user</option>';
+    (spocUserOptions || []).forEach(function(user) {
+        var sel = (String(selectedId) === String(user.id)) ? ' selected' : '';
+        html += '<option value="' + user.id + '"' + sel + '>' + user.label + '</option>';
+    });
+    $select.html(html);
+    if ($.fn.select2) {
+        $select.select2({ width: '100%', placeholder: 'Select SPOC user' });
+    }
+}
+
+function refreshAllSpocSelects(selectUserId, $activeBlock) {
+    $('.spoc-user-select').each(function() {
+        var $sel = $(this);
+        var isActive = $activeBlock && $activeBlock.find('.spoc-user-select')[0] === this;
+        var val = (isActive && selectUserId) ? selectUserId : $sel.val();
+        renderSpocSelectOptions($sel, val);
+        $sel.val(val).trigger('change');
+    });
+}
+
+function initSpocUserControls() {
+    if ($.fn.select2) {
+        $('.spoc-user-select').each(function() {
+            if (!$(this).hasClass('select2-hidden-accessible')) {
+                $(this).select2({ width: '100%', placeholder: 'Select SPOC user' });
+            }
+        });
+    }
+
+    $('.spoc-user-select').off('change.spoc').on('change.spoc', function() {
+        var $opt = $(this).find('option:selected');
+        var name = '';
+        if ($(this).val()) {
+            var label = $opt.text() || '';
+            name = label.split(' — ')[0] || label;
+        }
+        $(this).closest('.spoc-user-block').find('.spoc-name-hidden').val(name);
+    });
+
+    $('.toggle-spoc-add-form').off('click').on('click', function() {
+        var $block = $(this).closest('.spoc-user-block');
+        $block.find('.spoc-add-form').slideToggle(150);
+    });
+
+    $('.cancel-spoc-add').off('click').on('click', function() {
+        $(this).closest('.spoc-add-form').slideUp(150);
+    });
+
+    $('.save-spoc-user').off('click').on('click', function() {
+        var $btn = $(this);
+        var $block = $(this).closest('.spoc-user-block');
+        var payload = new FormData();
+        payload.append('_token', '{{ csrf_token() }}');
+        payload.append('department_id', $block.data('department-id') || '');
+        payload.append('project_department_id', $block.data('pd-id') || '');
+        payload.append('first_name', $block.find('.spoc-add-first-name').val());
+        payload.append('last_name', $block.find('.spoc-add-last-name').val());
+        payload.append('email_id', $block.find('.spoc-add-email').val());
+        payload.append('mobile_no', $block.find('.spoc-add-mobile').val());
+        payload.append('password', $block.find('.spoc-add-password').val());
+
+        ajaxRequestWithPromise("{{ getProjectUrl('wizard_create_spoc_user') }}", payload, 'wizard_create_spoc_user', 1, '', $btn)
+            .then(function(res) {
+                if (res.error == 0 || res.error == '0') {
+                    if (res.users && res.users.length) {
+                        spocUserOptions = res.users;
+                    } else if (res.user) {
+                        spocUserOptions = spocUserOptions || [];
+                        var exists = spocUserOptions.some(function(u) { return String(u.id) === String(res.user.id); });
+                        if (!exists) {
+                            spocUserOptions.push(res.user);
+                        }
+                    }
+                    refreshAllSpocSelects(res.user ? res.user.id : '', $block);
+                    $block.find('.spoc-add-form').slideUp(150);
+                    $block.find('.spoc-add-first-name, .spoc-add-last-name, .spoc-add-email, .spoc-add-mobile, .spoc-add-password').val('');
+                    parseFormErrors(res, 'success');
+                } else {
+                    parseFormErrors(res, 'error');
+                }
+            });
     });
 }
 

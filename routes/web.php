@@ -77,6 +77,8 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::post('save_wizard_finish', [ProjectWizardController::class, 'save_wizard_finish']);
     Route::post('update_department_status', [ProjectWizardController::class, 'update_department_status']);
     Route::post('save_project_department', [ProjectWizardController::class, 'save_project_department']);
+    Route::post('get_spoc_users', [ProjectWizardController::class, 'get_spoc_users']);
+    Route::post('wizard_create_spoc_user', [ProjectWizardController::class, 'wizard_create_spoc_user']);
     Route::post('wizard_save_delay', [ProjectWizardController::class, 'wizard_save_delay']);
     Route::post('wizard_save_mitigation', [ProjectWizardController::class, 'wizard_save_mitigation']);
     Route::post('wizard_save_financial', [ProjectWizardController::class, 'wizard_save_financial']);
