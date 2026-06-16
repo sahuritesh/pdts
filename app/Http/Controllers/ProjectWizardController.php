@@ -49,6 +49,39 @@ class ProjectWizardController extends Controller
             || $this->userScope->hasMyProjectsAccess();
     }
 
+    /** Full projects admin or assigned Project SPOC editing their project. */
+    private function canManageWizardProject(int $projectId): bool
+    {
+        if (modulePermissionExists($this->module)) {
+            return true;
+        }
+
+        if ($projectId <= 0) {
+            return false;
+        }
+
+        return $this->userScope->hasMyProjectsAccess()
+            && $this->userScope->canEditProject($projectId);
+    }
+
+    private function denyWizardManageUnless(?int $projectId, bool $isCreate = false): bool
+    {
+        if ($isCreate) {
+            if (!$this->userScope->hasFullProjectsPermission()) {
+                $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
+                return true;
+            }
+            return false;
+        }
+
+        if (!$this->canManageWizardProject((int) $projectId)) {
+            $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
+            return true;
+        }
+
+        return false;
+    }
+
     private function canAccessProject(int $projectId): bool
     {
         if (modulePermissionExists($this->module)) {
@@ -141,13 +174,18 @@ class ProjectWizardController extends Controller
 
     public function save_wizard_step1(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
-            $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
-            return;
-        }
-
         try {
             $postData = $this->parseWizardPost($request);
+
+            $projectId = $postData['project_id'] ?? null;
+            if ($projectId === '' || $projectId === '0') {
+                $projectId = null;
+            }
+            $operation = ($projectId && $projectId !== '') ? 'Update' : 'Add';
+
+            if ($this->denyWizardManageUnless($projectId ? (int) $projectId : null, $operation === 'Add')) {
+                return;
+            }
 
             $errMessage = $this->validateProjectData($postData);
             if ($errMessage !== '') {
@@ -155,11 +193,6 @@ class ProjectWizardController extends Controller
                 return;
             }
 
-            $projectId = $postData['project_id'] ?? null;
-            if ($projectId === '' || $projectId === '0') {
-                $projectId = null;
-            }
-            $operation = ($projectId && $projectId !== '') ? 'Update' : 'Add';
             $payload = $this->prepareProjectData($postData, $operation);
             if ($operation === 'Add') {
                 $payload['wizard_step'] = 2;
@@ -199,16 +232,15 @@ class ProjectWizardController extends Controller
 
     public function save_wizard_departments(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
-            $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
-            return;
-        }
-
         try {
             $postData = $this->parseWizardPost($request);
             $projectId = (int) ($postData['project_id'] ?? 0);
             if ($projectId <= 0) {
                 $this->sendValidationErrorResponse('<li>Invalid project</li>');
+                return;
+            }
+
+            if ($this->denyWizardManageUnless($projectId)) {
                 return;
             }
 
@@ -239,16 +271,15 @@ class ProjectWizardController extends Controller
 
     public function save_wizard_finish(Request $request)
     {
-        if (!modulePermissionExists($this->module)) {
-            $this->sendErrorResponse('Permission missing.', 1);
-            return;
-        }
-
         try {
             $postData = $this->parseWizardPost($request);
             $projectId = (int) ($postData['project_id'] ?? 0);
             if ($projectId <= 0) {
                 $this->sendValidationErrorResponse('<li>Invalid project</li>');
+                return;
+            }
+
+            if ($this->denyWizardManageUnless($projectId)) {
                 return;
             }
 
@@ -917,15 +948,24 @@ class ProjectWizardController extends Controller
 
     public function wizard_create_spoc_user(Request $request)
     {
-        if (!modulePermissionExists($this->module) && !modulePermissionExists('users')) {
-            $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
-            return;
-        }
-
         try {
             $postData = $request->all();
-            $departmentId = (int) ($postData['department_id'] ?? 0);
             $projectDepartmentId = (int) ($postData['project_department_id'] ?? 0);
+            $projectId = (int) ($postData['project_id'] ?? 0);
+            if ($projectId <= 0 && $projectDepartmentId > 0) {
+                $projectId = (int) DB::table('tbl_project_departments')
+                    ->where('id', $projectDepartmentId)
+                    ->where('is_delete', 0)
+                    ->value('project_id');
+            }
+
+            if (!modulePermissionExists('users')
+                && !$this->canManageWizardProject($projectId)) {
+                $this->sendErrorResponse('Permission missing. Contact administrator.', 1);
+                return;
+            }
+
+            $departmentId = (int) ($postData['department_id'] ?? 0);
             $isProjectSpoc = ($postData['spoc_role'] ?? 'department') === 'project';
 
             $errMessage = $this->validateSpocUserData($postData);
