@@ -126,14 +126,19 @@
                                 <label>Planned Start</label>
                                 <input type="date" class="form-control" name="planned_start_date" value="{{ !empty($project['planned_start_date']) ? date('Y-m-d', strtotime($project['planned_start_date'])) : '' }}">
                             </div>
+
                             <div class="col-md-4 mb-2">
                                 <label>Planned Completion</label>
                                 <input type="date" class="form-control" name="planned_completion_date" value="{{ !empty($project['planned_completion_date']) ? date('Y-m-d', strtotime($project['planned_completion_date'])) : '' }}">
                             </div>
+<!--
                             <div class="col-md-4 mb-2">
                                 <label>Target Revised Completion</label>
                                 <input type="date" class="form-control" name="target_revised_completion_date" value="{{ !empty($project['target_revised_completion_date']) ? date('Y-m-d', strtotime($project['target_revised_completion_date'])) : '' }}">
                             </div>
+
+-->
+
                             <div class="col-md-12 mb-2">
                                 <label>Project Scope</label>
                                 <textarea class="form-control" name="project_scope" rows="3">{{ $project['project_scope'] ?? '' }}</textarea>
