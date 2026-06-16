@@ -4,7 +4,7 @@
     $departmentId = $pd['department_id'] ?? '';
     $projectDepartmentId = $pd['id'] ?? '';
 @endphp
-<div class="col-12 spoc-user-block mb-2" data-department-id="{{ $departmentId }}" data-pd-id="{{ $projectDepartmentId }}">
+<div class="col-12 spoc-user-block mb-2" data-spoc-role="department" data-department-id="{{ $departmentId }}" data-pd-id="{{ $projectDepartmentId }}">
   <div class="d-flex justify-content-between align-items-center mb-1">
     <label class="small text-muted mb-0">Department SPOC</label>
     <button type="button" class="btn btn-link btn-sm p-0 toggle-spoc-add-form">

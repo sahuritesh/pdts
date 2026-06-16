@@ -136,7 +136,7 @@ class LocationsController extends Controller
         );
 
         $grid_data = $this->buildGridConfig([
-            'columns' => ['#', 'Code', 'Location Name', 'Zone', 'Description', 'Status', 'Created On', 'Actions'],
+            'columns' => ['Actions', '#', 'Code', 'Location Name', 'Zone', 'Description', 'Status', 'Created On'],
             'table' => 'tbl_locations',
             'dataurl' => 'get_location_list',
             'addurl' => 'locations/add',
@@ -181,7 +181,7 @@ class LocationsController extends Controller
 
             $getRecordListing = Datatables_model::getDataTableResult(
                 ['tb.*', 'tz.zone_name'],
-                ['', 'tb.location_code', 'tb.location_name', 'tz.zone_name', 'tb.description', 'tb.status', 'tb.created_on'],
+                ['', '', 'tb.location_code', 'tb.location_name', 'tz.zone_name', 'tb.description', 'tb.status', 'tb.created_on'],
                 "$table as tb",
                 [
                     ['table_name' => 'tbl_zones as tz', 'condition' => 'tz.id=tb.zone_id', 'join_type' => 'left'],
@@ -208,6 +208,7 @@ class LocationsController extends Controller
                 }
 
                 $recordListing[] = [
+                    $this->wrapGridActions('<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Location\'); return false;" title="Edit"><i class="ri-edit-fill"></i></a>'),
                     $srNumber + 1,
                     e($recordData->location_code),
                     e($recordData->location_name),
@@ -215,7 +216,6 @@ class LocationsController extends Controller
                     e($desc),
                     $this->formatStatusBadge($recordData->status),
                     displayCustomDateTime($recordData->created_on),
-                    '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Location\'); return false;" title="Edit"><i class="ri-edit-fill"></i></a>',
                 ];
                 $srNumber++;
             }

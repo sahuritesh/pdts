@@ -67,6 +67,8 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
 
     Route::get('projects-list', [ProjectsController::class, 'project_list']);
     Route::post('get_project_list', [ProjectsController::class, 'get_project_list']);
+    Route::get('my-projects-list', [ProjectsController::class, 'my_project_list']);
+    Route::post('get_my_project_list', [ProjectsController::class, 'get_my_project_list']);
 
     Route::match(array('GET', 'POST'), '/projects/wizard/panel/delay/{projectDepartmentId}', [ProjectWizardController::class, 'delay_panel']);
     Route::match(array('GET', 'POST'), '/projects/wizard/panel/financial/{projectDepartmentId}', [ProjectWizardController::class, 'financial_panel']);

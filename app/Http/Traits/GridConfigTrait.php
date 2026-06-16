@@ -149,6 +149,9 @@ trait GridConfigTrait
      */
     protected function buildGridConfig($config)
     {
+        $columns = $config['columns'] ?? [];
+        $actionsFirst = !empty($columns) && in_array($columns[0], ['Actions', 'Action'], true);
+
         $defaultConfig = [
             'columns' => [],
             'table' => '',
@@ -157,13 +160,25 @@ trait GridConfigTrait
             'filters' => [],
             'page_length' => 0,
             'length_menu' => null,
-            'export_columns' => ':not(:last-child)',
-            'no_sort_columns' => [],
+            'export_columns' => $actionsFirst ? ':not(:first-child)' : ':not(:last-child)',
+            'no_sort_columns' => $actionsFirst ? ['Actions', 'Action'] : [],
             'server_export' => null,
             'reload_on_filter_change' => true,
         ];
 
         return array_merge($defaultConfig, $config);
+    }
+
+    /**
+     * Wrap grid action icons so they stay on one row in the Actions column.
+     */
+    protected function wrapGridActions(string $html): string
+    {
+        if (trim($html) === '') {
+            return '';
+        }
+
+        return '<span class="grid-actions">' . $html . '</span>';
     }
 
     /**

@@ -285,10 +285,10 @@ class UserManagement extends Controller
                     $action = '';
                     if (Auth::user()->user_type == ADMIN) {
                         $editUrl = getProjectUrl('user-management/edit/' . $id);
-                        $action = '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit User\'); return false;" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit User"><i class="ri-edit-fill"></i></a>&nbsp;';
+                        $action = '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit User\'); return false;" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit User"><i class="ri-edit-fill"></i></a>';
                         $action .= '<a href="#" class="openforgotpassword" data-id="' . $recordData->id . '" data-bs-toggle="tooltip" data-bs-placement="top" title="Forgot Password"><i class="ri-lock-unlock-fill"></i></a>';
                     }
-                    $row[] = $action;
+                    $row[] = $this->wrapGridActions($action);
                     $row[] = $srNumber + 1;
                     $row[] = trim($recordData->first_name . ' ' . $recordData->last_name);
                     $row[] = $recordData->email_id;

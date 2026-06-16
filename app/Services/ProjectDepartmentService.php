@@ -279,8 +279,36 @@ class ProjectDepartmentService
 
         $this->activateNextDepartment((int) $row->project_id);
         $this->syncProjectRollupStatus((int) $row->project_id);
+        $this->ensureWizardExecutionStep((int) $row->project_id);
 
         return ['error' => 0, 'msg' => 'Department marked completed'];
+    }
+
+    /** Keep wizard on Execution step once department workflow has started. */
+    public function ensureWizardExecutionStep(int $projectId): void
+    {
+        if ($projectId <= 0 || !Schema::hasColumn('tbl_projects', 'wizard_step')) {
+            return;
+        }
+
+        $hasDepartments = DB::table('tbl_project_departments')
+            ->where('project_id', $projectId)
+            ->where('is_delete', 0)
+            ->exists();
+
+        if (!$hasDepartments) {
+            return;
+        }
+
+        DB::table('tbl_projects')
+            ->where('id', $projectId)
+            ->where('is_delete', 0)
+            ->where('wizard_step', '<', 3)
+            ->update([
+                'wizard_step' => 3,
+                'updated_by' => Auth::id(),
+                'updated_on' => current_datetime(),
+            ]);
     }
 
     public function setDepartmentDelay(int $projectDepartmentId): void

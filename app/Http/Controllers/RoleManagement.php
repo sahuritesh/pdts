@@ -156,7 +156,7 @@ class RoleManagement extends Controller
         ];
 
         $grid_data = $this->buildGridConfig([
-            'columns' => ['#', 'Role Name', 'Status', 'Created On', 'Updated On', 'Actions'],
+            'columns' => ['Actions', '#', 'Role Name', 'Status', 'Created On', 'Updated On'],
             'table' => 'tbl_roles',
             'dataurl' => 'get_role_management_list',
             'addurl' => 'role-management/add',
@@ -182,7 +182,7 @@ class RoleManagement extends Controller
 
             $indexColumn = 'tb.id';
             $selectColumns = ['tb.*'];
-            $dataTableSortOrdering = ['', 'tb.role_name', 'tb.status', 'tb.created_on', 'tb.updated_on'];
+            $dataTableSortOrdering = ['', '', 'tb.role_name', 'tb.status', 'tb.created_on', 'tb.updated_on'];
             $table_name = "$table as tb";
 
             $joinsArray = [];
@@ -222,13 +222,13 @@ class RoleManagement extends Controller
                     $id = Crypt::encrypt($recordData->id);
                     $row = [];
 
+                    $editUrl = getProjectUrl('role-management/edit/' . $id);
+                    $row[] = $this->wrapGridActions('<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Role\'); return false;" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Role"><i class="ri-edit-fill"></i></a>');
                     $row[] = $srNumber + 1;
                     $row[] = $recordData->role_name;
                     $row[] = $this->formatStatusBadge($recordData->status);
                     $row[] = displayCustomDateTime($recordData->created_on);
                     $row[] = displayCustomDateTime($recordData->updated_on);
-                    $editUrl = getProjectUrl('role-management/edit/' . $id);
-                    $row[] = '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Role\'); return false;" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Role"><i class="ri-edit-fill"></i></a>';
 
                     $recordListing[] = $row;
                     $srNumber++;
@@ -270,9 +270,9 @@ class RoleManagement extends Controller
             'Project Tracking' => [
                 ['label' => 'Departments', 'value' => 'departments'],
                 ['label' => 'Locations', 'value' => 'locations'],
-                ['label' => 'Projects', 'value' => 'projects'],
-                ['label' => 'Department SPOC access (scoped data)', 'value' => 'spoc_department_access'],
-                ['label' => 'My department tasks', 'value' => 'spoc_tasks'],
+                ['label' => 'Projects (admin)', 'value' => 'projects'],
+                ['label' => 'My Projects', 'value' => 'my_projects'],
+                ['label' => 'My Department Tasks', 'value' => 'spoc_tasks'],
             ],
         ]);
     }
@@ -289,8 +289,8 @@ class RoleManagement extends Controller
             'departments' => ['delay_categories', 'delay_categories_list'],
             'locations' => [],
             'projects' => ['projects_list', 'projects_create', 'delay_registers', 'mitigations', 'financial_impacts', 'delay_attachments'],
+            'my_projects' => ['spoc_project_access', 'spoc_department_access'],
             'spoc_tasks' => [],
-            'spoc_department_access' => [],
         ];
     }
 
@@ -304,7 +304,7 @@ class RoleManagement extends Controller
             'departments',
             'locations',
             'projects',
-            'spoc_department_access',
+            'my_projects',
             'spoc_tasks',
         ];
     }

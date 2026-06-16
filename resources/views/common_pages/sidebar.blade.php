@@ -2,6 +2,17 @@
     @php
     $currentURL = \Request::fullUrl();
     $activeLink = explode('/',$currentURL);
+    $showFullProjects = permissionexists('projects') === '1';
+    $showMyProjects = (permissionexists('my_projects') === '1'
+        || permissionexists('spoc_project_access') === '1'
+        || permissionexists('spoc_department_access') === '1')
+        && !$showFullProjects;
+    $showMyTasks = permissionexists('spoc_tasks') === '1';
+    $masterDataVisible = modulePermissionExists('departments')
+        || modulePermissionExists('locations')
+        || $showFullProjects
+        || $showMyProjects
+        || $showMyTasks;
     @endphp
     <div data-simplebar class="h-100">
 
@@ -44,20 +55,7 @@
                 </li>
                 @php
                 }
-                $masterDataItems = [
-                    ['label' => 'Departments', 'value' => 'departments', 'route' => 'departments-list'],
-                    ['label' => 'Locations', 'value' => 'locations', 'route' => 'locations-list'],
-                    ['label' => 'Projects', 'value' => 'projects', 'route' => 'projects-list'],
-                ];
-                $masterDataVisible = false;
-                foreach ($masterDataItems as $item) {
-                    if (modulePermissionExists($item['value'])) {
-                        $masterDataVisible = true;
-                        break;
-                    }
-                }
-                $spocTasksVisible = modulePermissionExists('spoc_tasks') || permissionexists('spoc_department_access') === '1';
-                if ($masterDataVisible || $spocTasksVisible) {
+                if ($masterDataVisible) {
                 @endphp
                 <li>
                     <a href="javascript: void(0);" class="has-arrow waves-effect">
@@ -65,11 +63,15 @@
                         <span>Project Tracking</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        @php foreach ($masterDataItems as $value) {
-                            if (modulePermissionExists($value['value'])) { @endphp
-                        <li><a href="{{ getProjectUrl($value['route']) }}">{{ $value['label'] }}</a></li>
-                        @php } }
-                        if ($spocTasksVisible) { @endphp
+                        @php if (modulePermissionExists('departments')) { @endphp
+                        <li><a href="{{ getProjectUrl('departments-list') }}">Departments</a></li>
+                        @php } if (modulePermissionExists('locations')) { @endphp
+                        <li><a href="{{ getProjectUrl('locations-list') }}">Locations</a></li>
+                        @php } if ($showFullProjects) { @endphp
+                        <li><a href="{{ getProjectUrl('projects-list') }}">Projects</a></li>
+                        @php } if ($showMyProjects) { @endphp
+                        <li><a href="{{ getProjectUrl('my-projects-list') }}">My Projects</a></li>
+                        @php } if ($showMyTasks) { @endphp
                         <li><a href="{{ getProjectUrl('spoc-tasks-list') }}">My Department Tasks</a></li>
                         @php } @endphp
                     </ul>

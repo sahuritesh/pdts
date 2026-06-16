@@ -10,6 +10,10 @@ $gridConfigJson = json_encode($grid_data);
 @include('gridviews.search_form')
 @endif
 
+@if(!empty($readonly))
+<div class="alert alert-info py-2 mb-2">View only — use <strong>My Department Tasks</strong> to manage your department work.</div>
+@endif
+
 <div class="col-12">
     <div class="col-md-12 mb-2 text-right min-height-40">
         @if(isset($additional_buttons) && is_array($additional_buttons) && !empty($additional_buttons))
@@ -66,8 +70,13 @@ $gridConfigJson = json_encode($grid_data);
                 <thead>
                     <tr>
                         @foreach($grid_data['columns'] as $column)
-                        @if(isset($grid_data['no_sort_columns']) && in_array($column, $grid_data['no_sort_columns']))
-                        <th class="no-sort">{{ $column }}</th>
+                        @php
+                            $isActionsCol = in_array($column, ['Actions', 'Action'], true);
+                            $isNoSort = $isActionsCol
+                                || (isset($grid_data['no_sort_columns']) && in_array($column, $grid_data['no_sort_columns'], true));
+                        @endphp
+                        @if($isNoSort)
+                        <th class="no-sort{{ $isActionsCol ? ' grid-actions-col' : '' }}">{{ $column }}</th>
                         @else
                         <th>{{ $column }}</th>
                         @endif
@@ -110,7 +119,7 @@ $gridConfigJson = json_encode($grid_data);
 @push('scripts')
 <!-- CMS Common Utilities (for deleteRecord and other CMS functions) - Load first -->
 <script src="{{ getAssetUrl('js/cms/cms-common.js') }}?v=1.1"></script>
-<script src="{{ getAssetUrl('js/gridview-utility.js') }}"></script>
+<script src="{{ getAssetUrl('js/gridview-utility.js') }}?v=1.2"></script>
 @if(isset($additional_scripts) && is_array($additional_scripts) && !empty($additional_scripts))
 @foreach($additional_scripts as $script)
 @if(!empty($script))

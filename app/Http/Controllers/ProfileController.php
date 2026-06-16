@@ -284,7 +284,9 @@ class ProfileController extends Controller
     {
         try {
             $pageTitle = 'List of Notifications';
-            $grid_data['columns'] = ['#', 'Type', 'Notification', 'Status', 'Created On', 'Action'];
+            $grid_data['columns'] = ['Action', '#', 'Type', 'Notification', 'Status', 'Created On'];
+            $grid_data['no_sort_columns'] = ['Action'];
+            $grid_data['export_columns'] = ':not(:first-child)';
             $grid_data['table'] = 'tbl_notifications';
             $grid_data['dataurl'] = 'get_notification_list';
             $grid_data['selected_value'] = NOTIFYUNREAD;
@@ -361,7 +363,7 @@ class ProfileController extends Controller
 
             $indexColumn = 'tb.id';
             $selectColumns = ['tb.id', 'tb.type', 'tb.message', 'tb.status', 'tb.created_on', 'tt.status_name', 'tt.class', 'tb.notification_refer_id'];
-            $dataTableSortOrdering = ['tb.type', 'tb.message', 'tb.status', 'tb.created_on', 'tt.status_name', 'tt.class'];
+            $dataTableSortOrdering = ['', '', 'tb.type', 'tb.message', 'tb.status', 'tb.created_on'];
             $table_name = "$table as tb";
             $joinsArray[] = ['table_name' => 'tbl_status as tt', 'condition' => 'tt.id=tb.status', 'join_type' => 'left'];
 
@@ -405,12 +407,12 @@ class ProfileController extends Controller
                 $srNumber = $start;
                 foreach ($getRecordListing['data'] as $recordData) {
                     $record = [];
+                    $record[] = '<span class="grid-actions"><a href="view-notification/' . $recordData->type . '/' . $recordData->id . '/' . $recordData->notification_refer_id . '" ><i class="fa fa-eye"></i></a></span>';
                     $record[] = $srNumber + 1;
                     $record[] = $recordData->type;
                     $record[] = $recordData->message;
                     $record[] = "<label class='$recordData->class'>" . $recordData->status_name . "</label>";
                     $record[] = ($recordData->created_on) ? displayCustomDateTime($recordData->created_on) : '';
-                    $record[] = '<a href="view-notification/' . $recordData->type . '/' . $recordData->id . '/' . $recordData->notification_refer_id . '" ><i class="fa fa-eye"></i></a>&nbsp;';
                     $recordListing[] = $record;
                     $srNumber++;
                 }

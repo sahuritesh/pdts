@@ -144,7 +144,7 @@ class DepartmentsController extends Controller
         ];
 
         $grid_data = $this->buildGridConfig([
-            'columns' => ['#', 'Department Name', 'Description', 'Status', 'Created On', 'Actions'],
+            'columns' => ['Actions', '#', 'Department Name', 'Description', 'Status', 'Created On'],
             'table' => $this->tableName(),
             'dataurl' => 'get_department_list',
             'addurl' => 'departments/add',
@@ -185,7 +185,7 @@ class DepartmentsController extends Controller
 
             $getRecordListing = Datatables_model::getDataTableResult(
                 ['tb.*'],
-                ['', "tb.$nameCol", 'tb.description', 'tb.status', 'tb.created_on'],
+                ['', '', "tb.$nameCol", 'tb.description', 'tb.status', 'tb.created_on'],
                 "$table as tb",
                 [],
                 $wherecondition,
@@ -211,12 +211,12 @@ class DepartmentsController extends Controller
                 }
 
                 $recordListing[] = [
+                    $this->wrapGridActions('<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Department\'); return false;" title="Edit"><i class="ri-edit-fill"></i></a>'),
                     $srNumber + 1,
                     e($name),
                     e($desc),
                     $this->formatStatusBadge($recordData->status),
                     displayCustomDateTime($recordData->created_on),
-                    '<a href="javascript:void(0)" onclick="openSideLayout({}, \'' . $editUrl . '\', \'Edit Department\'); return false;" title="Edit"><i class="ri-edit-fill"></i></a>',
                 ];
                 $srNumber++;
             }

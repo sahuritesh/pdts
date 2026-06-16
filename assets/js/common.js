@@ -1249,6 +1249,26 @@ function clearSideLayout() {
     $('#dynamicSideLayoutContent').html('');
 }
 
+function isDeptWorkflowSuccess(res) {
+    return res && (res.error === 0 || res.error === '0');
+}
+
+function triggerDeptWorkflowReload(options) {
+    var delay = (options.reloadMode === 'page' || typeof options.onSuccess === 'function') ? 500 : 400;
+
+    setTimeout(function() {
+        if (typeof options.onSuccess === 'function') {
+            options.onSuccess();
+            return;
+        }
+        if (options.reloadMode === 'sidelayout' && options.sidelayoutUrl) {
+            openSideLayout({}, options.sidelayoutUrl, $('.sidelayoutTitle').text());
+        } else if (options.reloadMode === 'page') {
+            window.location.reload();
+        }
+    }, delay);
+}
+
 function bindDepartmentWorkflowHandlers(options) {
     options = $.extend({
         saveUrl: '',
@@ -1270,7 +1290,12 @@ function bindDepartmentWorkflowHandlers(options) {
         });
         payload.append('_token', options.csrfToken);
         ajaxRequestWithPromise(options.saveUrl, payload, 'save_project_department', 1, '', $btn)
-            .then(function(res) { parseFormErrors(res, res.error == 0 ? 'success' : 'error'); });
+            .then(function(res) {
+                parseFormErrors(res, isDeptWorkflowSuccess(res) ? 'success' : 'error');
+                if (isDeptWorkflowSuccess(res)) {
+                    triggerDeptWorkflowReload(options);
+                }
+            });
     });
 
     $('.dept-action').off('click.deptWorkflow').on('click.deptWorkflow', function() {
@@ -1278,19 +1303,9 @@ function bindDepartmentWorkflowHandlers(options) {
         var payload = 'project_department_id=' + $btn.data('id') + '&action=' + $btn.data('action') + '&_token=' + options.csrfToken;
         ajaxRequestWithPromise(options.statusUrl, payload, 'update_department_status', 0, '', $btn)
             .then(function(res) {
-                parseFormErrors(res, res.error == 0 ? 'success' : 'error');
-                if (res.error == 0) {
-                    if (typeof options.onSuccess === 'function') {
-                        options.onSuccess(res);
-                        return;
-                    }
-                    setTimeout(function() {
-                        if (options.reloadMode === 'sidelayout' && options.sidelayoutUrl) {
-                            openSideLayout({}, options.sidelayoutUrl, $('.sidelayoutTitle').text());
-                        } else if (options.reloadMode === 'page') {
-                            window.location.reload();
-                        }
-                    }, options.reloadMode === 'page' ? 600 : 500);
+                parseFormErrors(res, isDeptWorkflowSuccess(res) ? 'success' : 'error');
+                if (isDeptWorkflowSuccess(res)) {
+                    triggerDeptWorkflowReload(options);
                 }
             });
     });

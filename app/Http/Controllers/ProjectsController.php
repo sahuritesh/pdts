@@ -125,33 +125,90 @@ class ProjectsController extends Controller
 
     public function project_list(Request $request)
     {
-        if (!modulePermissionExists($this->module) && !$this->userScope->isScopedUser()) {
+        if (!$this->userScope->hasFullProjectsPermission()) {
+            if ($this->userScope->shouldUseMyProjectsListing()) {
+                return redirect(getProjectUrl('my-projects-list'));
+            }
+
             return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
         $pageTitle = 'Projects';
+        $columns = ['Actions', '#', 'Project ID', 'Project Name', 'Hospital', 'Type', 'Zone', 'Area', 'SPOC', 'Status', 'Planned End'];
+        $grid_data = $this->buildProjectGridConfig($columns, 'get_project_list', false);
+        $grid_data['addurl'] = 'projects/wizard/new';
+        $grid_data['addurl_redirect'] = true;
+        $grid_data['addurllabel'] = 'Add Project';
+
+        return view('gridviews.gridviews', compact('pageTitle', 'grid_data'));
+    }
+
+    public function my_project_list(Request $request)
+    {
+        if (!$this->userScope->shouldUseMyProjectsListing()) {
+            if ($this->userScope->hasFullProjectsPermission()) {
+                return redirect(getProjectUrl('projects-list'));
+            }
+
+            return redirect()->back()->with('error', 'You dont have permission to access this page');
+        }
+
+        $viewOnly = !$this->userScope->hasAssignedProjectsAsResponsible();
+        $pageTitle = $viewOnly ? 'My Projects (View Only)' : 'My Projects';
+        $columns = ['Actions', '#', 'Project ID', 'Project Name', 'Hospital', 'Type', 'Zone', 'Area', 'SPOC', 'Status', 'Planned End'];
+        $grid_data = $this->buildProjectGridConfig($columns, 'get_my_project_list', false);
+        $readonly = $viewOnly;
+
+        return view('gridviews.gridviews', compact('pageTitle', 'grid_data', 'readonly'));
+    }
+
+    public function get_project_list(Request $request)
+    {
+        if (!$this->userScope->hasFullProjectsPermission()) {
+            return response()->json([
+                'draw' => (int) ($request->draw ?? 0),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+            ]);
+        }
+
+        return $this->buildProjectListResponse($request, 'scoped', false);
+    }
+
+    public function get_my_project_list(Request $request)
+    {
+        if (!$this->userScope->shouldUseMyProjectsListing()) {
+            return response()->json([
+                'draw' => (int) ($request->draw ?? 0),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+            ]);
+        }
+
+        return $this->buildProjectListResponse($request, 'my_projects', false);
+    }
+
+    private function buildProjectGridConfig(array $columns, string $dataurl, bool $readonly): array
+    {
         $statusOptions = array_map(function ($s) {
             return ['value' => $s['value'], 'label' => $s['label']];
         }, $this->getProjectStatuses());
 
-        $grid_data = $this->buildGridConfig([
-            'columns' => ['#', 'Project ID', 'Project Name', 'Hospital', 'Type', 'Zone', 'Area', 'SPOC', 'Status', 'Planned End', 'Actions'],
+        return $this->buildGridConfig([
+            'columns' => $columns,
             'table' => 'tbl_projects',
-            'dataurl' => 'get_project_list',
-            'addurl' => 'projects/wizard/new',
-            'addurl_redirect' => true,
-            'addurllabel' => 'Add Project',
+            'dataurl' => $dataurl,
             'filters' => [
                 $this->buildTextFilter('search', 'Search project, hospital, contractor', 'Search', 'col-md-3'),
                 $this->buildTextFilter('hospital', 'Hospital name', 'Hospital', 'col-md-2'),
                 $this->buildSelectFilter('project_status', $statusOptions, 'Status', 'All statuses', true, true, 'col-md-2'),
             ],
         ]);
-
-        return view('gridviews.gridviews', compact('pageTitle', 'grid_data'));
     }
 
-    public function get_project_list(Request $request)
+    private function buildProjectListResponse(Request $request, string $scopeMode, bool $readonly)
     {
         try {
             $table = $request->table;
@@ -181,7 +238,7 @@ class ProjectsController extends Controller
 
             $getRecordListing = Datatables_model::getDataTableResult(
                 ['tb.*', 'tz.zone_name'],
-                ['', 'tb.project_code', 'tb.project_name', 'tb.hospital_name', 'tb.project_type_label', 'tz.zone_name', 'tb.area_facility', 'tb.project_spoc_name', 'tb.project_status', 'tb.planned_completion_date'],
+                ['', '', 'tb.project_code', 'tb.project_name', 'tb.hospital_name', 'tb.project_type_label', 'tz.zone_name', 'tb.area_facility', 'tb.project_spoc_name', 'tb.project_status', 'tb.planned_completion_date'],
                 "$table as tb",
                 [
                     ['table_name' => 'tbl_zones as tz', 'condition' => 'tz.id=tb.zone_id', 'join_type' => 'left'],
@@ -195,12 +252,7 @@ class ProjectsController extends Controller
                 ''
             );
 
-            $scopedProjectIds = null;
-            if ($this->userScope->isScopedUser()) {
-                $scopedQuery = DB::table('tbl_projects as tp')->where('tp.is_delete', 0);
-                $this->userScope->applyProjectScope($scopedQuery, 'tp');
-                $scopedProjectIds = $scopedQuery->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
-            }
+            $scopedProjectIds = $this->resolveScopedProjectIds($scopeMode);
 
             $recordsFiltered = 0;
             $recordListing = [];
@@ -212,22 +264,7 @@ class ProjectsController extends Controller
                 }
 
                 $recordsFiltered++;
-                $id = Crypt::encrypt($recordData->id);
-                $editUrl = getProjectUrl('projects/wizard/' . $id);
-
-                $recordListing[] = [
-                    $srNumber + 1,
-                    e($recordData->project_code),
-                    e($recordData->project_name),
-                    e($recordData->hospital_name ?? ''),
-                    e($recordData->project_type_label ?? ''),
-                    e($recordData->zone_name ?? $recordData->zone_department ?? ''),
-                    e($recordData->area_facility ?? ''),
-                    e($recordData->project_spoc_name ?? $recordData->responsibility_name ?? ''),
-                    $this->formatProjectStatusBadge($recordData->project_status),
-                    !empty($recordData->planned_completion_date) ? displayCustomDateTime($recordData->planned_completion_date) : '',
-                    '<a href="' . $editUrl . '" title="Open project wizard"><i class="ri-edit-fill"></i></a>',
-                ];
+                $recordListing[] = $this->formatProjectListRow($recordData, $srNumber + 1, $readonly);
                 $srNumber++;
             }
 
@@ -246,6 +283,56 @@ class ProjectsController extends Controller
                 'data' => [],
             ]);
         }
+    }
+
+    /** @return int[]|null */
+    private function resolveScopedProjectIds(string $scopeMode): ?array
+    {
+        if ($scopeMode === 'my_projects') {
+            if (!Auth::check()) {
+                return [];
+            }
+
+            $scopedQuery = DB::table('tbl_projects as tp')->where('tp.is_delete', 0);
+            $this->userScope->applyMyProjectsScope($scopedQuery, 'tp');
+
+            return $scopedQuery->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+        }
+
+        if (!$this->userScope->isScopedUser()) {
+            return null;
+        }
+
+        $scopedQuery = DB::table('tbl_projects as tp')->where('tp.is_delete', 0);
+        $this->userScope->applyProjectScope($scopedQuery, 'tp');
+
+        return $scopedQuery->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    private function formatProjectListRow(object $recordData, int $rowNumber, bool $readonly): array
+    {
+        $actionCell = '<span class="text-muted" title="View only">—</span>';
+        if (!$readonly) {
+            $id = Crypt::encrypt($recordData->id);
+            $editUrl = getProjectUrl('projects/wizard/' . $id);
+            if ($this->userScope->canEditProject((int) $recordData->id)) {
+                $actionCell = '<a href="' . $editUrl . '" title="Open project wizard"><i class="ri-edit-fill"></i></a>';
+            }
+        }
+
+        return [
+            $this->wrapGridActions($actionCell),
+            $rowNumber,
+            e($recordData->project_code),
+            e($recordData->project_name),
+            e($recordData->hospital_name ?? ''),
+            e($recordData->project_type_label ?? ''),
+            e($recordData->zone_name ?? $recordData->zone_department ?? ''),
+            e($recordData->area_facility ?? ''),
+            e($recordData->project_spoc_name ?? $recordData->responsibility_name ?? ''),
+            $this->formatProjectStatusBadge($recordData->project_status),
+            !empty($recordData->planned_completion_date) ? displayCustomDateTime($recordData->planned_completion_date) : '',
+        ];
     }
 
     private function getProjectTypes(): array

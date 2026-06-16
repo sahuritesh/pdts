@@ -299,6 +299,38 @@
         }
 
         /**
+         * Get index of Actions column (-1 if not found).
+         * @returns {number}
+         */
+        getActionsColumnIndex() {
+            const cols = this.config.gridConfig.columns || [];
+            return cols.findIndex((col) => col === 'Actions' || col === 'Action');
+        }
+
+        /**
+         * Build DataTables column definitions.
+         * @returns {Array}
+         */
+        buildColumnDefs() {
+            const columnDefs = [
+                { targets: 'no-sort', orderable: false }
+            ];
+            const actionsIdx = this.getActionsColumnIndex();
+
+            if (actionsIdx >= 0) {
+                columnDefs.push({
+                    targets: actionsIdx,
+                    orderable: false,
+                    className: 'grid-actions-cell'
+                });
+            } else {
+                columnDefs.push({ orderable: false, targets: -1 });
+            }
+
+            return columnDefs;
+        }
+
+        /**
          * Initialize DataTable
          */
         initializeDataTable() {
@@ -338,10 +370,7 @@
                     [10, 20, 50, 100, 500, 1000, 5000, 10000, -1],
                     [10, 20, 50, 100, 500, 1000, 5000, 10000, 'All']
                 ],
-                columnDefs: [
-                    { orderable: false, targets: -1 },
-                    { targets: 'no-sort', orderable: false }
-                ],
+                columnDefs: this.buildColumnDefs(),
                 buttons: [{
                     extend: 'excelHtml5',
                     text: '<i class="fa fa-file-excel">&nbsp;&nbsp;</i>',

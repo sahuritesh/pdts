@@ -45,7 +45,7 @@
     <link href="{{ getAssetUrl('css/icons.min.css') }}" rel="stylesheet" type="text/css" />
     <!-- App Css-->
     <link href="{{ getAssetUrl('css/app.min.css') }}" rel="stylesheet" type="text/css" />
-    <link href="{{ getAssetUrl('css/custom-css.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ getAssetUrl('css/custom-css.css') }}?v=2.4" rel="stylesheet" type="text/css" />
     <link href="{{ getAssetUrl('css/tinymce-content.css') }}?v=2.0" rel="stylesheet" type="text/css" />
     <!--autocomplete----->
 
@@ -382,7 +382,7 @@ Active
     <script src="{{ getAssetUrl('js/growl.js') }}"></script>
     <script src="{{ getAssetUrl('js/ajaxPromise.js') }}"></script>
     {{-- Bump querystring to bust browser cache when common utilities change --}}
-    <script src="{{ getAssetUrl('js/common.js') }}?v=2.1"></script>
+    <script src="{{ getAssetUrl('js/common.js') }}?v=2.2"></script>
     <script src="{{ getAssetUrl('js/custom_operations.js') }}"></script>
     <script src="{{ getAssetUrl('js/common-confirm.js') }}"></script>
     <!--confirm popup--->

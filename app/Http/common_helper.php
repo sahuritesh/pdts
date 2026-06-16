@@ -629,6 +629,32 @@ if (!function_exists('getProjectUrl')) {
     }
 }
 
+if (!function_exists('getProjectsListingUrl')) {
+    /**
+     * Sidebar/back-link target for project listings based on role.
+     */
+    function getProjectsListingUrl(): string
+    {
+        if (permissionexists('projects') === '1') {
+            return getProjectUrl('projects-list');
+        }
+        if (permissionexists('my_projects') === '1'
+            || permissionexists('spoc_project_access') === '1'
+            || permissionexists('spoc_department_access') === '1') {
+            return getProjectUrl('my-projects-list');
+        }
+
+        return getProjectUrl('projects-list');
+    }
+}
+
+if (!function_exists('hasFullProjectsPermission')) {
+    function hasFullProjectsPermission(): bool
+    {
+        return permissionexists('projects') === '1';
+    }
+}
+
 if (!function_exists('getProjectRootUrl')) {
     /**
      * Project root URL without trailing /public.

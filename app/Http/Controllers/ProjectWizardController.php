@@ -46,7 +46,7 @@ class ProjectWizardController extends Controller
     private function canAccessModule(): bool
     {
         return modulePermissionExists($this->module)
-            || permissionexists('spoc_department_access') === '1';
+            || $this->userScope->hasMyProjectsAccess();
     }
 
     private function canAccessProject(int $projectId): bool
@@ -54,21 +54,14 @@ class ProjectWizardController extends Controller
         if (modulePermissionExists($this->module)) {
             return true;
         }
-        if (!$this->userScope->isScopedUser()) {
-            return false;
-        }
 
-        $query = DB::table('tbl_projects as tp')
-            ->where('tp.id', $projectId)
-            ->where('tp.is_delete', 0);
-
-        return $this->userScope->applyProjectScope($query, 'tp')->exists();
+        return $this->userScope->canAccessProject($projectId);
     }
 
     private function canManageDepartmentWorkflow(): bool
     {
         return modulePermissionExists($this->module)
-            || permissionexists('spoc_department_access') === '1';
+            || $this->userScope->hasMyProjectsAccess();
     }
 
     private function assertDepartmentAccess(int $projectDepartmentId): bool
@@ -82,9 +75,13 @@ class ProjectWizardController extends Controller
 
     public function wizard(Request $request, $id = 'new')
     {
-        if ($this->userScope->hasOnlySpocAccess()) {
-            return redirect(getProjectUrl('spoc-tasks-list'))
-                ->with('error', 'Use My Department Tasks to manage your assigned work.');
+        if (!$this->userScope->hasFullProjectsPermission() && !$this->userScope->hasMyProjectsAccess()) {
+            if ($this->userScope->hasMyDepartmentTasksAccess()) {
+                return redirect(getProjectUrl('spoc-tasks-list'))
+                    ->with('error', 'Use My Department Tasks to manage your assigned work.');
+            }
+
+            return redirect()->back()->with('error', 'You dont have permission to access this page');
         }
 
         if (!$this->canAccessModule()) {
@@ -94,28 +91,37 @@ class ProjectWizardController extends Controller
         $projectId = null;
         $project = null;
         $step = 1;
+        $scopedFallbackUrl = getProjectsListingUrl();
 
         if ($id !== 'new') {
             try {
                 $projectId = (int) Crypt::decrypt($id);
                 if (!$this->canAccessProject($projectId)) {
-                    return redirect(getProjectUrl('spoc-tasks-list'))->with('error', 'You do not have access to this project');
+                    return redirect($scopedFallbackUrl)->with('error', 'You do not have access to this project');
+                }
+                if (!$this->userScope->canEditProject($projectId)) {
+                    return redirect($scopedFallbackUrl)->with('error', 'You have view-only access to this project. Use My Department Tasks for your work.');
                 }
                 $project = DB::table('tbl_projects')->where('id', $projectId)->where('is_delete', 0)->first();
                 if (!$project) {
-                    return redirect(getProjectUrl('projects-list'))->with('error', 'Project not found');
+                    return redirect(getProjectsListingUrl())->with('error', 'Project not found');
+                }
+                if ($request->query('step') === 'execution') {
+                    $this->projectDepartmentService->ensureWizardExecutionStep($projectId);
+                    $project = DB::table('tbl_projects')->where('id', $projectId)->where('is_delete', 0)->first();
                 }
                 $step = max(1, min(3, (int) ($project->wizard_step ?? 1)));
             } catch (\Exception $e) {
-                return redirect(getProjectUrl('projects-list'))->with('error', 'Invalid project');
+                return redirect(getProjectsListingUrl())->with('error', 'Invalid project');
             }
         }
 
-        if ($id === 'new' && !modulePermissionExists($this->module)) {
-            return redirect(getProjectUrl('spoc-tasks-list'))->with('error', 'You do not have permission to create projects');
+        if ($id === 'new' && !$this->userScope->hasFullProjectsPermission()) {
+            return redirect($scopedFallbackUrl)->with('error', 'You do not have permission to create projects');
         }
 
         $pageTitle = $project ? 'Project Wizard — ' . $project->project_code : 'New Project';
+        $responsibleUserId = $project ? (int) ($project->responsible_user_id ?? 0) : 0;
         $data = [
             'project' => $project ? (array) $project : null,
             'project_id' => $projectId,
@@ -126,7 +132,8 @@ class ProjectWizardController extends Controller
             'master_departments' => $this->getActiveDepartments(),
             'project_departments' => $projectId ? $this->projectDepartmentService->getProjectDepartments($projectId) : [],
             'status_labels' => $this->projectDepartmentService->statusLabels(),
-            'spoc_users' => $this->getSpocUserOptions(),
+            'spoc_users' => $this->getSpocUserOptions('Department SPOC'),
+            'project_spoc_users' => $this->getSpocUserOptions('Project SPOC', $responsibleUserId ?: null),
         ];
 
         return view('project_wizard.wizard', compact('pageTitle', 'data'));
@@ -154,7 +161,12 @@ class ProjectWizardController extends Controller
             }
             $operation = ($projectId && $projectId !== '') ? 'Update' : 'Add';
             $payload = $this->prepareProjectData($postData, $operation);
-            $payload['wizard_step'] = 2;
+            if ($operation === 'Add') {
+                $payload['wizard_step'] = 2;
+            } else {
+                $existingStep = (int) DB::table('tbl_projects')->where('id', $projectId)->value('wizard_step');
+                $payload['wizard_step'] = max(2, $existingStep);
+            }
 
             if ($operation === 'Add') {
                 $newId = Common_model::addDataIntoTable('tbl_projects', $payload);
@@ -296,6 +308,7 @@ class ProjectWizardController extends Controller
             }
 
             $this->projectDepartmentService->updateDepartmentRow($pdId, $deptUpdate);
+            $this->projectDepartmentService->ensureWizardExecutionStep((int) $row->project_id);
 
             $this->sendSuccessResponse('Department details saved', 'Update');
         } catch (\Exception $e) {
@@ -340,6 +353,7 @@ class ProjectWizardController extends Controller
                 }
                 $this->projectDepartmentService->updateDepartmentRow($pdId, $update);
                 $this->projectDepartmentService->syncProjectRollupStatus((int) $row->project_id);
+                $this->projectDepartmentService->ensureWizardExecutionStep((int) $row->project_id);
                 $this->sendSuccessResponse('Status updated', 'Update');
                 return;
             }
@@ -832,6 +846,13 @@ class ProjectWizardController extends Controller
             }
         }
         $spoc = trim($postData['project_spoc_name'] ?? '');
+        $spocUserId = !empty($postData['project_spoc_user_id']) ? (int) $postData['project_spoc_user_id'] : null;
+        if ($spocUserId) {
+            $spocUser = DB::table('tbl_user')->where('id', $spocUserId)->where('status', ACTIVE)->first();
+            if ($spocUser) {
+                $spoc = trim(($spocUser->first_name ?? '') . ' ' . ($spocUser->last_name ?? ''));
+            }
+        }
 
         $data = [
             'project_code' => trim($postData['project_code']),
@@ -853,6 +874,10 @@ class ProjectWizardController extends Controller
             'updated_by' => $userId,
             'updated_on' => current_datetime(),
         ];
+
+        if (Schema::hasColumn('tbl_projects', 'responsible_user_id')) {
+            $data['responsible_user_id'] = $spocUserId ?: null;
+        }
 
         if (Schema::hasColumn('tbl_projects', 'location_id')) {
             $data['location_id'] = $locationId;
@@ -882,9 +907,11 @@ class ProjectWizardController extends Controller
             return response()->json(['error' => 1, 'users' => []]);
         }
 
+        $roleName = ($request->input('spoc_role') === 'project') ? 'Project SPOC' : 'Department SPOC';
+
         return response()->json([
             'error' => 0,
-            'users' => $this->getSpocUserOptions(),
+            'users' => $this->getSpocUserOptions($roleName),
         ]);
     }
 
@@ -899,6 +926,7 @@ class ProjectWizardController extends Controller
             $postData = $request->all();
             $departmentId = (int) ($postData['department_id'] ?? 0);
             $projectDepartmentId = (int) ($postData['project_department_id'] ?? 0);
+            $isProjectSpoc = ($postData['spoc_role'] ?? 'department') === 'project';
 
             $errMessage = $this->validateSpocUserData($postData);
             if ($errMessage !== '') {
@@ -906,9 +934,9 @@ class ProjectWizardController extends Controller
                 return;
             }
 
-            $spocRoleId = $this->getSpocRoleId();
+            $spocRoleId = $this->getSpocRoleId($isProjectSpoc ? 'Project SPOC' : 'Department SPOC');
             if (!$spocRoleId) {
-                $this->sendErrorResponse('Department SPOC role is not configured. Run roles seeder.', 1);
+                $this->sendErrorResponse(($isProjectSpoc ? 'Project' : 'Department') . ' SPOC role is not configured. Run roles seeder.', 1);
                 return;
             }
 
@@ -934,11 +962,11 @@ class ProjectWizardController extends Controller
                 return;
             }
 
-            if ($departmentId > 0) {
+            if (!$isProjectSpoc && $departmentId > 0) {
                 $this->assignUserToDepartment((int) $newUserId, $departmentId);
             }
 
-            if ($projectDepartmentId > 0) {
+            if (!$isProjectSpoc && $projectDepartmentId > 0) {
                 $spocName = trim($payload['first_name'] . ' ' . $payload['last_name']);
                 $this->projectDepartmentService->updateDepartmentRow($projectDepartmentId, [
                     'spoc_user_id' => (int) $newUserId,
@@ -952,9 +980,11 @@ class ProjectWizardController extends Controller
                 'name' => trim($payload['first_name'] . ' ' . $payload['last_name']),
             ];
 
+            $roleName = $isProjectSpoc ? 'Project SPOC' : 'Department SPOC';
             $this->sendSuccessResponse('SPOC user created successfully', 'Add', '', [
                 'user' => $userOption,
-                'users' => $this->getSpocUserOptions(),
+                'users' => $this->getSpocUserOptions($roleName),
+                'spoc_role' => $isProjectSpoc ? 'project' : 'department',
             ]);
         } catch (\Exception $e) {
             Log::error('Wizard create SPOC user: ' . $e->getMessage());
@@ -962,16 +992,31 @@ class ProjectWizardController extends Controller
         }
     }
 
-    private function getSpocUserOptions(): array
+    private function getSpocUserOptions(?string $roleName = null, ?int $includeUserId = null): array
     {
         if (!Schema::hasTable('tbl_user')) {
             return [];
         }
 
-        $query = DB::table('tbl_user')->where('status', ACTIVE)->orderBy('first_name')->orderBy('last_name');
+        $query = DB::table('tbl_user as u')
+            ->where('u.status', ACTIVE)
+            ->orderBy('u.first_name')
+            ->orderBy('u.last_name');
+
+        if ($roleName) {
+            $roleId = $this->getSpocRoleId($roleName);
+            if ($roleId) {
+                $query->where(function ($q) use ($roleId, $includeUserId) {
+                    $q->where('u.user_type', $roleId);
+                    if ($includeUserId) {
+                        $q->orWhere('u.id', $includeUserId);
+                    }
+                });
+            }
+        }
 
         return $query
-            ->get(['id', 'first_name', 'last_name', 'email_id'])
+            ->get(['u.id', 'u.first_name', 'u.last_name', 'u.email_id'])
             ->map(fn ($user) => [
                 'id' => (int) $user->id,
                 'label' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) . ' — ' . ($user->email_id ?? ''),
@@ -980,10 +1025,10 @@ class ProjectWizardController extends Controller
             ->all();
     }
 
-    private function getSpocRoleId(): ?int
+    private function getSpocRoleId(string $roleName = 'Department SPOC'): ?int
     {
         $roleId = DB::table('tbl_roles')
-            ->where('role_name', 'Department SPOC')
+            ->where('role_name', $roleName)
             ->where('status', ACTIVE)
             ->value('id');
 

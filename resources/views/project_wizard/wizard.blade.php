@@ -9,11 +9,19 @@
     $projectTypes = $data['project_types'] ?? [];
     $zones = $data['zones'] ?? [];
     $spocUsers = $data['spoc_users'] ?? [];
+    $projectSpocUsers = $data['project_spoc_users'] ?? [];
     $selectedDeptIds = array_column($projectDepartments, 'department_id');
     $selectedZoneId = $project['zone_id'] ?? '';
     $selectedLocationId = $project['location_id'] ?? '';
     $enableClick = !empty($projectId);
-    $initialStep = $enableClick ? max(0, min(2, (int) ($project['wizard_step'] ?? 1) - 1)) : 0;
+    $savedWizardStep = (int) ($project['wizard_step'] ?? 1);
+    $initialStep = $enableClick ? max(0, min(2, $savedWizardStep - 1)) : 0;
+    if ($enableClick && request()->query('step') === 'execution') {
+        $initialStep = 2;
+        $canOpenExecutionTab = true;
+    }
+    $canOpenDepartmentsTab = $enableClick && $savedWizardStep >= 2;
+    $canOpenExecutionTab = $enableClick && $savedWizardStep >= 3;
     $activeExpand = null;
     foreach ($projectDepartments as $pd) {
         if (in_array($pd['department_status'] ?? '', ['start', 'in_progress', 'delay'])) {
@@ -36,15 +44,15 @@
         {{ $pageTitle }}
     </h4>
 
-    <a href="{{ getProjectUrl('projects-list') }}" class="back-project-btn">
+    <a href="{{ getProjectsListingUrl() }}" class="back-project-btn">
         <i class="ri-arrow-left-line"></i>
-        Back to Projects
+        Back to {{ hasFullProjectsPermission() ? 'Projects' : 'My Projects' }}
     </a>
 
 </div>
 
                 <input type="hidden" id="hdnForeignKeyId" value="{{ $projectId }}">
-                <a id="commonActionButton" href="{{ getProjectUrl('projects-list') }}" style="display:none"></a>
+                <a id="commonActionButton" href="{{ getProjectsListingUrl() }}" style="display:none"></a>
 
                 <div id="basic-example" role="application" class="wizard clearfix">
                     <div class="steps clearfix">
@@ -54,11 +62,11 @@
                                 <a class="customWizardSteps"><span class="number"></span> General</a>
                             </li>
                             <li role="tab" class="customWizard customWizard-1 @if($initialStep === 1) current @else disabled @endif"
-                                @if($enableClick) onclick="enableDisableSections(1)" @endif>
+                                @if($canOpenDepartmentsTab) onclick="enableDisableSections(1)" @endif>
                                 <a class="customWizardSteps"><span class="number"></span> Departments</a>
                             </li>
                             <li role="tab" class="customWizard customWizard-2 @if($initialStep === 2) current @else disabled @endif"
-                                @if($enableClick) onclick="enableDisableSections(2)" @endif>
+                                @if($canOpenExecutionTab) onclick="enableDisableSections(2)" @endif>
                                 <a class="customWizardSteps"><span class="number"></span> Execution</a>
                             </li>
                         </ul>
@@ -115,8 +123,10 @@
                                 <input type="hidden" name="location" id="wizard_location_text" value="{{ $project['location'] ?? '' }}">
                             </div>
                             <div class="col-md-4 mb-2">
-                                <label>Project SPOC</label>
-                                <input type="text" class="form-control" name="project_spoc_name" value="{{ $project['project_spoc_name'] ?? '' }}">
+                                @include('project_wizard.partials.project-spoc-user-field', [
+                                    'project' => $project ?? [],
+                                    'projectSpocUsers' => $projectSpocUsers,
+                                ])
                             </div>
                             <div class="col-md-4 mb-2">
                                 <label>Contractor</label>
@@ -261,7 +271,7 @@
                             <div class="actions clearfix">
                                 <ul role="menu">
                                     <li onclick="calculateSteps(this,'previous',2)"><a href="#previous">Previous</a></li>
-                                    <li onclick="calculateSteps(this,'finish',2,'{{ getProjectUrl('projects-list') }}')"><a href="#finish">Finish</a></li>
+                                    <li onclick="calculateSteps(this,'finish',2,'{{ getProjectsListingUrl() }}')"><a href="#finish">Finish</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -1179,14 +1189,47 @@
 <script>
 var projectDeptMaster = @json($masterDepartments);
 var spocUserOptions = @json($spocUsers);
+var projectSpocUserOptions = @json($projectSpocUsers);
 var projectWizardInitialStep = {{ $initialStep }};
 var projectWizardEnableClick = {{ $enableClick ? 'true' : 'false' }};
+var projectWizardCanOpenDepartments = {{ $canOpenDepartmentsTab ? 'true' : 'false' }};
+var projectWizardCanOpenExecution = {{ $canOpenExecutionTab ? 'true' : 'false' }};
 
 function syncProjectDepartmentOrder() {
     var ids = [];
     $('#deptSortable li').each(function() { ids.push($(this).data('dept-id')); });
     $('#department_order').val(ids.join(','));
     $('#deptSortableEmpty').toggle(ids.length === 0);
+}
+
+function reloadWizardExecutionStep() {
+    var href = window.location.href.split('#')[0];
+    var qIndex = href.indexOf('?');
+    var base = qIndex > -1 ? href.substring(0, qIndex) : href;
+    var query = qIndex > -1 ? href.substring(qIndex + 1) : '';
+    var params = {};
+
+    if (query) {
+        query.split('&').forEach(function(part) {
+            if (!part) {
+                return;
+            }
+            var pair = part.split('=');
+            var key = decodeURIComponent(pair[0] || '');
+            if (key) {
+                params[key] = decodeURIComponent(pair[1] || '');
+            }
+        });
+    }
+
+    params.step = 'execution';
+    params._ = String(Date.now());
+
+    var nextQuery = Object.keys(params).map(function(key) {
+        return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+    }).join('&');
+
+    window.location.assign(base + '?' + nextQuery);
 }
 
 function initProjectExecutionStep() {
@@ -1203,42 +1246,52 @@ function bindExecutionPanelHandlers() {
         saveUrl: "{{ getProjectUrl('save_project_department') }}",
         statusUrl: "{{ getProjectUrl('update_department_status') }}",
         csrfToken: '{{ csrf_token() }}',
-        reloadMode: 'page'
+        onSuccess: reloadWizardExecutionStep
     });
 
     initSpocUserControls();
 }
 
-function renderSpocSelectOptions($select, selectedId) {
+function renderSpocSelectOptions($select, selectedId, users) {
+    users = users || spocUserOptions;
     if ($.fn.select2 && $select.hasClass('select2-hidden-accessible')) {
         $select.select2('destroy');
     }
-    var html = '<option value="">Select SPOC user</option>';
-    (spocUserOptions || []).forEach(function(user) {
+    var placeholder = $select.hasClass('project-spoc-user-select') ? 'Select Project SPOC' : 'Select SPOC user';
+    var html = '<option value="">' + placeholder + '</option>';
+    (users || []).forEach(function(user) {
         var sel = (String(selectedId) === String(user.id)) ? ' selected' : '';
         html += '<option value="' + user.id + '"' + sel + '>' + user.label + '</option>';
     });
     $select.html(html);
     if ($.fn.select2) {
-        $select.select2({ width: '100%', placeholder: 'Select SPOC user' });
+        $select.select2({ width: '100%', placeholder: placeholder });
     }
 }
 
-function refreshAllSpocSelects(selectUserId, $activeBlock) {
-    $('.spoc-user-select').each(function() {
+function refreshAllSpocSelects(selectUserId, $activeBlock, spocRole) {
+    var isProject = spocRole === 'project' || ($activeBlock && $activeBlock.hasClass('project-spoc-user-block'));
+    var selector = isProject ? '.project-spoc-user-select' : '.spoc-user-select';
+    var users = isProject ? projectSpocUserOptions : spocUserOptions;
+
+    $(selector).each(function() {
         var $sel = $(this);
-        var isActive = $activeBlock && $activeBlock.find('.spoc-user-select')[0] === this;
+        var isActive = $activeBlock && (
+            (isProject && $activeBlock.find('.project-spoc-user-select')[0] === this) ||
+            (!isProject && $activeBlock.find('.spoc-user-select')[0] === this)
+        );
         var val = (isActive && selectUserId) ? selectUserId : $sel.val();
-        renderSpocSelectOptions($sel, val);
+        renderSpocSelectOptions($sel, val, users);
         $sel.val(val).trigger('change');
     });
 }
 
 function initSpocUserControls() {
     if ($.fn.select2) {
-        $('.spoc-user-select').each(function() {
+        $('.spoc-user-select, .project-spoc-user-select').each(function() {
             if (!$(this).hasClass('select2-hidden-accessible')) {
-                $(this).select2({ width: '100%', placeholder: 'Select SPOC user' });
+                var placeholder = $(this).hasClass('project-spoc-user-select') ? 'Select Project SPOC' : 'Select SPOC user';
+                $(this).select2({ width: '100%', placeholder: placeholder });
             }
         });
     }
@@ -1253,8 +1306,18 @@ function initSpocUserControls() {
         $(this).closest('.spoc-user-block').find('.spoc-name-hidden').val(name);
     });
 
+    $('.project-spoc-user-select').off('change.projectSpoc').on('change.projectSpoc', function() {
+        var $opt = $(this).find('option:selected');
+        var name = '';
+        if ($(this).val()) {
+            var label = $opt.text() || '';
+            name = label.split(' — ')[0] || label;
+        }
+        $(this).closest('.project-spoc-user-block').find('.project-spoc-name-hidden').val(name);
+    });
+
     $('.toggle-spoc-add-form').off('click').on('click', function() {
-        var $block = $(this).closest('.spoc-user-block');
+        var $block = $(this).closest('.spoc-user-block, .project-spoc-user-block');
         $block.find('.spoc-add-form').slideToggle(150);
     });
 
@@ -1264,9 +1327,11 @@ function initSpocUserControls() {
 
     $('.save-spoc-user').off('click').on('click', function() {
         var $btn = $(this);
-        var $block = $(this).closest('.spoc-user-block');
+        var $block = $(this).closest('.spoc-user-block, .project-spoc-user-block');
+        var spocRole = $block.data('spoc-role') || 'department';
         var payload = new FormData();
         payload.append('_token', '{{ csrf_token() }}');
+        payload.append('spoc_role', spocRole);
         payload.append('department_id', $block.data('department-id') || '');
         payload.append('project_department_id', $block.data('pd-id') || '');
         payload.append('first_name', $block.find('.spoc-add-first-name').val());
@@ -1278,16 +1343,26 @@ function initSpocUserControls() {
         ajaxRequestWithPromise("{{ getProjectUrl('wizard_create_spoc_user') }}", payload, 'wizard_create_spoc_user', 1, '', $btn)
             .then(function(res) {
                 if (res.error == 0 || res.error == '0') {
-                    if (res.users && res.users.length) {
-                        spocUserOptions = res.users;
-                    } else if (res.user) {
-                        spocUserOptions = spocUserOptions || [];
-                        var exists = spocUserOptions.some(function(u) { return String(u.id) === String(res.user.id); });
+                    var users = res.users || [];
+                    if (res.spoc_role === 'project') {
+                        projectSpocUserOptions = users;
+                    } else {
+                        spocUserOptions = users;
+                    }
+                    if (res.user) {
+                        var target = res.spoc_role === 'project' ? projectSpocUserOptions : spocUserOptions;
+                        target = target || [];
+                        var exists = target.some(function(u) { return String(u.id) === String(res.user.id); });
                         if (!exists) {
-                            spocUserOptions.push(res.user);
+                            target.push(res.user);
+                        }
+                        if (res.spoc_role === 'project') {
+                            projectSpocUserOptions = target;
+                        } else {
+                            spocUserOptions = target;
                         }
                     }
-                    refreshAllSpocSelects(res.user ? res.user.id : '', $block);
+                    refreshAllSpocSelects(res.user ? res.user.id : '', $block, res.spoc_role || spocRole);
                     $block.find('.spoc-add-form').slideUp(150);
                     $block.find('.spoc-add-first-name, .spoc-add-last-name, .spoc-add-email, .spoc-add-mobile, .spoc-add-password').val('');
                     parseFormErrors(res, 'success');
@@ -1336,9 +1411,13 @@ $(function() {
     }
 
     if (projectWizardEnableClick) {
-        for (var i = 0; i <= 2; i++) {
-            $('.customWizard-' + i).removeClass('disabled');
-        }
+        $('.customWizard-0').removeClass('disabled');
+    }
+    if (projectWizardCanOpenDepartments) {
+        $('.customWizard-1').removeClass('disabled');
+    }
+    if (projectWizardCanOpenExecution) {
+        $('.customWizard-2').removeClass('disabled');
     }
     enableDisableSections(projectWizardInitialStep);
     $('.customWizard-' + projectWizardInitialStep).addClass('current');

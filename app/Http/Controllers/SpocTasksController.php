@@ -32,7 +32,7 @@ class SpocTasksController extends Controller
     private function canAccess(): bool
     {
         return modulePermissionExists($this->module)
-            || permissionexists('spoc_department_access') === '1';
+            || $this->userScope->hasMyDepartmentTasksAccess();
     }
 
     public function task_list(Request $request)
@@ -45,12 +45,10 @@ class SpocTasksController extends Controller
         $statusOptions = $this->projectDepartmentService->statusFilterOptions();
 
         $grid_data = $this->buildGridConfig([
-            'columns' => array_merge(
-                ['#', 'Project', 'Hospital', 'Zone', 'Location', 'Department', 'Status', 'Delay Days', 'Planned End', 'Task'],
-                array_map(fn ($panel) => $panel['label'], $this->projectDepartmentService->workflowPanels())
-            ),
+            'columns' => ['Actions', '#', 'Project', 'Hospital', 'Zone', 'Location', 'Department', 'Status', 'Delay Days', 'Planned End'],
             'table' => 'tbl_project_departments',
             'dataurl' => 'get_spoc_task_list',
+            'no_sort_columns' => ['Actions'],
             'filters' => [
                 $this->buildTextFilter('search', 'Search project or hospital', 'Search', 'col-md-3'),
                 $this->buildSelectFilter('status_filter', $statusOptions, 'Status', 'All statuses', true, true, 'col-md-2'),
@@ -156,7 +154,7 @@ class SpocTasksController extends Controller
 
             $getRecordListing = Datatables_model::getDataTableResult(
                 ['pd.*', 'tp.project_code', 'tp.project_name', 'tp.hospital_name', 'tz.zone_name', 'tl.location_name', "d.$nameCol as department_name"],
-                ['', 'tp.project_code', 'tp.hospital_name', 'tz.zone_name', 'tl.location_name', "d.$nameCol", 'pd.department_status', 'pd.delay_days', 'pd.planned_end_date'],
+                ['', '', 'tp.project_code', 'tp.hospital_name', 'tz.zone_name', 'tl.location_name', "d.$nameCol", 'pd.department_status', 'pd.delay_days', 'pd.planned_end_date'],
                 'tbl_project_departments as pd',
                 $joins,
                 $wherecondition,
@@ -195,6 +193,7 @@ class SpocTasksController extends Controller
                 $isPending = $status === 'pending';
 
                 $row = [
+                    $this->buildSpocTaskActions($encPdId, $deptName, $isPending),
                     $srNumber + 1,
                     e(trim(($recordData->project_code ?? '') . ' — ' . ($recordData->project_name ?? ''))),
                     e($recordData->hospital_name ?? ''),
@@ -204,24 +203,7 @@ class SpocTasksController extends Controller
                     $this->projectDepartmentService->statusBadgeHtml($status),
                     (int) ($recordData->delay_days ?? 0),
                     !empty($recordData->planned_end_date) ? displayCustomDateTime($recordData->planned_end_date) : '',
-                    $this->buildSideLayoutLink(
-                        getProjectUrl('spoc-tasks/view/' . $encPdId),
-                        'Manage Task',
-                        'ri-edit-box-line',
-                        'Manage task'
-                    ),
                 ];
-
-                foreach ($this->projectDepartmentService->workflowPanels() as $type => $panel) {
-                    $row[] = $isPending
-                        ? '—'
-                        : $this->buildSideLayoutLink(
-                            $this->projectDepartmentService->panelUrl($type, $encPdId),
-                            $this->projectDepartmentService->panelTitle($type, $deptName),
-                            $panel['icon'],
-                            $panel['label']
-                        );
-                }
 
                 $recordListing[] = $row;
                 $srNumber++;
@@ -244,9 +226,38 @@ class SpocTasksController extends Controller
         }
     }
 
+    private function buildSpocTaskActions(string $encPdId, string $deptName, bool $isPending): string
+    {
+        $actions = [
+            $this->buildSideLayoutLink(
+                getProjectUrl('spoc-tasks/view/' . $encPdId),
+                'Manage Task',
+                'ri-edit-box-line',
+                'Manage task'
+            ),
+        ];
+
+        if (!$isPending) {
+            foreach ($this->projectDepartmentService->workflowPanels() as $type => $panel) {
+                $actions[] = $this->buildSideLayoutLink(
+                    $this->projectDepartmentService->panelUrl($type, $encPdId),
+                    $this->projectDepartmentService->panelTitle($type, $deptName),
+                    $panel['icon'],
+                    $panel['label']
+                );
+            }
+        }
+
+        return $this->wrapGridActions(implode('', $actions));
+    }
+
     private function claimTaskIfUnassigned(int $pdId): void
     {
         if (!$this->userScope->isScopedUser()) {
+            return;
+        }
+
+        if ($this->userScope->hasAssignedProjectsAsResponsible() && empty($this->userScope->getAssignedDepartmentIds())) {
             return;
         }
 

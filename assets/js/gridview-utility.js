@@ -308,6 +308,54 @@
         }
 
         /**
+         * Get index of Actions column (-1 if not found).
+         * @returns {number}
+         */
+        getActionsColumnIndex() {
+            const cols = this.config.gridConfig.columns || [];
+            return cols.findIndex((col) => col === 'Actions' || col === 'Action');
+        }
+
+        /**
+         * Build DataTables column definitions.
+         * @returns {Array}
+         */
+        buildColumnDefs() {
+            const columnDefs = [
+                { targets: 'no-sort', orderable: false }
+            ];
+            const actionsIdx = this.getActionsColumnIndex();
+
+            if (actionsIdx >= 0) {
+                columnDefs.push({
+                    targets: actionsIdx,
+                    orderable: false,
+                    className: 'grid-actions-cell',
+                    width: '1%'
+                });
+            } else {
+                columnDefs.push({ orderable: false, targets: -1 });
+            }
+
+            return columnDefs;
+        }
+
+        /**
+         * Keep header/body column widths in sync.
+         */
+        syncGridColumnWidths() {
+            const $table = $(this.config.tableId);
+            if (!$table.length || !$.fn.DataTable || !$.fn.DataTable.isDataTable($table[0])) {
+                return;
+            }
+
+            const api = $table.DataTable();
+            if (api.columns && typeof api.columns.adjust === 'function') {
+                api.columns.adjust();
+            }
+        }
+
+        /**
          * Initialize DataTable
          */
         initializeDataTable() {
@@ -329,6 +377,10 @@
                     if (this.isSpecialRoute(route)) {
                         data.length = -1;
                         return;
+                    }
+                    const actionsIdx = this.getActionsColumnIndex();
+                    if (actionsIdx >= 0 && data && data.columns && data.columns[actionsIdx]) {
+                        delete data.columns[actionsIdx].width;
                     }
                     const se = this.config.gridConfig.server_export;
                     if (se && se.url && data) {
@@ -363,10 +415,7 @@
                     [10, 20, 50, 100, 500, 1000, 5000, 10000, -1],
                     [10, 20, 50, 100, 500, 1000, 5000, 10000, 'All']
                 ],
-                columnDefs: [
-                    { orderable: false, targets: -1 },
-                    { targets: 'no-sort', orderable: false }
-                ],
+                columnDefs: this.buildColumnDefs(),
                 buttons: [{
                     extend: 'excelHtml5',
                     text: '<i class="fa fa-file-excel">&nbsp;&nbsp;</i>',
@@ -378,16 +427,17 @@
                         .attr('title', 'Export to Excel').tooltip();
                     this.setupServerExportToolbar();
                     this.bindFilterChangeReload();
+                    setTimeout(() => this.syncGridColumnWidths(), 0);
                 },
                 drawCallback: () => {
                     $('[data-bs-toggle="tooltip"]').tooltip();
+                    this.syncGridColumnWidths();
                 },
                 processing: true,
                 searching: false,
                 destroy: true,
                 bSort: true,
                 serverSide: true,
-                sScrollX: '100%',
                 Paginate: true,
                 processing: false,
                 oLanguage: {

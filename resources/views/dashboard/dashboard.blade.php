@@ -321,7 +321,7 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
                 <i class="ri-add-circle-line"></i>
                 <span>New Project</span>
             </a>
-            <a href="{{ getProjectUrl('projects-list') }}" class="quick-btn quick-project">
+            <a href="{{ getProjectsListingUrl() }}" class="quick-btn quick-project">
                 <i class="ri-building-2-line"></i>
                 <span>Projects</span>
             </a>
@@ -331,10 +331,16 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
                 <span>Departments</span>
             </a>
             @endif
-            @if(modulePermissionExists('spoc_tasks') || permissionexists('spoc_department_access') === '1')
+            @if(permissionexists('spoc_tasks') === '1')
             <a href="{{ getProjectUrl('spoc-tasks-list') }}" class="quick-btn quick-mitigation">
                 <i class="ri-task-line"></i>
                 <span>My Tasks</span>
+            </a>
+            @endif
+            @if((permissionexists('my_projects') === '1' || permissionexists('spoc_project_access') === '1' || permissionexists('spoc_department_access') === '1') && permissionexists('projects') !== '1')
+            <a href="{{ getProjectsListingUrl() }}" class="quick-btn quick-project">
+                <i class="ri-building-2-line"></i>
+                <span>My Projects</span>
             </a>
             @endif
         </div>
@@ -342,7 +348,7 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
 </div>
 @endif
 
-@if((modulePermissionExists('spoc_tasks') || permissionexists('spoc_department_access') === '1') && !modulePermissionExists('projects'))
+@if(permissionexists('spoc_tasks') === '1' && permissionexists('projects') !== '1')
 <div class="row mb-4">
     <div class="col-12">
         <div class="quick-actions">

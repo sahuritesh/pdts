@@ -149,7 +149,7 @@ class EmailTemplateController extends Controller
         ];
 
         $grid_data = $this->buildGridConfig([
-            'columns' => ['#', 'Template Name', 'Status', 'Created On', 'Updated On', 'Actions'],
+            'columns' => ['Actions', '#', 'Template Name', 'Status', 'Created On', 'Updated On'],
             'table' => 'tbl_emailtemplates',
             'dataurl' => 'get_email_templates_list',
             'addurl' => 'email_templates/add',
@@ -175,7 +175,7 @@ class EmailTemplateController extends Controller
 
             $indexColumn = 'tb.id';
             $selectColumns = ['tb.*', 'tt.status_name', 'tt.class'];
-            $dataTableSortOrdering = ['', 'tb.template_name', 'tt.status_name', 'tb.created_on', 'tb.updated_on'];
+            $dataTableSortOrdering = ['', '', 'tb.template_name', 'tt.status_name', 'tb.created_on', 'tb.updated_on'];
             $table_name = "$table as tb";
 
             $joinsArray = [
@@ -218,13 +218,13 @@ class EmailTemplateController extends Controller
             if (!empty($getRecordListing['data'])) {
                 foreach ($getRecordListing['data'] as $recordData) {
                     $j = 0;
+                    $action = '<a href="' . url('email_templates/edit/' . Crypt::encrypt($recordData->id)) . '" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="ri-edit-fill"></i></a>';
+                    $recordListing[$i][$j++] = $this->wrapGridActions($action);
                     $recordListing[$i][$j++] = $srNumber + 1;
                     $recordListing[$i][$j++] = $recordData->template_name;
                     $recordListing[$i][$j++] = "<label class='$recordData->class'>" . $recordData->status_name . "</label>";
                     $recordListing[$i][$j++] = displayCustomDateTime($recordData->created_on);
                     $recordListing[$i][$j++] = displayCustomDateTime($recordData->updated_on);
-                    $action = '<a href="' . url('email_templates/edit/' . Crypt::encrypt($recordData->id)) . '" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit"><i class="ri-edit-fill"></i></a>';
-                    $recordListing[$i][$j++] = $action;
                     $i++;
                     $srNumber++;
                 }
