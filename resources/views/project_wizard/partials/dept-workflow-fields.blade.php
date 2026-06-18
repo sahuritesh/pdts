@@ -60,7 +60,7 @@
     </div>
     @else
     <div class="col-md-2 d-flex align-items-end">
-        <button type="button" class="btn btn-sm btn-outline-secondary save-dept-meta w-100" @if($actionsDisabled) disabled @endif>{{ $saveButtonLabel }}</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary save-dept-meta w-100 save-add-btn" @if($actionsDisabled) disabled @endif>{{ $saveButtonLabel }}</button>
     </div>
     @endif
     @endif
@@ -72,3 +72,21 @@
 </div>
 @endif
 @endif
+
+@push('styles')
+<style>
+
+
+.save-add-btn{
+    border-radius: 10px !important;
+    padding: 8px 15px;
+    font-weight: 600;
+
+    cursor:pointer;
+
+    transition:all .3s ease;
+}
+
+
+</style>
+@endpush
