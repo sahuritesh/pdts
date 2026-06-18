@@ -14,6 +14,7 @@ $hasWidgets = !empty($data['has_dashboard_widgets']);
 $w = function ($key) use ($widgets) { return !empty($widgets[$key]); };
 $kpis = $analytics['kpis'] ?? [];
 $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
+$drillLinks = $data['drill_links'] ?? [];
 @endphp
 
 <div class="dashboard-welcome">
@@ -77,94 +78,110 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
 @if($w('m1_kpis'))
 <div class="row mb-3">
     <div class="col-lg-3 col-md-6 mb-3">
+        <a href="{{ $drillLinks['total_projects'] ?? getProjectsListingUrl() }}" class="dashboard-drill-link" title="View all projects">
         <div class="stat-card primary">
              <span class="shine"></span>
             <div class="stat-card-Inner">
                 <div class="stat-icon"><i class="ri-building-2-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['total_projects'] ?? 0) }}</div>
             </div>
-            <p class="stat-label">Total projects</p>
+            <p class="stat-label">Total projects <i class="ri-arrow-right-s-line dashboard-drill-icon"></i></p>
         </div>
+        </a>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
+        <a href="{{ $drillLinks['open_delays'] ?? getProjectsListingUrl() }}" class="dashboard-drill-link" title="View delayed departments">
         <div class="stat-card warning">
              <span class="shine"></span>
             <div class="stat-card-Inner">
                 <div class="stat-icon"><i class="ri-time-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['open_delays'] ?? 0) }}</div>
             </div>
-            <p class="stat-label">Open delay logs (delayed departments)</p>
+            <p class="stat-label">Open delay logs (delayed departments) <i class="ri-arrow-right-s-line dashboard-drill-icon"></i></p>
         </div>
+        </a>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
+        <a href="{{ $drillLinks['departments_delayed'] ?? getProjectsListingUrl() }}" class="dashboard-drill-link" title="View delayed departments">
         <div class="stat-card danger">
              <span class="shine"></span>
             <div class="stat-card-Inner">
                 <div class="stat-icon"><i class="ri-alert-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['departments_delayed'] ?? 0) }}</div>
             </div>
-            <p class="stat-label">Departments delayed</p>
+            <p class="stat-label">Departments delayed <i class="ri-arrow-right-s-line dashboard-drill-icon"></i></p>
         </div>
+        </a>
     </div>
     <div class="col-lg-3 col-md-6 mb-3">
+        <a href="{{ $drillLinks['total_delay_cost'] ?? getProjectsListingUrl() }}" class="dashboard-drill-link" title="View delayed departments">
         <div class="stat-card success">
              <span class="shine"></span>
             <div class="stat-card-Inner">
                 <div class="stat-icon"><i class="ri-money-dollar-circle-line"></i></div>
                 <div class="stat-value">{{ number_format($kpis['total_delay_cost'] ?? 0, 0) }}</div>
             </div>
-            <p class="stat-label">Total delay cost</p>
+            <p class="stat-label">Total delay cost <i class="ri-arrow-right-s-line dashboard-drill-icon"></i></p>
         </div>
+        </a>
     </div>
 </div>
 <div class="row mb-3">
 
     <div class="col-lg-3 col-md-6 mb-3">
+        <a href="{{ $drillLinks['delayed_projects'] ?? getProjectsListingUrl() }}" class="dashboard-drill-link" title="View delayed projects">
         <div class="tracker-card tracker-blue">
             <div class="tracker-count">
                 {{ number_format($kpis['delayed_projects'] ?? 0) }}
             </div>
             <div class="tracker-info">
-                <h6>Delayed Projects</h6>
+                <h6>Delayed Projects <i class="ri-arrow-right-s-line dashboard-drill-icon"></i></h6>
                 <p>Current delayed projects</p>
             </div>
         </div>
+        </a>
     </div>
 
     <div class="col-lg-3 col-md-6 mb-3">
+        <a href="{{ $drillLinks['departments_in_progress'] ?? getProjectsListingUrl() }}" class="dashboard-drill-link" title="View departments in progress">
         <div class="tracker-card tracker-purple">
             <div class="tracker-count">
                 {{ number_format($kpis['departments_in_progress'] ?? 0) }}
             </div>
             <div class="tracker-info">
-                <h6>Departments In Progress</h6>
+                <h6>Departments In Progress <i class="ri-arrow-right-s-line dashboard-drill-icon"></i></h6>
                 <p>Active department workflows</p>
             </div>
         </div>
+        </a>
     </div>
 
     <div class="col-lg-3 col-md-6 mb-3">
+        <a href="{{ $drillLinks['departments_completed'] ?? getProjectsListingUrl() }}" class="dashboard-drill-link" title="View completed departments">
         <div class="tracker-card tracker-orange">
             <div class="tracker-count">
                 {{ number_format($kpis['departments_completed'] ?? 0) }}
             </div>
             <div class="tracker-info">
-                <h6>Departments Completed</h6>
+                <h6>Departments Completed <i class="ri-arrow-right-s-line dashboard-drill-icon"></i></h6>
                 <p>Finished on projects</p>
             </div>
         </div>
+        </a>
     </div>
 
     <div class="col-lg-3 col-md-6 mb-3">
+        <a href="{{ $drillLinks['total_departments'] ?? getProjectUrl('departments-list') }}" class="dashboard-drill-link" title="View departments master">
         <div class="tracker-card tracker-green">
             <div class="tracker-count">
-                {{ number_format($kpis['total_departments'] ?? 0) }}
+                {{ number_format($kpis['master_departments'] ?? 0) }}
             </div>
             <div class="tracker-info">
-                <h6>Total Departments</h6>
-                <p>Across all projects</p>
+                <h6>Departments (Master) <i class="ri-arrow-right-s-line dashboard-drill-icon"></i></h6>
+                <p>Active department types in master</p>
             </div>
         </div>
+        </a>
     </div>
 
 </div>
@@ -265,7 +282,8 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
     @if($w('m1_table_critical'))
     <div class="col-lg-6 mb-3">
         <div class="chart-card dashboardTable">
-            <h6> <span class="chart-icon"><i class="ri-error-warning-line me-1"></i></span> Delayed departments</h6>
+            <h6> <span class="chart-icon"><i class="ri-error-warning-line me-1"></i></span> Delayed departments
+            <a href="{{ ($drillLinks['departments_delayed'] ?? '') }}" class="chart-drill-hint text-decoration-none">View all</a></h6>
             @if(!empty($recentDelayedDepts))
             <div class="custom-table-wrapper">
     <div class="table-responsive">
@@ -293,7 +311,7 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
 
             <tbody>
                 @foreach($recentDelayedDepts as $row)
-                <tr>
+                <tr class="dashboard-drill-row" @if(!empty($row['url'])) data-href="{{ $row['url'] }}" @endif>
                     <td><div class="delay-title">{{ $row['department'] }}</div></td>
                     <td><span class="project-name">{{ $row['project'] }}</span></td>
                     <td>{{ $row['hospital'] }}</td>
@@ -402,6 +420,14 @@ $recentDelayedDepts = $analytics['recent_delayed_departments'] ?? [];
     window.pdtsDashboardData = @json($analytics);
     window.pdtsDashboardWidgets = @json($widgets);
 </script>
-<script src="{{ getAssetUrl('js/pages/pdts-dashboard.init.js') }}"></script>
+<script src="{{ getAssetUrl('js/pages/pdts-dashboard.init.js') }}?v=1.2"></script>
+<script>
+$(document).on('click', '.dashboard-drill-row[data-href]', function() {
+    var url = $(this).data('href');
+    if (url) {
+        window.location.href = url;
+    }
+});
+</script>
 @endif
 @endpush

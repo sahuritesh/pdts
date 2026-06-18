@@ -6,8 +6,18 @@
                 $project = $data['project'] ?? '';
                 $projectTypes = $data['project_types'] ?? [];
                 $zones = $data['zones'] ?? [];
+                $hospitals = $data['hospitals'] ?? [];
                 $statuses = $data['project_statuses'] ?? [];
                 $selectedZoneId = $project['zone_id'] ?? '';
+                $selectedHospitalId = $project['hospital_id'] ?? '';
+                if ($selectedHospitalId === '' && !empty($project['hospital_name']) && !empty($hospitals)) {
+                    foreach ($hospitals as $hospital) {
+                        if (($hospital['label'] ?? '') === $project['hospital_name']) {
+                            $selectedHospitalId = $hospital['id'];
+                            break;
+                        }
+                    }
+                }
                 if ($selectedZoneId === '' && !empty($project['zone_department']) && !empty($zones)) {
                     foreach ($zones as $zone) {
                         if (($zone['label'] ?? '') === $project['zone_department']) {
@@ -34,9 +44,13 @@
                                     value="{{ $project['project_name'] ?? '' }}" />
                             </div>
                             <div class="col-md-4 mb-2">
-                                <label for="hospital_name">Hospital Name</label>
-                                <input type="text" class="form-control" name="hospital_name" id="hospital_name"
-                                    value="{{ $project['hospital_name'] ?? '' }}" />
+                                <label for="hospital_id">Hospital Name</label>
+                                <select name="hospital_id" id="hospital_id" class="form-control dd-select">
+                                    <option value="">Select hospital</option>
+                                    @foreach($hospitals as $hospital)
+                                    <option value="{{ $hospital['id'] }}" @if($selectedHospitalId == $hospital['id']) selected @endif>{{ $hospital['label'] }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="col-md-4 mb-2">
                                 <label for="project_type_id">Project Type</label>

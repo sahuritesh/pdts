@@ -328,6 +328,7 @@ class Common_controller extends Controller
             'tbl_roles' => 'roles',
             'tbl_email_templates' => 'email_templates',
             'tbl_departments' => 'departments',
+            'tbl_hospitals' => 'hospitals',
             'tbl_delay_categories' => 'departments',
             'tbl_projects' => 'projects',
             'tbl_delay_registers' => 'delay_registers',

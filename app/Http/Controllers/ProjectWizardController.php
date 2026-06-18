@@ -208,6 +208,7 @@ class ProjectWizardController extends Controller
             'wizard_step' => $step,
             'project_types' => $this->getProjectTypes(),
             'zones' => $this->getZones(),
+            'hospitals' => $this->getHospitals(),
             'master_departments' => $this->getActiveDepartments(),
             'project_departments' => $projectId ? $this->projectDepartmentService->getProjectDepartments($projectId) : [],
             'status_labels' => $this->projectDepartmentService->statusLabels(),
@@ -799,6 +800,16 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            $dateErr = $this->validatePlannedDateRange(
+                $postData['delay_start_date'] ?? '',
+                $postData['delay_end_date'] ?? '',
+                'Delay end date'
+            );
+            if ($dateErr !== '') {
+                $this->sendValidationErrorResponse($dateErr);
+                return;
+            }
+
             $registerId = $postData['delay_register_id'] ?? null;
             $operation = ($registerId && $registerId !== '') ? 'Update' : 'Add';
 
@@ -1098,6 +1109,21 @@ class ProjectWizardController extends Controller
             ->get()->map(fn ($r) => ['id' => $r->id, 'label' => $r->zone_name])->all();
     }
 
+    private function getHospitals(): array
+    {
+        if (!Schema::hasTable('tbl_hospitals')) {
+            return [];
+        }
+
+        return DB::table('tbl_hospitals')
+            ->where('is_delete', 0)
+            ->where('status', 1)
+            ->orderBy('hospital_name')
+            ->get()
+            ->map(fn ($r) => ['id' => $r->id, 'label' => $r->hospital_name])
+            ->all();
+    }
+
     private function getActiveDepartments(): array
     {
         $table = $this->projectDepartmentService->departmentsTable();
@@ -1206,12 +1232,21 @@ class ProjectWizardController extends Controller
             }
         }
 
+        $hospitalId = !empty($postData['hospital_id']) ? (int) $postData['hospital_id'] : null;
+        $hospitalName = '';
+        if ($hospitalId && Schema::hasTable('tbl_hospitals')) {
+            $hospitalName = (string) (DB::table('tbl_hospitals')
+                ->where('id', $hospitalId)
+                ->where('is_delete', 0)
+                ->value('hospital_name') ?? '');
+        }
+
         $data = [
             'project_code' => trim($postData['project_code']),
             'project_name' => trim($postData['project_name']),
             'project_scope' => trim($postData['project_scope'] ?? ''),
             'location' => $locationName,
-            'hospital_name' => trim($postData['hospital_name'] ?? ''),
+            'hospital_name' => $hospitalName,
             'contractor_name' => trim($postData['contractor_name'] ?? ''),
             'zone_id' => $zoneId,
             'zone_department' => $zoneName ?: trim($postData['zone_department'] ?? ''),
@@ -1233,6 +1268,10 @@ class ProjectWizardController extends Controller
 
         if (Schema::hasColumn('tbl_projects', 'location_id')) {
             $data['location_id'] = $locationId;
+        }
+
+        if (Schema::hasColumn('tbl_projects', 'hospital_id')) {
+            $data['hospital_id'] = $hospitalId;
         }
 
         if ($operation === 'Add') {

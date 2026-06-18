@@ -119,7 +119,7 @@ $gridConfigJson = json_encode($grid_data);
 @push('scripts')
 <!-- CMS Common Utilities (for deleteRecord and other CMS functions) - Load first -->
 <script src="{{ getAssetUrl('js/cms/cms-common.js') }}?v=1.1"></script>
-<script src="{{ getAssetUrl('js/gridview-utility.js') }}?v=1.2"></script>
+<script src="{{ getAssetUrl('js/gridview-utility.js') }}?v=1.4"></script>
 @if(isset($additional_scripts) && is_array($additional_scripts) && !empty($additional_scripts))
 @foreach($additional_scripts as $script)
 @if(!empty($script))

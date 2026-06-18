@@ -97,6 +97,7 @@ $(document).ready(function() {
     // Reset button functionality
     $('.reset_cls').click(function() {
         $('#searchform')[0].reset();
+        $('#searchform input[data-drill-filter]').remove();
         // Reset select2 if used
         $('#searchform select.select2').val(null).trigger('change');
         // Reset date pickers

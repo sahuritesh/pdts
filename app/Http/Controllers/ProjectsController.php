@@ -43,6 +43,7 @@ class ProjectsController extends Controller
             'project' => '',
             'project_types' => $this->getProjectTypes(),
             'zones' => $this->getZones(),
+            'hospitals' => $this->getHospitals(),
             'project_statuses' => $this->getProjectStatuses(),
         ];
 
@@ -201,6 +202,10 @@ class ProjectsController extends Controller
         $statusOptions = array_map(function ($s) {
             return ['value' => $s['value'], 'label' => $s['label']];
         }, $this->getProjectStatuses());
+        $hospitalOptions = array_map(
+            fn ($h) => ['value' => $h['id'], 'label' => $h['label']],
+            $this->getHospitals()
+        );
 
         return $this->buildGridConfig([
             'columns' => $columns,
@@ -208,7 +213,7 @@ class ProjectsController extends Controller
             'dataurl' => $dataurl,
             'filters' => [
                 $this->buildTextFilter('search', 'Search project, hospital, contractor', 'Search', 'col-md-3'),
-                $this->buildTextFilter('hospital', 'Hospital name', 'Hospital', 'col-md-2'),
+                $this->buildSelectFilter('hospital', $hospitalOptions, 'Hospital', 'All hospitals', true, true, 'col-md-2'),
                 $this->buildSelectFilter('project_status', $statusOptions, 'Status', 'All statuses', true, true, 'col-md-2'),
             ],
         ]);
@@ -224,6 +229,8 @@ class ProjectsController extends Controller
             $search = $filters['search'] ?? '';
             $hospital = $filters['hospital'] ?? '';
             $projectStatus = $filters['project_status'] ?? '';
+            $rollupStatus = $filters['rollup_status'] ?? '';
+            $zoneIdFilter = $filters['zone_id'] ?? '';
 
             $wherecondition = [
                 ['column' => 'tb.is_delete', 'operator' => '', 'value' => 0, 'condition' => 'and'],
@@ -231,8 +238,18 @@ class ProjectsController extends Controller
             if (!empty($projectStatus) && $projectStatus !== 'All') {
                 $wherecondition[] = ['column' => 'tb.project_status', 'operator' => '', 'value' => $projectStatus, 'condition' => 'and'];
             }
-            if (!empty($hospital)) {
-                $wherecondition[] = ['column' => 'tb.hospital_name', 'operator' => 'LIKE', 'value' => '%' . $hospital . '%', 'condition' => 'and'];
+            if (!empty($zoneIdFilter) && $zoneIdFilter !== 'All') {
+                $wherecondition[] = ['column' => 'tb.zone_id', 'operator' => '', 'value' => (int) $zoneIdFilter, 'condition' => 'and'];
+            }
+            if (!empty($hospital) && $hospital !== 'All') {
+                if (DB::getSchemaBuilder()->hasColumn('tbl_projects', 'hospital_id')) {
+                    $wherecondition[] = ['column' => 'tb.hospital_id', 'operator' => '', 'value' => (int) $hospital, 'condition' => 'and'];
+                } else {
+                    $hospitalName = DB::table('tbl_hospitals')->where('id', (int) $hospital)->value('hospital_name');
+                    if ($hospitalName) {
+                        $wherecondition[] = ['column' => 'tb.hospital_name', 'operator' => '', 'value' => $hospitalName, 'condition' => 'and'];
+                    }
+                }
             }
 
             $searchColumns = [];
@@ -259,6 +276,7 @@ class ProjectsController extends Controller
             );
 
             $scopedProjectIds = $this->resolveScopedProjectIds($scopeMode);
+            $rollupProjectIds = $this->resolveRollupProjectIds($rollupStatus, $scopedProjectIds);
 
             $recordsFiltered = 0;
             $recordListing = [];
@@ -266,6 +284,9 @@ class ProjectsController extends Controller
 
             foreach ($getRecordListing['data'] as $recordData) {
                 if ($scopedProjectIds !== null && !in_array((int) $recordData->id, $scopedProjectIds, true)) {
+                    continue;
+                }
+                if ($rollupProjectIds !== null && !in_array((int) $recordData->id, $rollupProjectIds, true)) {
                     continue;
                 }
 
@@ -313,6 +334,91 @@ class ProjectsController extends Controller
         $this->userScope->applyProjectScope($scopedQuery, 'tp');
 
         return $scopedQuery->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * @param  int[]|null  $scopeIds
+     * @return int[]|null
+     */
+    private function resolveRollupProjectIds(string $rollupStatus, ?array $scopeIds): ?array
+    {
+        $rollupStatus = trim($rollupStatus);
+        if ($rollupStatus === '' || $rollupStatus === 'All') {
+            return null;
+        }
+
+        $query = DB::table('tbl_projects as tp')->where('tp.is_delete', 0);
+        if ($scopeIds !== null) {
+            if ($scopeIds === []) {
+                return [];
+            }
+            $query->whereIn('tp.id', $scopeIds);
+        }
+
+        if ($rollupStatus === 'on_hold') {
+            return $query->where('tp.project_status', 'on_hold')->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+        }
+
+        if (!DB::getSchemaBuilder()->hasTable('tbl_project_departments')) {
+            if ($rollupStatus === 'delayed') {
+                return $query->where('tp.project_status', 'delayed')->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+            }
+            if ($rollupStatus === 'completed') {
+                return $query->where('tp.project_status', 'completed')->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+            }
+            if ($rollupStatus === 'active') {
+                return $query->where('tp.project_status', 'active')->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+            }
+
+            return [];
+        }
+
+        if ($rollupStatus === 'delayed') {
+            return $query
+                ->where('tp.project_status', '!=', 'on_hold')
+                ->whereExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('tbl_project_departments as pd')
+                        ->whereColumn('pd.project_id', 'tp.id')
+                        ->where('pd.is_delete', 0)
+                        ->where('pd.department_status', 'delay');
+                })
+                ->pluck('tp.id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
+        if ($rollupStatus === 'completed') {
+            return $query
+                ->whereExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('tbl_project_departments as pd')
+                        ->whereColumn('pd.project_id', 'tp.id')
+                        ->where('pd.is_delete', 0);
+                })
+                ->whereNotExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('tbl_project_departments as pd')
+                        ->whereColumn('pd.project_id', 'tp.id')
+                        ->where('pd.is_delete', 0)
+                        ->where('pd.department_status', '!=', 'completed');
+                })
+                ->pluck('tp.id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
+        if ($rollupStatus === 'active') {
+            $allIds = (clone $query)->pluck('tp.id')->map(fn ($id) => (int) $id)->all();
+            $delayedIds = $this->resolveRollupProjectIds('delayed', $scopeIds) ?? [];
+            $completedIds = $this->resolveRollupProjectIds('completed', $scopeIds) ?? [];
+            $onHoldIds = $this->resolveRollupProjectIds('on_hold', $scopeIds) ?? [];
+            $exclude = array_flip(array_merge($delayedIds, $completedIds, $onHoldIds));
+
+            return array_values(array_filter($allIds, static fn ($id) => !isset($exclude[$id])));
+        }
+
+        return [];
     }
 
     private function formatProjectListRow(object $recordData, int $rowNumber, bool $readonly): array
@@ -369,6 +475,21 @@ class ProjectsController extends Controller
             ->orderBy('zone_name')
             ->get()
             ->map(fn ($r) => ['id' => $r->id, 'label' => $r->zone_name, 'code' => $r->zone_code])
+            ->all();
+    }
+
+    private function getHospitals(): array
+    {
+        if (!DB::getSchemaBuilder()->hasTable('tbl_hospitals')) {
+            return [];
+        }
+
+        return DB::table('tbl_hospitals')
+            ->where('is_delete', 0)
+            ->where('status', 1)
+            ->orderBy('hospital_name')
+            ->get()
+            ->map(fn ($r) => ['id' => $r->id, 'label' => $r->hospital_name, 'code' => $r->hospital_code])
             ->all();
     }
 
@@ -439,12 +560,21 @@ class ProjectsController extends Controller
 
         $spoc = trim($postData['project_spoc_name'] ?? '');
 
+        $hospitalId = !empty($postData['hospital_id']) ? (int) $postData['hospital_id'] : null;
+        $hospitalName = '';
+        if ($hospitalId && DB::getSchemaBuilder()->hasTable('tbl_hospitals')) {
+            $hospitalName = (string) (DB::table('tbl_hospitals')
+                ->where('id', $hospitalId)
+                ->where('is_delete', 0)
+                ->value('hospital_name') ?? '');
+        }
+
         $data = [
             'project_code' => trim($postData['project_code']),
             'project_name' => trim($postData['project_name']),
             'project_scope' => trim($postData['project_scope'] ?? ''),
             'location' => $locationName,
-            'hospital_name' => trim($postData['hospital_name'] ?? ''),
+            'hospital_name' => $hospitalName,
             'contractor_name' => trim($postData['contractor_name'] ?? ''),
             'zone_id' => $zoneId,
             'zone_department' => $zoneName ?: trim($postData['zone_department'] ?? ''),
@@ -465,6 +595,10 @@ class ProjectsController extends Controller
 
         if (DB::getSchemaBuilder()->hasColumn('tbl_projects', 'location_id')) {
             $data['location_id'] = $locationId;
+        }
+
+        if (DB::getSchemaBuilder()->hasColumn('tbl_projects', 'hospital_id')) {
+            $data['hospital_id'] = $hospitalId;
         }
 
         if ($operation === 'Add') {

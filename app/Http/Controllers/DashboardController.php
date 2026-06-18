@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Common_model;
 use App\Services\DashboardAnalyticsService;
+use App\Services\DashboardDrilldownService;
 use Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,10 +15,14 @@ use Illuminate\Support\Facades\Session;
 class DashboardController extends Controller
 {
     protected DashboardAnalyticsService $dashboardAnalytics;
+    protected DashboardDrilldownService $dashboardDrilldown;
 
-    public function __construct(DashboardAnalyticsService $dashboardAnalytics)
-    {
+    public function __construct(
+        DashboardAnalyticsService $dashboardAnalytics,
+        DashboardDrilldownService $dashboardDrilldown
+    ) {
         $this->dashboardAnalytics = $dashboardAnalytics;
+        $this->dashboardDrilldown = $dashboardDrilldown;
     }
 
     public function dashboard(Request $request)
@@ -89,7 +94,9 @@ class DashboardController extends Controller
             $zoneId = ($zoneId !== null && $zoneId !== '' && $zoneId !== 'all') ? (int) $zoneId : null;
             $data['selected_zone_id'] = $zoneId;
             $data['zones'] = $this->getZones();
-            $data['analytics'] = $this->dashboardAnalytics->getDashboardAnalytics($widgets, $zoneId);
+            $analytics = $this->dashboardAnalytics->getDashboardAnalytics($widgets, $zoneId);
+            $data['analytics'] = $this->dashboardDrilldown->attachChartDrillUrls($analytics, $zoneId);
+            $data['drill_links'] = $this->dashboardDrilldown->buildKpiLinks($zoneId);
         }
 
         return response()->view('dashboard.dashboard', compact(

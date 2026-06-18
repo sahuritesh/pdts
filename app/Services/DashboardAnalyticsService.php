@@ -179,6 +179,11 @@ class DashboardAnalyticsService
         $departmentsInProgress = (clone $pdQuery)->whereIn('department_status', ['start', 'in_progress'])->count();
         $departmentsCompleted = (clone $pdQuery)->where('department_status', 'completed')->count();
 
+        $deptTable = $this->departmentsTable();
+        $masterDepartments = Schema::hasTable($deptTable)
+            ? (int) DB::table($deptTable)->where('is_delete', 0)->count()
+            : 0;
+
         $openDelays = $this->countOpenDelayEntries();
         $totalDelays = (clone $delayQuery)->count();
         $avgDelayDays = round((float) ((clone $pdQuery)->avg('delay_days') ?? 0), 1);
@@ -207,6 +212,7 @@ class DashboardAnalyticsService
             'delayed_projects' => $delayedProjects,
             'completed_projects' => $completedProjects,
             'total_departments' => $totalDepartments,
+            'master_departments' => $masterDepartments,
             'departments_delayed' => $departmentsDelayed,
             'departments_in_progress' => $departmentsInProgress,
             'departments_completed' => $departmentsCompleted,
@@ -863,6 +869,8 @@ class DashboardAnalyticsService
             ->orderByDesc('pd.id')
             ->limit($limit)
             ->get([
+                'pd.id as pd_id',
+                'pd.project_id',
                 "d.$nameCol as department_name",
                 'pd.department_status',
                 'pd.delay_days',
@@ -871,6 +879,8 @@ class DashboardAnalyticsService
                 'tp.hospital_name',
             ])
             ->map(fn ($row) => [
+                'pd_id' => (int) $row->pd_id,
+                'project_id' => (int) $row->project_id,
                 'department' => $row->department_name,
                 'status' => ucfirst(str_replace('_', ' ', $row->department_status ?? '')),
                 'days' => (int) ($row->delay_days ?? 0),
@@ -938,7 +948,18 @@ class DashboardAnalyticsService
     private function getZoneMetrics(): array
     {
         if (!Schema::hasTable('tbl_zones')) {
-            return ['labels' => [], 'projects' => [], 'delayed_projects' => [], 'departments_delayed' => []];
+            return [
+                'labels' => [],
+                'projects' => [],
+                'delayed_projects' => [],
+                'departments_delayed' => [],
+                'zone_ids' => [],
+                'tooltip_details' => [
+                    'projects' => [],
+                    'delayed_projects' => [],
+                    'departments_delayed' => [],
+                ],
+            ];
         }
 
         $zones = DB::table('tbl_zones')
@@ -951,6 +972,13 @@ class DashboardAnalyticsService
         $projects = [];
         $delayed_projects = [];
         $departments_delayed = [];
+        $zone_ids = [];
+        $tooltipProjects = [];
+        $tooltipDelayedProjects = [];
+        $tooltipDepartmentsDelayed = [];
+
+        $deptTable = $this->departmentsTable();
+        $deptNameCol = $this->departmentNameColumn();
 
         foreach ($zones as $zone) {
             if ($this->zoneFilter && (int) $zone->id !== $this->zoneFilter) {
@@ -958,6 +986,7 @@ class DashboardAnalyticsService
             }
 
             $labels[] = $zone->zone_name;
+            $zone_ids[] = (int) $zone->id;
 
             $projectQuery = DB::table('tbl_projects as tp')
                 ->where('tp.is_delete', 0)
@@ -969,9 +998,12 @@ class DashboardAnalyticsService
 
             $delayedCount = 0;
             $deptDelayedCount = 0;
+            $tooltipProjects[] = $this->buildZoneProjectTooltipBucket($projectIds);
+            $tooltipDelayedProjects[] = ['items' => [], 'total' => 0, 'more' => 0];
+            $tooltipDepartmentsDelayed[] = ['items' => [], 'total' => 0, 'more' => 0];
 
             if (!empty($projectIds) && Schema::hasTable('tbl_project_departments')) {
-                $delayedCount = (int) DB::table('tbl_projects as tp')
+                $delayedProjectIds = DB::table('tbl_projects as tp')
                     ->whereIn('tp.id', $projectIds)
                     ->where('tp.is_delete', 0)
                     ->where('tp.project_status', '!=', 'on_hold')
@@ -983,20 +1015,106 @@ class DashboardAnalyticsService
                             ->where('pd.department_status', 'delay');
                         $this->applyDepartmentScope($sub, 'pd');
                     })
-                    ->count();
+                    ->pluck('tp.id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+
+                $delayedCount = count($delayedProjectIds);
+                $tooltipDelayedProjects[count($tooltipDelayedProjects) - 1] = $this->buildZoneProjectTooltipBucket($delayedProjectIds);
 
                 $deptQuery = DB::table('tbl_project_departments as pd')
+                    ->join('tbl_projects as tp', 'tp.id', '=', 'pd.project_id')
+                    ->join("$deptTable as d", 'd.id', '=', 'pd.department_id')
                     ->whereIn('pd.project_id', $projectIds)
                     ->where('pd.is_delete', 0)
                     ->where('pd.department_status', 'delay');
                 $this->applyDepartmentScope($deptQuery, 'pd');
-                $deptDelayedCount = (int) $deptQuery->count();
+
+                $deptDelayedCount = (int) (clone $deptQuery)->count();
+                $tooltipDepartmentsDelayed[count($tooltipDepartmentsDelayed) - 1] = $this->buildZoneDelayedDepartmentTooltipBucket(
+                    (clone $deptQuery)
+                        ->orderByDesc('pd.delay_days')
+                        ->orderByDesc('pd.id')
+                        ->limit(8)
+                        ->get([
+                            "d.$deptNameCol as department_name",
+                            'tp.project_code',
+                            'tp.project_name',
+                            'tp.hospital_name',
+                            'pd.delay_days',
+                        ]),
+                    $deptDelayedCount
+                );
             }
 
             $delayed_projects[] = $delayedCount;
             $departments_delayed[] = $deptDelayedCount;
         }
 
-        return compact('labels', 'projects', 'delayed_projects', 'departments_delayed');
+        return [
+            'labels' => $labels,
+            'projects' => $projects,
+            'delayed_projects' => $delayed_projects,
+            'departments_delayed' => $departments_delayed,
+            'zone_ids' => $zone_ids,
+            'tooltip_details' => [
+                'projects' => $tooltipProjects,
+                'delayed_projects' => $tooltipDelayedProjects,
+                'departments_delayed' => $tooltipDepartmentsDelayed,
+            ],
+        ];
+    }
+
+    /**
+     * @param  int[]  $projectIds
+     */
+    private function buildZoneProjectTooltipBucket(array $projectIds): array
+    {
+        if ($projectIds === []) {
+            return ['items' => [], 'total' => 0, 'more' => 0];
+        }
+
+        $rows = DB::table('tbl_projects as tp')
+            ->whereIn('tp.id', $projectIds)
+            ->where('tp.is_delete', 0)
+            ->orderBy('tp.project_code')
+            ->limit(8)
+            ->get(['tp.project_code', 'tp.project_name', 'tp.hospital_name']);
+
+        $total = count($projectIds);
+        $items = $rows->map(function ($row) {
+            $label = trim(($row->project_code ?? '') . ' — ' . ($row->project_name ?? ''));
+            $hospital = trim($row->hospital_name ?? '');
+            if ($hospital !== '') {
+                $label .= ' (' . $hospital . ')';
+            }
+
+            return $label;
+        })->values()->all();
+
+        return [
+            'items' => $items,
+            'total' => $total,
+            'more' => max(0, $total - count($items)),
+        ];
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, object>  $rows
+     */
+    private function buildZoneDelayedDepartmentTooltipBucket($rows, int $total): array
+    {
+        $items = $rows->map(fn ($row) => [
+            'department' => (string) ($row->department_name ?? 'Department'),
+            'project' => trim(($row->project_code ?? '') . ' — ' . ($row->project_name ?? '')),
+            'hospital' => (string) ($row->hospital_name ?? ''),
+            'days' => (int) ($row->delay_days ?? 0),
+        ])->values()->all();
+
+        return [
+            'items' => $items,
+            'total' => $total,
+            'more' => max(0, $total - count($items)),
+        ];
     }
 }

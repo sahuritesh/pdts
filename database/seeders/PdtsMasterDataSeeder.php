@@ -18,6 +18,7 @@ class PdtsMasterDataSeeder extends Seeder
 
         $this->seedProjectTypes($now, $userId);
         $this->seedZones($now, $userId);
+        $this->seedHospitals($now, $userId);
         $this->seedLocations($now, $userId);
         $this->seedRootCauses($now, $userId);
         $this->seedDepartments($now, $userId);
@@ -83,6 +84,38 @@ class PdtsMasterDataSeeder extends Seeder
             DB::table('tbl_zones')->insert([
                 'zone_code' => $code,
                 'zone_name' => $name,
+                'description' => $desc,
+                'status' => 1,
+                'created_by' => $userId,
+                'created_on' => $now,
+                'updated_by' => $userId,
+                'updated_on' => $now,
+                'is_delete' => 0,
+            ]);
+        }
+    }
+
+    private function seedHospitals($now, int $userId): void
+    {
+        if (!DB::getSchemaBuilder()->hasTable('tbl_hospitals')) {
+            return;
+        }
+
+        $hospitals = [
+            ['apollo_gurugram', 'Apollo Hospitals — Gurugram', 'Apollo Hospitals campus in Gurugram'],
+            ['apollo_hyderabad', 'Apollo Hospitals — Hyderabad', 'Apollo Hospitals campus in Hyderabad'],
+            ['apollo_chennai', 'Apollo Hospitals — Chennai', 'Apollo Hospitals campus in Chennai'],
+            ['apollo_bangalore', 'Apollo Hospitals — Bengaluru', 'Apollo Hospitals campus in Bengaluru'],
+            ['apollo_delhi', 'Apollo Hospitals — Delhi', 'Apollo Hospitals campus in Delhi NCR'],
+        ];
+
+        foreach ($hospitals as [$code, $name, $desc]) {
+            if (DB::table('tbl_hospitals')->where('hospital_code', $code)->exists()) {
+                continue;
+            }
+            DB::table('tbl_hospitals')->insert([
+                'hospital_code' => $code,
+                'hospital_name' => $name,
                 'description' => $desc,
                 'status' => 1,
                 'created_by' => $userId,

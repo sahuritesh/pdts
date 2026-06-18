@@ -64,7 +64,6 @@ $(function() {
         var form = document.getElementById('wizardAttachmentForm');
         ajaxRequestWithPromise("{{ getProjectUrl('wizard_save_attachment') }}", new FormData(form), 'wizard_save_attachment', 1, '', $btn)
             .then(function(res) {
-                parseFormErrors(res, res.error == 0 ? 'success' : 'error');
                 if (res.error == 0) openSideLayout({}, panelUrl, '{{ $pageTitle }}');
             });
     });

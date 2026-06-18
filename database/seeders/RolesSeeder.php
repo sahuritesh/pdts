@@ -58,7 +58,7 @@ class RolesSeeder extends Seeder
                 'role_name' => 'Manager',
                 'role_description' => 'Manage projects, departments, and reports',
                 'permission_types' => implode(',', array_merge(
-                    ['dashboard_view', 'users', 'departments', 'locations', 'projects'],
+                    ['dashboard_view', 'users', 'departments', 'hospitals', 'locations', 'projects'],
                     RoleManagement::allDashboardPermissionKeys()
                 )),
                 'replace_permissions' => false,
@@ -73,7 +73,7 @@ class RolesSeeder extends Seeder
                 'role_name' => 'Viewer',
                 'role_description' => 'Read-only dashboards and listings',
                 'permission_types' => implode(',', array_merge(
-                    ['dashboard_view', 'departments', 'projects'],
+                    ['dashboard_view', 'departments', 'hospitals', 'projects'],
                     RoleManagement::allDashboardPermissionKeys()
                 )),
                 'replace_permissions' => false,

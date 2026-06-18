@@ -123,6 +123,8 @@ class SpocTasksController extends Controller
             $filters = $request->filters ?? [];
             $search = $filters['search'] ?? '';
             $status = $filters['status_filter'] ?? '';
+            $zoneIdFilter = $filters['zone_id'] ?? '';
+            $hospitalFilter = $filters['hospital'] ?? '';
 
             $deptTable = Schema::hasTable('tbl_departments') ? 'tbl_departments' : 'tbl_delay_categories';
             $nameCol = Schema::hasColumn($deptTable, 'department_name') ? 'department_name' : 'category_name';
@@ -133,7 +135,29 @@ class SpocTasksController extends Controller
             ];
 
             if (!empty($status) && $status !== 'All') {
-                $wherecondition[] = ['column' => 'pd.department_status', 'operator' => '', 'value' => $status, 'condition' => 'and'];
+                if ($status === 'active_work') {
+                    $wherecondition[] = [
+                        'column' => 'pd.department_status',
+                        'operator' => '',
+                        'value' => ['start', 'in_progress'],
+                        'condition' => 'in',
+                    ];
+                } else {
+                    $wherecondition[] = ['column' => 'pd.department_status', 'operator' => '', 'value' => $status, 'condition' => 'and'];
+                }
+            }
+            if (!empty($zoneIdFilter) && $zoneIdFilter !== 'All') {
+                $wherecondition[] = ['column' => 'tp.zone_id', 'operator' => '', 'value' => (int) $zoneIdFilter, 'condition' => 'and'];
+            }
+            if (!empty($hospitalFilter) && $hospitalFilter !== 'All') {
+                if (Schema::hasColumn('tbl_projects', 'hospital_id')) {
+                    $wherecondition[] = ['column' => 'tp.hospital_id', 'operator' => '', 'value' => (int) $hospitalFilter, 'condition' => 'and'];
+                } else {
+                    $hospitalName = DB::table('tbl_hospitals')->where('id', (int) $hospitalFilter)->value('hospital_name');
+                    if ($hospitalName) {
+                        $wherecondition[] = ['column' => 'tp.hospital_name', 'operator' => '', 'value' => $hospitalName, 'condition' => 'and'];
+                    }
+                }
             }
 
             $searchColumns = [];

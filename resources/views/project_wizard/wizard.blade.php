@@ -8,11 +8,21 @@
     $statusLabels = $data['status_labels'] ?? [];
     $projectTypes = $data['project_types'] ?? [];
     $zones = $data['zones'] ?? [];
+    $hospitals = $data['hospitals'] ?? [];
     $spocUsers = $data['spoc_users'] ?? [];
     $projectSpocUsers = $data['project_spoc_users'] ?? [];
     $selectedDeptIds = array_column($projectDepartments, 'department_id');
     $selectedZoneId = $project['zone_id'] ?? '';
     $selectedLocationId = $project['location_id'] ?? '';
+    $selectedHospitalId = $project['hospital_id'] ?? '';
+    if ($selectedHospitalId === '' && !empty($project['hospital_name']) && !empty($hospitals)) {
+        foreach ($hospitals as $hospital) {
+            if (($hospital['label'] ?? '') === $project['hospital_name']) {
+                $selectedHospitalId = $hospital['id'];
+                break;
+            }
+        }
+    }
     $enableClick = !empty($projectId);
     $savedWizardStep = (int) ($project['wizard_step'] ?? 1);
     $initialStep = $enableClick ? max(0, min(2, $savedWizardStep - 1)) : 0;
@@ -100,7 +110,12 @@
                             </div>
                             <div class="col-md-4 mb-2">
                                 <label>Hospital Name</label>
-                                <input type="text" class="form-control" name="hospital_name" value="{{ $project['hospital_name'] ?? '' }}">
+                                <select name="hospital_id" id="wizard_hospital_id" class="form-control dd-select">
+                                    <option value="">Select hospital</option>
+                                    @foreach($hospitals as $hospital)
+                                    <option value="{{ $hospital['id'] }}" @if($selectedHospitalId == $hospital['id']) selected @endif>{{ $hospital['label'] }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="col-md-4 mb-2">
                                 <label>Project Type</label>
@@ -1849,9 +1864,6 @@ function initSpocUserControls() {
                     refreshAllSpocSelects(res.user ? res.user.id : '', $block, res.spoc_role || spocRole);
                     $block.find('.spoc-add-form').slideUp(150);
                     $block.find('.spoc-add-first-name, .spoc-add-last-name, .spoc-add-email, .spoc-add-mobile, .spoc-add-password').val('');
-                    parseFormErrors(res, 'success');
-                } else {
-                    parseFormErrors(res, 'error');
                 }
             });
     });

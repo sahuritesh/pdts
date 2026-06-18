@@ -44,10 +44,78 @@
          * Initialize the utility
          */
         init() {
-            this.loadSavedFilterData();
+            this.applyUrlFilters();
+            if (!this.config.urlFiltersApplied) {
+                this.loadSavedFilterData();
+            }
             this.initializeSelect2();
             this.initializeDateRangePickers();
-            this.restoreFilters();
+        }
+
+        /**
+         * Apply dashboard drilldown filters from URL (?gf_field=value).
+         * Creates hidden inputs for params that have no visible filter control.
+         */
+        applyUrlFilters() {
+            if (typeof URLSearchParams === 'undefined') {
+                return;
+            }
+
+            const $form = $('#' + this.config.formId);
+            if (!$form.length) {
+                return;
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const values = [];
+            let hasUrlFilters = false;
+
+            params.forEach((value, key) => {
+                if (!key || key.indexOf('gf_') !== 0 || value === '') {
+                    return;
+                }
+                values.push({ name: key.substring(3), value: value });
+                hasUrlFilters = true;
+            });
+
+            if (!hasUrlFilters) {
+                return;
+            }
+
+            this.config.urlFiltersApplied = true;
+            this.dateRangeFilterData = {};
+            localStorage.removeItem(this.config.filterStorageKey);
+
+            $form[0].reset();
+            $form.find('input[data-drill-filter]').remove();
+            $form.find('select.select2').val(null).trigger('change');
+
+            values.forEach((field) => {
+                let $el = $form.find(`[name="${field.name}"]`);
+                if (!$el.length) {
+                    $el = $('<input>', {
+                        type: 'hidden',
+                        name: field.name,
+                        value: field.value,
+                        'data-drill-filter': '1'
+                    });
+                    $form.append($el);
+                } else {
+                    $el.val(field.value);
+                    if ($el.hasClass('select2-hidden-accessible')) {
+                        $el.trigger('change');
+                    }
+                }
+
+                if (field.value) {
+                    this.dateRangeFilterData[field.name] = field.value;
+                }
+            });
+
+            localStorage.setItem(this.config.filterStorageKey, JSON.stringify({
+                values: values,
+                timestamp: new Date().getTime()
+            }));
         }
 
         /**
@@ -231,8 +299,8 @@
                 const now = new Date().getTime();
                 const age = now - parsed.timestamp;
 
-                // Check if data is expired
-                if (age > this.config.filterExpiry) {
+                // Check if data is expired (skip expiry when opened from dashboard drilldown URL)
+                if (!this.config.urlFiltersApplied && age > this.config.filterExpiry) {
                     localStorage.removeItem(this.config.filterStorageKey);
                     if (callback) callback();
                     return;

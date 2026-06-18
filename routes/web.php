@@ -13,6 +13,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\CronController;
 use App\Http\Controllers\DepartmentsController;
 use App\Http\Controllers\LocationsController;
+use App\Http\Controllers\HospitalsController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ProjectWizardController;
 use App\Http\Controllers\SpocTasksController;
@@ -60,6 +61,12 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::get('locations-list', [LocationsController::class, 'location_list']);
     Route::post('get_location_list', [LocationsController::class, 'get_location_list']);
     Route::post('get_locations_by_zone', [LocationsController::class, 'get_locations_by_zone']);
+
+    Route::match(array('GET', 'POST'), '/hospitals/add', [HospitalsController::class, 'hospital_form']);
+    Route::match(array('GET', 'POST'), '/hospitals/edit/{id}', [HospitalsController::class, 'hospital_form']);
+    Route::post('insert_update_hospital', [HospitalsController::class, 'insert_update_hospital']);
+    Route::get('hospitals-list', [HospitalsController::class, 'hospital_list']);
+    Route::post('get_hospital_list', [HospitalsController::class, 'get_hospital_list']);
 
     Route::get('spoc-tasks-list', [SpocTasksController::class, 'task_list']);
     Route::match(array('GET', 'POST'), '/spoc-tasks/view/{id}', [SpocTasksController::class, 'task_detail']);

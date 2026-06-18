@@ -61,7 +61,7 @@
         initSpocUserControls();
     }
 
-    $('#saveDeptSetupBtn').on('click', function() {
+    $(document).off('click.deptSetupSave', '#saveDeptSetupBtn').on('click.deptSetupSave', '#saveDeptSetupBtn', function() {
         var $btn = $(this);
         if (typeof syncProjectDepartmentOrder === 'function') {
             syncProjectDepartmentOrder();
@@ -87,7 +87,6 @@
                 if (typeof res === 'string') {
                     try { res = JSON.parse(res); } catch (e) {}
                 }
-                parseFormErrors(res, (res.error == 0 || res.error == '0') ? 'success' : 'error');
                 if (res.error == 0 || res.error == '0') {
                     if (!res.spoc_name && spocName) {
                         res.spoc_name = spocName;

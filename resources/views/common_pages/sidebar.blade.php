@@ -9,6 +9,7 @@
         && !$showFullProjects;
     $showMyTasks = permissionexists('spoc_tasks') === '1';
     $masterDataVisible = modulePermissionExists('departments')
+        || modulePermissionExists('hospitals')
         || modulePermissionExists('locations')
         || $showFullProjects
         || $showMyProjects
@@ -65,6 +66,8 @@
                     <ul class="sub-menu" aria-expanded="false">
                         @php if (modulePermissionExists('departments')) { @endphp
                         <li><a href="{{ getProjectUrl('departments-list') }}">Departments</a></li>
+                        @php } if (modulePermissionExists('hospitals')) { @endphp
+                        <li><a href="{{ getProjectUrl('hospitals-list') }}">Hospitals</a></li>
                         @php } if (modulePermissionExists('locations')) { @endphp
                         <li><a href="{{ getProjectUrl('locations-list') }}">Locations</a></li>
                         @php } if ($showFullProjects) { @endphp

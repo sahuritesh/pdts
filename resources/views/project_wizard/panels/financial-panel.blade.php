@@ -44,8 +44,7 @@ $(function() {
     $('.sidelayoutTitle').html('{{ $pageTitle }}');
     $('#saveWizardFinancialBtn').on('click', function() {
         var $btn = $(this);
-        ajaxRequestWithPromise("{{ getProjectUrl('wizard_save_financial') }}", $('#wizardFinancialForm').serialize(), 'wizard_save_financial', 0, '', $btn)
-            .then(function(res) { parseFormErrors(res, res.error == 0 ? 'success' : 'error'); });
+        ajaxRequestWithPromise("{{ getProjectUrl('wizard_save_financial') }}", $('#wizardFinancialForm').serialize(), 'wizard_save_financial', 0, '', $btn);
     });
 });
 </script>

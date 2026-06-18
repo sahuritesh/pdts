@@ -1602,7 +1602,6 @@ function bindDepartmentWorkflowHandlers(options) {
         payload.append('_token', options.csrfToken);
         ajaxRequestWithPromise(options.saveUrl, payload, 'save_project_department', 1, '', $btn)
             .then(function(res) {
-                parseFormErrors(res, isDeptWorkflowSuccess(res) ? 'success' : 'error');
                 if (isDeptWorkflowSuccess(res)) {
                     triggerDeptWorkflowReload(options);
                 }
@@ -1614,7 +1613,6 @@ function bindDepartmentWorkflowHandlers(options) {
         var payload = 'project_department_id=' + $btn.data('id') + '&action=' + $btn.data('action') + '&_token=' + options.csrfToken;
         ajaxRequestWithPromise(options.statusUrl, payload, 'update_department_status', 0, '', $btn)
             .then(function(res) {
-                parseFormErrors(res, isDeptWorkflowSuccess(res) ? 'success' : 'error');
                 if (isDeptWorkflowSuccess(res)) {
                     triggerDeptWorkflowReload(options);
                 }

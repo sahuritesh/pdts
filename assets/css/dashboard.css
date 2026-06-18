@@ -1217,3 +1217,95 @@ color: var(--color-black) !important;
 .tracker-green .tracker-count{
     background:#10b981;
 }
+
+/* Dashboard drilldown links */
+a.dashboard-drill-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+a.dashboard-drill-link:hover {
+    color: inherit;
+    text-decoration: none;
+}
+
+a.dashboard-drill-link:hover .stat-card,
+a.dashboard-drill-link:hover .tracker-card {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.dashboard-drill-icon {
+    font-size: 0.85em;
+    opacity: 0.45;
+    vertical-align: middle;
+}
+
+a.dashboard-drill-link:hover .dashboard-drill-icon {
+    opacity: 1;
+}
+
+.dashboard-chart-drillable {
+    cursor: pointer;
+}
+
+.dashboard-drill-row[data-href] {
+    cursor: pointer;
+}
+
+.dashboard-drill-row[data-href]:hover {
+    background: #f8fafc;
+}
+
+.chart-card .chart-drill-hint {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 400;
+    margin-left: 6px;
+}
+
+.zone-chart-tooltip {
+    padding: 8px 10px;
+    max-width: 320px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #1e293b;
+}
+
+.zone-chart-tooltip-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #0f172a;
+}
+
+.zone-chart-tooltip-count {
+    margin-bottom: 6px;
+    color: #334155;
+}
+
+.zone-chart-tooltip-list {
+    margin: 0;
+    padding: 0 0 0 14px;
+    list-style: disc;
+}
+
+.zone-chart-tooltip-list li {
+    margin-bottom: 3px;
+}
+
+.zone-chart-tooltip-muted {
+    color: #64748b;
+}
+
+.zone-chart-tooltip-days {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.zone-chart-tooltip-more {
+    color: #64748b;
+    font-style: italic;
+    list-style: none;
+    margin-left: -14px;
+}

@@ -269,6 +269,7 @@ class RoleManagement extends Controller
             ],
             'Project Tracking' => [
                 ['label' => 'Departments', 'value' => 'departments'],
+                ['label' => 'Hospitals', 'value' => 'hospitals'],
                 ['label' => 'Locations', 'value' => 'locations'],
                 ['label' => 'Projects (admin)', 'value' => 'projects'],
                 ['label' => 'My Projects', 'value' => 'my_projects'],
@@ -287,6 +288,7 @@ class RoleManagement extends Controller
         return [
             'users' => ['users_creation', 'users_list'],
             'departments' => ['delay_categories', 'delay_categories_list'],
+            'hospitals' => [],
             'locations' => [],
             'projects' => ['projects_list', 'projects_create', 'delay_registers', 'mitigations', 'financial_impacts', 'delay_attachments'],
             'my_projects' => ['spoc_project_access', 'spoc_department_access'],
@@ -302,6 +304,7 @@ class RoleManagement extends Controller
             'roles',
             'users',
             'departments',
+            'hospitals',
             'locations',
             'projects',
             'my_projects',

@@ -380,9 +380,9 @@ Active
     <script src="{{ getAssetUrl('libs/tinymce/tinymce.min.js') }}"></script>
     <script src="{{ getAssetUrl('js/tinymce-utils.js') }}"></script>
     <script src="{{ getAssetUrl('js/growl.js') }}"></script>
-    <script src="{{ getAssetUrl('js/ajaxPromise.js') }}"></script>
+    <script src="{{ getAssetUrl('js/ajaxPromise.js') }}?v=1.1"></script>
     {{-- Bump querystring to bust browser cache when common utilities change --}}
-    <script src="{{ getAssetUrl('js/common.js') }}?v=2.5"></script>
+    <script src="{{ getAssetUrl('js/common.js') }}?v=2.6"></script>
     <script src="{{ getAssetUrl('js/custom_operations.js') }}"></script>
     <script src="{{ getAssetUrl('js/common-confirm.js') }}"></script>
     <!--confirm popup--->
@@ -391,7 +391,7 @@ Active
     <script src="{{ getAssetUrl('js/confirm-utility.js') }}"></script>
     <script src="{{ getAssetUrl('js/select2.min.js') }}"></script>
 
-    <script src="{{ getAssetUrl('js/formWizard.js') }}"></script>
+    <script src="{{ getAssetUrl('js/formWizard.js') }}?v=1.1"></script>
     <!---end confirm popup-->
     <!-- apexcharts -->
     <script src="{{ getAssetUrl('libs/apexcharts/apexcharts.min.js') }}"></script>

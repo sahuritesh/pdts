@@ -46,14 +46,8 @@ function validateAndProcessDataForWizard(json) {
                 if (callbackFunction !== '' && callbackFunction !== undefined) {
                     triggerCallBackFunction(callbackFunction);
                 }
-                if (response.msg) {
-                    parseFormErrors(response, 'success');
-                }
             } else {
                 $('.customWizard-' + currentState).removeClass('disabled').addClass('current');
-                if (response.msg) {
-                    parseFormErrors(response, 'error');
-                }
             }
         }).catch(function() {
             preloaderOverlay('hide');

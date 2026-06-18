@@ -49,9 +49,6 @@
                     <span class="badge bg-{{ $severityClass[$sev] ?? 'secondary' }}">{{ ucfirst($sev) }}</span>
                     <span class="badge bg-info text-dark">{{ (int)($delay->delay_days ?? 0) }} days</span>
                     <span class="badge bg-primary">{{ $statusLabel }}</span>
-                    @if(!empty($delay->licensing_openings_affected))
-                    <span class="badge bg-dark">Showstopper</span>
-                    @endif
                 </div>
             </div>
 
@@ -173,13 +170,17 @@
                 <label>Event Description</label>
                 <textarea class="form-control" name="specific_event_description" rows="2"></textarea>
             </div>
-            <div class="col-md-6 mb-2">
-                <label>Start Date</label>
-                <input type="date" class="form-control" name="delay_start_date">
-            </div>
-            <div class="col-md-6 mb-2">
-                <label>End Date</label>
-                <input type="date" class="form-control" name="delay_end_date">
+            <div class="col-12 mb-2">
+                <div class="row g-2 planned-date-range">
+                    <div class="col-md-6">
+                        <label for="delay_start_{{ $ctx['id'] }}">Start Date</label>
+                        <input type="date" class="form-control js-planned-start" name="delay_start_date" id="delay_start_{{ $ctx['id'] }}" autocomplete="off" placeholder="yyyy-mm-dd">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="delay_end_{{ $ctx['id'] }}">End Date</label>
+                        <input type="date" class="form-control js-planned-end" name="delay_end_date" id="delay_end_{{ $ctx['id'] }}" data-label="Delay end date" autocomplete="off" placeholder="yyyy-mm-dd">
+                    </div>
+                </div>
             </div>
             <div class="col-md-6 mb-2">
                 <label>Root Cause</label>
@@ -201,7 +202,7 @@
             <div class="col-12 mb-2">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" name="licensing_openings_affected" value="1" id="licensing_{{ $ctx['id'] }}">
-                    <label class="form-check-label" for="licensing_{{ $ctx['id'] }}">Licensing / openings affected (showstopper)</label>
+                    <label class="form-check-label" for="licensing_{{ $ctx['id'] }}">Is this a Showstopper?</label>
                 </div>
             </div>
         </div>
@@ -211,6 +212,7 @@
     </form>
 
     <hr>
+    @if($delays->count())
     <h6>Add Mitigation</h6>
     <form id="wizardMitigationForm">
         @csrf
@@ -241,6 +243,13 @@
             <button type="button" class="btn btn-submit btn-sm" id="saveWizardMitigationBtn">Save Mitigation</button>
         </div>
     </form>
+    @else
+    <h6>Mitigation</h6>
+    <div class="alert alert-info small mb-0">
+        <i class="ri-information-line me-1"></i>
+        No delay entries are registered for this department yet. Log a delay above before adding mitigation actions.
+    </div>
+    @endif
 </div>
 
 <style>
@@ -293,31 +302,61 @@
 </style>
 
 <script>
-$(function() {
+(function initDelayRegisterPanel() {
+    var $panel = $('#dynamicSideLayoutContent .delay-register-panel').first();
+    if (!$panel.length) {
+        return;
+    }
+
     $('.sidelayoutTitle').html('{{ $pageTitle }}');
-    if ($.fn.select2) { $('.dd-select').select2({ dropdownParent: $("#offcanvasRight"), width: '100%' }); }
+    if ($.fn.select2) {
+        $panel.find('.dd-select').select2({ dropdownParent: $('#offcanvasRight'), width: '100%' });
+    }
 
     var panelUrl = "{{ getProjectUrl('projects/wizard/panel/delay/' . $encPd) }}";
     function reloadPanel() {
         openSideLayout({}, panelUrl, '{{ $pageTitle }}');
     }
 
-    $('#saveWizardDelayBtn').on('click', function() {
+    $panel.off('click.delaySave', '#saveWizardDelayBtn').on('click.delaySave', '#saveWizardDelayBtn', function() {
+        if (window.__wizardDelaySaving) {
+            return;
+        }
         var $btn = $(this);
-        ajaxRequestWithPromise("{{ getProjectUrl('wizard_save_delay') }}", $('#wizardDelayForm').serialize(), 'wizard_save_delay', 0, '', $btn)
+        var $form = $panel.find('#wizardDelayForm');
+        if (!$form.length) {
+            return;
+        }
+        if (typeof validatePlannedDateRangesInScope === 'function' && !validatePlannedDateRangesInScope($form)) {
+            return;
+        }
+        window.__wizardDelaySaving = true;
+        ajaxRequestWithPromise("{{ getProjectUrl('wizard_save_delay') }}", $form.serialize(), 'wizard_save_delay', 0, '', $btn)
             .then(function(res) {
-                parseFormErrors(res, res.error == 0 ? 'success' : 'error');
-                if (res.error == 0) reloadPanel();
+                if (res.error == 0 || res.error == '0') {
+                    reloadPanel();
+                }
+            })
+            .finally(function() {
+                window.__wizardDelaySaving = false;
             });
     });
 
-    $('#saveWizardMitigationBtn').on('click', function() {
+    $panel.off('click.delayMitigationSave', '#saveWizardMitigationBtn').on('click.delayMitigationSave', '#saveWizardMitigationBtn', function() {
+        if (window.__wizardMitigationSaving) {
+            return;
+        }
         var $btn = $(this);
-        ajaxRequestWithPromise("{{ getProjectUrl('wizard_save_mitigation') }}", $('#wizardMitigationForm').serialize(), 'wizard_save_mitigation', 0, '', $btn)
+        window.__wizardMitigationSaving = true;
+        ajaxRequestWithPromise("{{ getProjectUrl('wizard_save_mitigation') }}", $panel.find('#wizardMitigationForm').serialize(), 'wizard_save_mitigation', 0, '', $btn)
             .then(function(res) {
-                parseFormErrors(res, res.error == 0 ? 'success' : 'error');
-                if (res.error == 0) reloadPanel();
+                if (res.error == 0 || res.error == '0') {
+                    reloadPanel();
+                }
+            })
+            .finally(function() {
+                window.__wizardMitigationSaving = false;
             });
     });
-});
+})();
 </script>
