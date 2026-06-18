@@ -1176,15 +1176,11 @@
     width:100%;
 
     padding:14px;
-
     margin-bottom:12px;
-
     border:none;
-
     border-radius:14px;
-
     background:#fff;
-
+text-align: left;
     transition:.3s ease;
 
     box-shadow:

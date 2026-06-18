@@ -88,7 +88,7 @@ class ProjectDepartmentService
             'attachments' => [
                 'route' => 'projects/wizard/panel/attachments',
                 'title_prefix' => 'Attachments',
-                'icon' => 'ri-attachment-2-line',
+                'icon' => 'ri-file-list-3-line',
                 'label' => 'Attachments',
                 'subtitle' => 'Documents & files',
                 'css_class' => 'dept-panel-attachments',
