@@ -82,7 +82,7 @@
                 </select>
             </div>
             @if(!empty($data['departments']))
-            <div class="col-md-12 mb-3">
+            <div class="col-md-12 mb-3 department-select-wrapper">
                 <label>Assigned Departments <small class="text-muted">(for Department SPOC users)</small></label>
                 <select name="department_ids[]" id="department_ids" class="form-select" multiple="multiple">
                     @foreach($data['departments'] as $dept)

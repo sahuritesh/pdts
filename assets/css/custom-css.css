@@ -595,7 +595,7 @@ text.highcharts-credits {
 #ucList th.grid-actions-col,
 #ucList td.grid-actions-cell {
     white-space: nowrap !important;
-    width: 1% !important;
+    width: 8% !important;
     min-width: 0 !important;
     padding: 0.45rem 0.55rem !important;
     vertical-align: middle;
@@ -2150,7 +2150,7 @@ table.dataTable th {
     flex-direction: column;
 }
 .sidelayout-offcanvas .offcanvas-body {
-    padding: 1.75rem 2.25rem 2rem;
+    padding: 16px;
 }
 .offcanvas-body .card{
     box-shadow: none;
@@ -2429,4 +2429,118 @@ table.dataTable th {
 /* OPTIONAL ACTIVE ROW */
 .role-permission-ui input[type="checkbox"]:checked {
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+/* select option */
+/* =====================================
+   CORPORATE MULTI SELECT
+===================================== */
+
+.department-select-wrapper .select2-container--default .select2-selection--multiple{
+
+    min-height:48px;
+
+    border:1px solid #dbe2ea;
+
+    border-radius:12px;
+
+    padding:6px;
+
+    background:#fff;
+
+    transition:.3s ease;
+}
+
+.department-select-wrapper .select2-container--default.select2-container--focus .select2-selection--multiple{
+
+    border-color:#1F8EF1;
+
+    box-shadow:
+        0 0 0 4px rgba(31,142,241,.08);
+}
+
+/* Selected Tags */
+
+.department-select-wrapper .select2-container .select2-selection--multiple .select2-selection__choice{
+
+    background:linear-gradient(
+        135deg,
+        #eff6ff,
+        #dbeafe
+    );
+
+    border:1px solid #bfdbfe;
+
+    color:#1e40af;
+
+    border-radius:8px;
+
+    padding:5px 10px;
+
+    margin-top:4px;
+    margin-right:5px;
+
+    font-size:12px;
+    font-weight:600;
+}
+
+/* Remove Icon */
+
+.department-select-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice__remove{
+
+    color:#dc2626;
+
+    margin-right:6px;
+
+    font-size:14px;
+
+    border:none;
+
+    transition:.3s;
+    left: 3px;
+    top: 3px;
+}
+
+.department-select-wrapper .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover{
+
+    color:#b91c1c;
+
+    background:none;
+}
+
+/* Search Input */
+
+.department-select-wrapper .select2-search__field{
+
+    font-size:13px !important;
+
+    margin-top:6px !important;
+}
+
+/* Dropdown */
+
+.department-select-wrapper .select2-dropdown{
+
+    border:1px solid #dbe2ea;
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+    box-shadow:
+        0 10px 25px rgba(15,23,42,.08);
+}
+
+.department-select-wrapper .select2-results__option{
+
+    padding:10px 14px;
+
+    font-size:13px;
+}
+
+.department-select-wrapper .select2-results__option--highlighted{
+
+    background:#1F8EF1 !important;
+
+    color:#fff !important;
 }
