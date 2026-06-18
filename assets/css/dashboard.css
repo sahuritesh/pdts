@@ -423,20 +423,13 @@
 
 .stat-card{
     background:#ffffff;
-
     border:1px solid #e5e7eb;
-
     border-radius:16px;
-
     padding:15px;
-
     position:relative;
-
     overflow:hidden;
-
     transition:all .35s ease;
 
-    z-index:1;
 }
 
 /* Floating Glow Top Right */
@@ -571,7 +564,7 @@
 .stat-card-Inner{
     display:flex;
     align-items:center;
-    gap:14px;
+    gap:12px;
 }
 
 .stat-value{
@@ -736,7 +729,7 @@
 /* ===== LABEL ===== */
 .stat-label {
   margin-top: 12px;
-  font-size: 13px;
+  font-size: 12px;
   color: #6b7280;
   font-weight: 500;
   margin-bottom: 2px;
@@ -1236,10 +1229,44 @@ a.dashboard-drill-link:hover .tracker-card {
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
 }
 
-.dashboard-drill-icon {
-    font-size: 0.85em;
-    opacity: 0.45;
-    vertical-align: middle;
+
+.dashboard-drill-card{
+    position:relative;
+}
+
+.dashboard-drill-icon{
+    position:absolute;
+
+    right:15px;
+    top:50%;
+
+    transform:translateY(-50%);
+
+    width:28px;
+    height:28px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:50%;
+
+    background:#f8fafc;
+
+    color:#64748b;
+
+    font-size:14px;
+
+    opacity:1;
+
+    transition:.3s ease;
+}
+
+.dashboard-drill-card:hover .dashboard-drill-icon{
+    background:#2563eb;
+    color:#fff;
+
+    transform:translateY(-50%) translateX(3px);
 }
 
 a.dashboard-drill-link:hover .dashboard-drill-icon {
