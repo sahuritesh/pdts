@@ -194,7 +194,7 @@ class ProjectDepartmentService
             ->all();
     }
 
-    public function syncProjectDepartments(int $projectId, array $orderedDepartmentIds, array $parallelFlags = []): void
+    public function syncProjectDepartments(int $projectId, array $orderedDepartmentIds, array $parallelFlags = [], array $spocAssignments = []): void
     {
         $userId = Auth::id();
         $now = current_datetime();
@@ -213,14 +213,20 @@ class ProjectDepartmentService
                 continue;
             }
 
+            $setup = $spocAssignments[$departmentId] ?? $spocAssignments[(string) $departmentId] ?? [];
             $allowParallel = ($hasParallelColumn && $sort < $total && !empty($parallelFlags[$departmentId])) ? 1 : 0;
+            if ($hasParallelColumn && isset($setup['allow_parallel_next'])) {
+                $allowParallel = $sort < $total && !empty($setup['allow_parallel_next']) ? 1 : 0;
+            }
+
+            $spocFields = $this->resolveSpocFieldsFromSetup($setup);
 
             if (isset($existing[$departmentId])) {
-                $update = [
+                $update = array_merge([
                     'sort_order' => $sort,
                     'updated_by' => $userId,
                     'updated_on' => $now,
-                ];
+                ], $spocFields);
                 if ($hasParallelColumn) {
                     $update['allow_parallel_next'] = $allowParallel;
                 }
@@ -228,7 +234,7 @@ class ProjectDepartmentService
                     ->where('id', $existing[$departmentId]->id)
                     ->update($update);
             } else {
-                $insert = [
+                $insert = array_merge([
                     'project_id' => $projectId,
                     'department_id' => $departmentId,
                     'sort_order' => $sort,
@@ -238,7 +244,7 @@ class ProjectDepartmentService
                     'updated_by' => $userId,
                     'updated_on' => $now,
                     'is_delete' => 0,
-                ];
+                ], $spocFields);
                 if ($hasParallelColumn) {
                     $insert['allow_parallel_next'] = $allowParallel;
                 }
@@ -259,6 +265,41 @@ class ProjectDepartmentService
 
         $this->recomputeDepartmentAvailability($projectId);
         $this->syncProjectRollupStatus($projectId);
+    }
+
+    /** @param array<string, mixed> $setup */
+    private function resolveSpocFieldsFromSetup(array $setup): array
+    {
+        $fields = [];
+
+        if (array_key_exists('planned_start_date', $setup)) {
+            $fields['planned_start_date'] = $this->normalizeOptionalDate($setup['planned_start_date']);
+        }
+        if (array_key_exists('planned_end_date', $setup)) {
+            $fields['planned_end_date'] = $this->normalizeOptionalDate($setup['planned_end_date']);
+        }
+
+        if (!empty($setup['spoc_user_id'])) {
+            $spocUserId = (int) $setup['spoc_user_id'];
+            $spocUser = DB::table('tbl_user')->where('id', $spocUserId)->where('status', ACTIVE)->first();
+            if ($spocUser) {
+                $fields['spoc_user_id'] = $spocUserId;
+                $fields['spoc_name'] = trim(($spocUser->first_name ?? '') . ' ' . ($spocUser->last_name ?? ''));
+            }
+        } elseif (array_key_exists('spoc_user_id', $setup) && ($setup['spoc_user_id'] === '' || $setup['spoc_user_id'] === null)) {
+            $fields['spoc_user_id'] = null;
+            $fields['spoc_name'] = null;
+        } elseif (!empty($setup['spoc_name'])) {
+            $fields['spoc_name'] = trim((string) $setup['spoc_name']);
+        }
+
+        return $fields;
+    }
+
+    private function normalizeOptionalDate($value): ?string
+    {
+        $value = trim((string) $value);
+        return $value !== '' ? $value : null;
     }
 
     public function updateDepartmentRow(int $projectDepartmentId, array $data): bool

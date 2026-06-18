@@ -141,14 +141,23 @@
                                 <label>Contractor</label>
                                 <input type="text" class="form-control" name="contractor_name" value="{{ $project['contractor_name'] ?? '' }}">
                             </div>
-                            <div class="col-md-4 mb-2">
-                                <label>Planned Start</label>
-                                <input type="date" class="form-control" name="planned_start_date" value="{{ !empty($project['planned_start_date']) ? date('Y-m-d', strtotime($project['planned_start_date'])) : '' }}">
-                            </div>
-
-                            <div class="col-md-4 mb-2">
-                                <label>Planned Completion</label>
-                                <input type="date" class="form-control" name="planned_completion_date" value="{{ !empty($project['planned_completion_date']) ? date('Y-m-d', strtotime($project['planned_completion_date'])) : '' }}">
+                            @php
+                                $wizardPlannedStart = !empty($project['planned_start_date']) ? date('Y-m-d', strtotime($project['planned_start_date'])) : '';
+                                $wizardPlannedEnd = !empty($project['planned_completion_date']) ? date('Y-m-d', strtotime($project['planned_completion_date'])) : '';
+                            @endphp
+                            <div class="col-md-8 mb-2">
+                                <div class="row g-2 planned-date-range">
+                                    <div class="col-md-6">
+                                        <label>Planned Start</label>
+                                        <input type="text" class="form-control planned-date-input js-planned-start" name="planned_start_date" autocomplete="off" placeholder="yyyy-mm-dd"
+                                            value="{{ $wizardPlannedStart }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label>Planned Completion</label>
+                                        <input type="text" class="form-control planned-date-input js-planned-end" name="planned_completion_date" data-label="Planned completion" autocomplete="off" placeholder="yyyy-mm-dd"
+                                            value="{{ $wizardPlannedEnd }}" @if($wizardPlannedStart === '') readonly @endif>
+                                    </div>
+                                </div>
                             </div>
 <!--
                             <div class="col-md-4 mb-2">
@@ -179,10 +188,12 @@
                 <section class="commonSections section1" @if($initialStep !== 1) style="display:none" @endif>
                     <form id="masterForm1" class="masterForm" data-url="save_wizard_departments" enctype="multipart/form-data">
                         @csrf
-                        <h5 class="mb-3">Select &amp; Order Departments</h5>
+                        <h5 class="mb-3">Select, Order &amp; Configure Departments</h5>
+                        <p class="text-muted small mb-3">Choose departments, drag to set execution order, then use <strong>Configure</strong> on each row to assign the department SPOC and parallel workflow before execution.</p>
                         <div class="row">
                             <div class="col-md-5">
-                                <div class="border rounded p-3" style="max-height:480px;overflow-y:auto;">
+                                <label class="form-label small text-muted text-uppercase fw-semibold">Available departments</label>
+                                <div class="border rounded p-3 dept-pick-list" style="max-height:480px;overflow-y:auto;">
                                     @foreach($masterDepartments as $dept)
                                     <div class="form-check mb-2">
                                         <input class="form-check-input dept-pick" type="checkbox" value="{{ $dept['id'] }}" id="dept_pick_{{ $dept['id'] }}"
@@ -196,30 +207,28 @@
                                 </div>
                             </div>
                             <div class="col-md-7">
-                                <p class="text-muted small">Drag to set execution order (top = first). Use the parallel flag when the next department may start before the current one completes.</p>
+                                <label class="form-label small text-muted text-uppercase fw-semibold">Execution order &amp; setup</label>
+                                <div class="dept-sortable-legend mb-2">
+                                    <span class="dept-legend-item"><span class="dept-legend-bar dept-legend-bar-missing"></span> SPOC not assigned</span>
+                                    <span class="dept-legend-item"><span class="dept-legend-bar dept-legend-bar-assigned"></span> SPOC assigned</span>
+                                    <span class="dept-legend-item"><i class="ri-arrow-right-line"></i> Sequential</span>
+                                    <span class="dept-legend-item"><i class="ri-git-branch-line"></i> Parallel</span>
+                                </div>
                                 <ul id="deptSortable" class="list-group dept-sortable mb-0">
                                     @foreach($projectDepartments as $pdIndex => $pd)
-                                    @php
-                                        $allowParallel = !empty($pd['allow_parallel_next']);
-                                        $isLastDept = ($pdIndex === count($projectDepartments) - 1);
-                                    @endphp
-                                    <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2" data-dept-id="{{ $pd['department_id'] }}">
-                                        <span class="dept-sortable-name"><i class="ri-drag-move-2-line me-2 text-muted"></i>{{ $pd['department_name'] }}</span>
-                                        <div class="dept-parallel-wrap form-check mb-0 @if($isLastDept) d-none @endif">
-                                            <input class="form-check-input allow-parallel-next" type="checkbox"
-                                                id="dept_parallel_{{ $pd['department_id'] }}"
-                                                @if($allowParallel) checked @endif>
-                                            <label class="form-check-label small" for="dept_parallel_{{ $pd['department_id'] }}">Allow next step parallely</label>
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-link text-danger remove-dept ms-auto">&times;</button>
-                                    </li>
+                                    @include('project_wizard.partials.dept-sortable-item', [
+                                        'pd' => $pd,
+                                        'isLast' => ($pdIndex === count($projectDepartments) - 1),
+                                        'isProjectReadOnly' => $isProjectReadOnly,
+                                    ])
                                     @endforeach
                                 </ul>
-                                <p class="text-muted small mt-2 mb-0" id="deptSortableEmpty" @if(count($projectDepartments)) style="display:none" @endif>Select departments from the left.</p>
+                                <p class="text-muted small mt-2 mb-0" id="deptSortableEmpty" @if(count($projectDepartments)) style="display:none" @endif>Select departments from the left, then configure each row.</p>
                             </div>
                         </div>
                         <input type="hidden" name="department_order" id="department_order" value="">
                         <input type="hidden" name="department_parallel" id="department_parallel" value="">
+                        <input type="hidden" name="department_spocs" id="department_spocs" value="">
                         <div class="wizard mt-3">
                             <div class="actions clearfix">
                                 <ul role="menu">
@@ -257,6 +266,9 @@
                                         @if($isLocked) disabled @endif>
                                         <span class="me-2">{{ $pd['sort_order'] }}.</span>
                                         <strong>{{ $pd['department_name'] }}</strong>
+                                        @if(!empty($pd['spoc_name']))
+                                        <small class="text-muted ms-2 fw-normal">· {{ $pd['spoc_name'] }}</small>
+                                        @endif
                                         <span class="badge bg-{{ $badgeClass }} ms-2">{{ $statusLabels[$status] ?? ucfirst($status) }}</span>
                                         @if($isLocked && $status === 'pending')
                                         <span class="badge bg-light text-muted ms-2">Waiting for previous step</span>
@@ -268,11 +280,14 @@
                                         <div class="row">
                                             <div class="col-md-8">
                                                 <p class="text-muted small">{{ $pd['department_description'] ?? '' }}</p>
+                                                @if(!empty($pd['spoc_name']))
+                                                <p class="small mb-2"><i class="ri-user-line me-1 text-muted"></i><strong>Department SPOC:</strong> {{ $pd['spoc_name'] }}</p>
+                                                @endif
                                                 @if(!$isPending)
                                                 @include('project_wizard.partials.dept-workflow-fields', [
                                                     'pd' => $pd,
                                                     'status' => $status,
-                                                    'showSpoc' => true,
+                                                    'showSpoc' => false,
                                                     'spocUsers' => $spocUsers,
                                                 ])
                                                 @endif
@@ -812,27 +827,173 @@
 
 .dept-sortable .list-group-item{
     border-radius:12px;
-    margin-bottom:8px;
+    margin-bottom:10px;
     border:1px solid #e2e8f0;
+    border-left-width:4px;
+    border-left-color:#e2e8f0;
+    padding:14px 16px;
 }
 
-.dept-sortable-name{
-    flex:1 1 180px;
+.dept-sortable-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:#fff;
+    transition:.2s ease;
+}
+
+.dept-sortable-item.dept-spoc-missing{
+    border-left-color:#f59e0b !important;
+    background:linear-gradient(90deg, #fffbeb 0%, #fff 28%);
+}
+
+.dept-sortable-item.dept-has-spoc{
+    border-left-color:#22c55e !important;
+    background:linear-gradient(90deg, #f0fdf4 0%, #fff 22%);
+}
+
+.dept-sortable-item.dept-spoc-missing:hover{
+    border-color:#fcd34d;
+    box-shadow:0 4px 14px rgba(245,158,11,.12);
+}
+
+.dept-sortable-item.dept-has-spoc:hover{
+    border-color:#86efac;
+    box-shadow:0 4px 14px rgba(34,197,94,.12);
+}
+
+.planned-end-locked{
+    background-color:#f1f5f9;
+    cursor:not-allowed;
+}
+
+.dept-sortable-legend{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:12px 18px;
+    font-size:12px;
+    color:#64748b;
+    padding:8px 12px;
+    background:#f8fafc;
+    border:1px dashed #e2e8f0;
+    border-radius:10px;
+}
+
+.dept-legend-item{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+}
+
+.dept-legend-bar{
+    display:inline-block;
+    width:4px;
+    height:16px;
+    border-radius:4px;
+}
+
+.dept-legend-bar-missing{
+    background:#f59e0b;
+}
+
+.dept-legend-bar-assigned{
+    background:#22c55e;
+}
+
+.dept-icon-spoc-missing{
+    color:#d97706;
+}
+
+.dept-icon-spoc-assigned{
+    color:#16a34a;
+}
+
+.dept-meta-flow{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-weight:500;
+    font-size:11px;
+    padding:4px 10px;
+}
+
+.dept-meta-flow i{
+    font-size:14px;
+    line-height:1;
+}
+
+.dept-flow-parallel i{
+    color:#0284c7;
+}
+
+.dept-flow-sequential i{
+    color:#64748b;
+}
+
+.dept-sortable-item:hover{
+    box-shadow:0 4px 14px rgba(37,99,235,.08);
+}
+
+.dept-sortable-main{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    min-width:0;
+}
+
+.dept-sortable-drag{
+    color:#94a3b8;
+    font-size:18px;
+    line-height:1;
+    padding-top:2px;
+    cursor:grab;
+}
+
+.dept-sortable-title{
     font-weight:600;
     color:#1e293b;
+    font-size:15px;
 }
 
-.dept-parallel-wrap{
-    flex:1 1 220px;
-    padding:4px 10px;
-    border-radius:10px;
-    background:#f8fafc;
-    border:1px dashed #dbe2ea;
+.dept-sortable-meta{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    margin-top:6px;
 }
 
-.dept-parallel-wrap .form-check-label{
+.dept-meta-spoc{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:12px;
     color:#64748b;
-    line-height:1.3;
+}
+
+.dept-meta-spoc-text{
+    max-width:220px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.dept-sortable-actions{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    flex-shrink:0;
+}
+
+.dept-pick-list .form-check{
+    padding:8px 10px;
+    border-radius:10px;
+    transition:.15s ease;
+}
+
+.dept-pick-list .form-check:hover{
+    background:#f8fafc;
 }
 
 .dept-accordion-item.dept-accordion-locked .accordion-button.disabled{
@@ -1254,33 +1415,150 @@ var projectWizardCanOpenDepartments = {{ $canOpenDepartmentsTab ? 'true' : 'fals
 var projectWizardCanOpenExecution = {{ $canOpenExecutionTab ? 'true' : 'false' }};
 var projectWizardReadOnly = {{ $isProjectReadOnly ? 'true' : 'false' }};
 
+function getDeptLiAttr($li, key) {
+    return ($li.attr('data-' + key) || '').toString();
+}
+
+function setDeptLiAttr($li, key, value) {
+    $li.attr('data-' + key, value == null ? '' : String(value));
+    $li.removeData(key.replace(/-([a-z])/g, function(m, c) { return c.toUpperCase(); }));
+}
+
+function deptFlowBadgeHtml(allowParallel) {
+    if (allowParallel) {
+        return '<span class="dept-meta-parallel dept-meta-flow badge rounded-pill bg-info-subtle text-info dept-flow-parallel">' +
+            '<i class="ri-git-branch-line" title="Next department may start in parallel"></i><span>Parallel</span></span>';
+    }
+    return '<span class="dept-meta-parallel dept-meta-flow badge rounded-pill bg-secondary-subtle text-secondary dept-flow-sequential">' +
+        '<i class="ri-arrow-right-line" title="Next department waits for completion"></i><span>Sequential</span></span>';
+}
+
+function refreshDeptSortableMeta($li) {
+    var spocName = getDeptLiAttr($li, 'spoc-name').trim();
+    var allowParallel = parseInt(getDeptLiAttr($li, 'allow-parallel'), 10) === 1;
+    var isLast = $li.is('#deptSortable li:last');
+
+    $li.toggleClass('dept-has-spoc', spocName !== '');
+    $li.toggleClass('dept-spoc-missing', spocName === '');
+
+    $li.find('.dept-meta-spoc-text').text(spocName !== '' ? spocName : 'SPOC not assigned');
+    $li.find('.dept-meta-spoc > i')
+        .attr('class', spocName !== ''
+            ? 'ri-user-follow-line dept-icon-spoc-assigned'
+            : 'ri-user-unfollow-line dept-icon-spoc-missing');
+
+    var $badge = $li.find('.dept-meta-parallel');
+    if (isLast) {
+        $badge.remove();
+    } else if (!$badge.length) {
+        $li.find('.dept-sortable-meta').append(deptFlowBadgeHtml(allowParallel));
+        $badge = $li.find('.dept-meta-parallel');
+    } else {
+        $badge.replaceWith(deptFlowBadgeHtml(allowParallel));
+    }
+}
+
 function syncProjectDepartmentOrder() {
     var ids = [];
     var parallel = {};
-    $('#deptSortable li').each(function() {
-        var id = $(this).data('dept-id');
+    var spocs = {};
+
+    $('#deptSortable li').each(function(index) {
+        var $li = $(this);
+        var id = getDeptLiAttr($li, 'dept-id');
         ids.push(id);
-        var $chk = $(this).find('.allow-parallel-next');
-        if ($chk.length) {
-            parallel[id] = $chk.is(':checked') ? 1 : 0;
-        }
+
+        var isLast = (index === $('#deptSortable li').length - 1);
+        var allowParallel = !isLast && parseInt(getDeptLiAttr($li, 'allow-parallel'), 10) === 1;
+        parallel[id] = allowParallel ? 1 : 0;
+
+        spocs[id] = {
+            spoc_user_id: getDeptLiAttr($li, 'spoc-user-id'),
+            spoc_name: getDeptLiAttr($li, 'spoc-name'),
+            allow_parallel_next: allowParallel ? 1 : 0
+        };
+
+        refreshDeptSortableMeta($li);
     });
+
     $('#department_order').val(ids.join(','));
     $('#department_parallel').val(JSON.stringify(parallel));
+    $('#department_spocs').val(JSON.stringify(spocs));
     $('#deptSortableEmpty').toggle(ids.length === 0);
-    $('#deptSortable li .dept-parallel-wrap').removeClass('d-none');
-    $('#deptSortable li:last .dept-parallel-wrap').addClass('d-none');
 }
 
-function buildDeptSortableItem(dept, allowParallel) {
-    var checked = allowParallel ? ' checked' : '';
-    return '<li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2" data-dept-id="' + dept.id + '">' +
-        '<span class="dept-sortable-name"><i class="ri-drag-move-2-line me-2 text-muted"></i>' + dept.department_name + '</span>' +
-        '<div class="dept-parallel-wrap form-check mb-0">' +
-        '<input class="form-check-input allow-parallel-next" type="checkbox" id="dept_parallel_' + dept.id + '"' + checked + '>' +
-        '<label class="form-check-label small" for="dept_parallel_' + dept.id + '">Allow next step parallely</label>' +
-        '</div>' +
-        '<button type="button" class="btn btn-sm btn-link text-danger remove-dept ms-auto">&times;</button></li>';
+function buildDeptSortableItem(dept) {
+    var deptId = dept.id || dept.department_id;
+    var deptName = dept.department_name || dept.label || 'Department';
+    var html = '<li class="list-group-item dept-sortable-item dept-spoc-missing" data-dept-id="' + deptId + '" data-pd-id="0" data-spoc-user-id="" data-spoc-name="" data-allow-parallel="0" data-pd-token="">' +
+        '<div class="dept-sortable-main flex-grow-1">' +
+        '<div class="dept-sortable-drag"><i class="ri-drag-move-2-line"></i></div>' +
+        '<div class="dept-sortable-content">' +
+        '<div class="dept-sortable-title">' + deptName + '</div>' +
+        '<div class="dept-sortable-meta">' +
+        '<span class="dept-meta-spoc"><i class="ri-user-unfollow-line dept-icon-spoc-missing"></i><span class="dept-meta-spoc-text">SPOC not assigned</span></span>' +
+        deptFlowBadgeHtml(false) +
+        '</div></div></div>' +
+        '<div class="dept-sortable-actions">';
+
+    if (!projectWizardReadOnly) {
+        html += '<button type="button" class="btn btn-sm btn-outline-primary btn-config-dept" title="Configure SPOC & workflow">' +
+            '<i class="ri-settings-3-line me-1"></i> Configure</button>';
+    }
+
+    html += '<button type="button" class="btn btn-sm btn-link text-danger remove-dept" title="Remove">&times;</button>' +
+        '</div></li>';
+
+    return html;
+}
+
+window.updateDeptSortableItem = function(res) {
+    var deptId = String(res.department_id || '');
+    var $li = $('#deptSortable li').filter(function() {
+        return getDeptLiAttr($(this), 'dept-id') === deptId;
+    }).first();
+    if (!$li.length) {
+        return;
+    }
+
+    if (res.project_department_id) {
+        setDeptLiAttr($li, 'pd-id', res.project_department_id);
+    }
+    if (res.project_department_token) {
+        setDeptLiAttr($li, 'pd-token', res.project_department_token);
+    }
+    setDeptLiAttr($li, 'spoc-user-id', res.spoc_user_id || '');
+    setDeptLiAttr($li, 'spoc-name', res.spoc_name || '');
+    setDeptLiAttr($li, 'allow-parallel', parseInt(res.allow_parallel_next, 10) === 1 ? '1' : '0');
+
+    refreshDeptSortableMeta($li);
+    syncProjectDepartmentOrder();
+};
+
+function openDeptSetupPanel($li) {
+    var deptId = getDeptLiAttr($li, 'dept-id');
+    var projectId = $('#projectDeptMasterId').val() || $('#projectMasterId').val();
+    if (!projectId) {
+        parseFormErrors({ error: 1, msg: ['Save general details first before configuring departments.'] }, 'error');
+        return;
+    }
+
+    syncProjectDepartmentOrder();
+
+    var pdToken = getDeptLiAttr($li, 'pd-token');
+    if (!pdToken) {
+        pdToken = 'new';
+    }
+
+    var sortIndex = $li.index();
+    var total = $('#deptSortable li').length;
+    var url = "{{ getProjectUrl('projects/wizard/dept-setup') }}/" + encodeURIComponent(pdToken) +
+        '?project_id=' + encodeURIComponent(projectId) +
+        '&department_id=' + encodeURIComponent(deptId) +
+        '&sort_index=' + sortIndex +
+        '&total=' + total;
+
+    openSideLayout({}, url, 'Configure Department');
 }
 
 function reloadWizardExecutionStep() {
@@ -1329,6 +1607,10 @@ function bindExecutionPanelHandlers() {
         csrfToken: '{{ csrf_token() }}',
         onSuccess: reloadWizardExecutionStep
     });
+
+    if (typeof bindPlannedDateRangeInputs === 'function') {
+        bindPlannedDateRangeInputs($('.section2'));
+    }
 
     initSpocUserControls();
 }
@@ -1485,6 +1767,11 @@ $(function() {
 
     if ($.fn.select2) { $('.dd-select').select2({ width: '100%' }); }
 
+    if (typeof bindPlannedDateRangeInputs === 'function') {
+        bindPlannedDateRangeInputs($('#masterForm0'));
+        bindPlannedDateRangeInputs($('.section2'));
+    }
+
     var initZone = $('#wizard_zone_id').val();
     var initLoc = $('#wizard_location_id').data('selected') || '';
     if (initZone) {
@@ -1504,12 +1791,16 @@ $(function() {
     $('.customWizard-' + projectWizardInitialStep).addClass('current');
 
     $('#deptSortable').sortable({
-        placeholder: 'list-group-item bg-light',
+        placeholder: 'list-group-item bg-light dept-sortable-item',
+        handle: '.dept-sortable-drag',
         update: syncProjectDepartmentOrder
     });
     syncProjectDepartmentOrder();
 
-    $(document).on('change', '.allow-parallel-next', syncProjectDepartmentOrder);
+    $(document).on('click', '.btn-config-dept', function() {
+        if (projectWizardReadOnly) return;
+        openDeptSetupPanel($(this).closest('li'));
+    });
 
     $('.dept-pick').on('change', function() {
         var id = $(this).val();
@@ -1517,7 +1808,7 @@ $(function() {
             if (!$('#deptSortable li[data-dept-id="' + id + '"]').length) {
                 var dept = projectDeptMaster.find(function(d) { return String(d.id) === String(id); });
                 if (dept) {
-                    $('#deptSortable').append(buildDeptSortableItem(dept, false));
+                    $('#deptSortable').append(buildDeptSortableItem(dept));
                 }
             }
         } else {
@@ -1538,7 +1829,7 @@ $(function() {
     if (projectWizardReadOnly) {
         $('.masterForm').find('input, select, textarea, button').prop('disabled', true);
         $('.wizard .actions').hide();
-        $('.toggle-spoc-add-form, .save-spoc-user, .remove-dept').hide();
+        $('.toggle-spoc-add-form, .save-spoc-user, .remove-dept, .btn-config-dept').hide();
         if ($('#deptSortable').data('ui-sortable')) {
             $('#deptSortable').sortable('disable');
         }

@@ -801,6 +801,12 @@ function validateFormdata(json, isFormData = "") {
             }
         }
     });
+    if (doSubmit && formId) {
+        var $plannedForm = $('#' + formId);
+        if ($plannedForm.find('.js-planned-start').length && !validatePlannedDateRangesInScope($plannedForm)) {
+            doSubmit = false;
+        }
+    }
     if (!doSubmit) {
         // Validation failed - no loader was shown, so no need to hide
         return false;
@@ -811,6 +817,191 @@ function validateFormdata(json, isFormData = "") {
 
 function highlightErrorInput(input) {
     input.addClass('errorBorder').focus();
+}
+
+function plannedDateRangeMessage(startVal, endVal, endLabel) {
+    if (!startVal || !endVal) {
+        return '';
+    }
+    if (endVal < startVal) {
+        return (endLabel || 'Planned end') + ' cannot be earlier than the planned start date';
+    }
+    return '';
+}
+
+function plannedDateRangePairsInScope($scope) {
+    var pairs = [];
+    var $root = ($scope && $scope.length) ? $scope : $(document);
+    $root.find('.js-planned-start').each(function() {
+        var $start = $(this);
+        var $container = $start.closest('.planned-date-range, .dept-meta-form, form');
+        var $end = $container.find('.js-planned-end').first();
+        if ($end.length) {
+            pairs.push({ $start: $start, $end: $end });
+        }
+    });
+    return pairs;
+}
+
+function syncPlannedEndMin($start, $end) {
+    var startVal = ($start.val() || '').trim();
+    if (startVal) {
+        $end.attr('min', startVal);
+        if ($end.val() && $end.val() < startVal) {
+            $end.val(startVal);
+        }
+    } else {
+        $end.removeAttr('min');
+    }
+}
+
+function parseYmdToDate(ymd) {
+    if (!ymd || typeof ymd !== 'string') {
+        return null;
+    }
+    var parts = ymd.trim().split('-');
+    if (parts.length !== 3) {
+        return null;
+    }
+    var y = parseInt(parts[0], 10);
+    var m = parseInt(parts[1], 10) - 1;
+    var d = parseInt(parts[2], 10);
+    if (isNaN(y) || isNaN(m) || isNaN(d)) {
+        return null;
+    }
+    return new Date(y, m, d);
+}
+
+var plannedDatePickerOptions = {
+    autoclose: true,
+    clearBtn: true,
+    format: 'yyyy-mm-dd',
+    todayHighlight: true,
+    orientation: 'bottom auto',
+    todayBtn: 'linked'
+};
+
+function ensurePlannedDateTextInput($input) {
+    if ($input.attr('type') === 'date') {
+        $input.attr('type', 'text').attr('autocomplete', 'off');
+    }
+    if (!$input.hasClass('planned-date-input')) {
+        $input.addClass('planned-date-input');
+    }
+}
+
+function applyPlannedEndConstraints(pair) {
+    var $start = pair.$start;
+    var $end = pair.$end;
+    var startVal = ($start.val() || '').trim();
+    var startDate = parseYmdToDate(startVal);
+    var endVal = ($end.val() || '').trim();
+
+    if (typeof $.fn.datepicker !== 'undefined' && $end.data('datepicker')) {
+        if (startDate) {
+            $end.prop('readonly', false).removeClass('planned-end-locked');
+            $end.datepicker('setStartDate', startDate);
+            if (endVal && endVal < startVal) {
+                $end.datepicker('setDate', startDate);
+            } else if (!endVal) {
+                try {
+                    $end.datepicker('setViewDate', startDate);
+                } catch (e) {}
+            }
+        } else {
+            $end.prop('readonly', true).addClass('planned-end-locked');
+            $end.val('');
+            $end.datepicker('setStartDate', -Infinity);
+        }
+        return;
+    }
+
+    syncPlannedEndMin($start, $end);
+    if (!startVal) {
+        $end.prop('readonly', true).addClass('planned-end-locked');
+        $end.val('');
+    } else {
+        $end.prop('readonly', false).removeClass('planned-end-locked');
+    }
+}
+
+function initPlannedDatePickerPair(pair) {
+    var $start = pair.$start;
+    var $end = pair.$end;
+
+    ensurePlannedDateTextInput($start);
+    ensurePlannedDateTextInput($end);
+
+    if (typeof $.fn.datepicker === 'undefined') {
+        applyPlannedEndConstraints(pair);
+        $start.off('change.plannedRange input.plannedRange').on('change.plannedRange input.plannedRange', function() {
+            applyPlannedEndConstraints(pair);
+        });
+        return;
+    }
+
+    if (!$start.data('datepicker')) {
+        $start.datepicker($.extend({}, plannedDatePickerOptions))
+            .on('changeDate.plannedRange clearDate.plannedRange change.plannedRange', function() {
+                applyPlannedEndConstraints(pair);
+            });
+    }
+
+    if (!$end.data('datepicker')) {
+        $end.datepicker($.extend({}, plannedDatePickerOptions))
+            .on('show.plannedRange', function() {
+                var startDate = parseYmdToDate(($start.val() || '').trim());
+                if (!startDate) {
+                    return false;
+                }
+                try {
+                    $end.datepicker('setViewDate', startDate);
+                } catch (e) {}
+            })
+            .on('changeDate.plannedRange change.plannedRange', function() {
+                var endLabel = $end.data('label') || 'Planned end';
+                var msg = plannedDateRangeMessage(($start.val() || '').trim(), ($end.val() || '').trim(), endLabel);
+                if (msg) {
+                    toastr.error(msg);
+                    highlightErrorInput($end);
+                } else {
+                    $end.removeClass('errorBorder');
+                }
+            });
+    }
+
+    $end.off('click.plannedRange focus.plannedRange').on('click.plannedRange focus.plannedRange', function(e) {
+        if (!($start.val() || '').trim()) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            $end.blur();
+            toastr.warning('Please select planned start date first');
+            $start.focus();
+            return false;
+        }
+    });
+
+    applyPlannedEndConstraints(pair);
+}
+
+function bindPlannedDateRangeInputs($scope) {
+    plannedDateRangePairsInScope($scope).forEach(function(pair) {
+        initPlannedDatePickerPair(pair);
+    });
+}
+
+function validatePlannedDateRangesInScope($scope) {
+    var valid = true;
+    plannedDateRangePairsInScope($scope).forEach(function(pair) {
+        var endLabel = pair.$end.data('label') || 'Planned end';
+        var msg = plannedDateRangeMessage(pair.$start.val(), pair.$end.val(), endLabel);
+        if (msg) {
+            toastr.error('<li>' + msg + '</li>');
+            highlightErrorInput(pair.$end);
+            valid = false;
+        }
+    });
+    return valid;
 }
 
 function validateAndProcessData(json, isFormData = "") {
@@ -1282,6 +1473,9 @@ function bindDepartmentWorkflowHandlers(options) {
     $('.save-dept-meta').off('click.deptWorkflow').on('click.deptWorkflow', function() {
         var $btn = $(this);
         var $block = $btn.closest('.dept-meta-form');
+        if (!validatePlannedDateRangesInScope($block)) {
+            return;
+        }
         var payload = new FormData();
         $block.find('input, select, textarea').each(function() {
             if (this.name) {

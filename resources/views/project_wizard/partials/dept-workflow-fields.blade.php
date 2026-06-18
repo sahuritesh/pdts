@@ -9,9 +9,11 @@
     $showRemarks = $showRemarks ?? false;
     $inProgressLabel = $inProgressLabel ?? 'In Progress';
     $completeLabel = $completeLabel ?? 'Complete';
+    $plannedStartYmd = !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '';
+    $plannedEndYmd = !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '';
 @endphp
 @if(($status ?? 'pending') !== 'pending')
-<div class="dept-meta-form row g-2 {{ $formMarginClass }}" data-pd-id="{{ $pd['id'] }}">
+<div class="dept-meta-form planned-date-range row g-2 {{ $formMarginClass }}" data-pd-id="{{ $pd['id'] }}">
     <input type="hidden" name="project_department_id" value="{{ $pd['id'] }}">
     @if($showSpoc)
     <div class="col-md-6">
@@ -19,13 +21,13 @@
     </div>
     <div class="col-md-3">
         <label class="small text-muted">Planned start</label>
-        <input type="date" class="form-control form-control-sm" name="planned_start_date"
-            value="{{ !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '' }}">
+        <input type="text" class="form-control form-control-sm planned-date-input js-planned-start" name="planned_start_date" autocomplete="off" placeholder="yyyy-mm-dd"
+            value="{{ $plannedStartYmd }}">
     </div>
     <div class="col-md-3">
         <label class="small text-muted">Planned end</label>
-        <input type="date" class="form-control form-control-sm" name="planned_end_date"
-            value="{{ !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '' }}">
+        <input type="text" class="form-control form-control-sm planned-date-input js-planned-end" name="planned_end_date" data-label="Planned end" autocomplete="off" placeholder="yyyy-mm-dd"
+            value="{{ $plannedEndYmd }}" @if($plannedStartYmd === '') readonly @endif>
     </div>
     <div class="col-md-2 d-flex align-items-end">
         <button type="button" class="btn btn-sm btn-outline-secondary save-dept-meta w-100">{{ $saveButtonLabel }}</button>
@@ -33,13 +35,13 @@
     @else
     <div class="col-md-6">
         <label class="small text-muted">Planned start</label>
-        <input type="date" class="form-control form-control-sm" name="planned_start_date"
-            value="{{ !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '' }}">
+        <input type="text" class="form-control form-control-sm planned-date-input js-planned-start" name="planned_start_date" autocomplete="off" placeholder="yyyy-mm-dd"
+            value="{{ $plannedStartYmd }}">
     </div>
     <div class="col-md-6">
         <label class="small text-muted">Planned end</label>
-        <input type="date" class="form-control form-control-sm" name="planned_end_date"
-            value="{{ !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '' }}">
+        <input type="text" class="form-control form-control-sm planned-date-input js-planned-end" name="planned_end_date" data-label="Planned end" autocomplete="off" placeholder="yyyy-mm-dd"
+            value="{{ $plannedEndYmd }}" @if($plannedStartYmd === '') readonly @endif>
     </div>
     @if($showRemarks)
     <div class="col-12">

@@ -282,7 +282,9 @@ class ProjectWizardController extends Controller
             }
             $parallelFlags = array_map('intval', $parallelFlags);
 
-            $this->projectDepartmentService->syncProjectDepartments($projectId, $ordered, $parallelFlags);
+            $spocAssignments = $this->parseDepartmentSpocPayload($postData['department_spocs'] ?? '{}');
+
+            $this->projectDepartmentService->syncProjectDepartments($projectId, $ordered, $parallelFlags, $spocAssignments);
 
             DB::table('tbl_projects')->where('id', $projectId)->update([
                 'wizard_step' => 3,
@@ -295,6 +297,196 @@ class ProjectWizardController extends Controller
             Log::error('Wizard step 2 error: ' . $e->getMessage());
             $this->sendErrorResponse($e->getMessage(), 2);
         }
+    }
+
+    public function department_setup_panel(Request $request, $token = 'new')
+    {
+        if (!$this->canManageDepartmentWorkflow()) {
+            return $this->panelDenied($request);
+        }
+
+        $projectId = (int) $request->input('project_id');
+        $departmentId = (int) $request->input('department_id');
+        $sortIndex = (int) $request->input('sort_index', 0);
+        $total = (int) $request->input('total', 0);
+        $isLast = $total > 0 && $sortIndex >= ($total - 1);
+
+        $row = null;
+        if ($token !== 'new') {
+            try {
+                $pdId = (int) Crypt::decrypt($token);
+                $row = $this->projectDepartmentService->resolveDepartment($pdId);
+                if ($row) {
+                    $projectId = (int) ($row['project_id'] ?? $projectId);
+                    $departmentId = (int) ($row['department_id'] ?? $departmentId);
+                }
+            } catch (\Exception $e) {
+                return $this->panelError($request, 'Invalid department row');
+            }
+        }
+
+        if ($projectId <= 0 || $departmentId <= 0) {
+            return $this->panelError($request, 'Project and department are required');
+        }
+
+        if ($this->denyWizardManageUnless($projectId)) {
+            return $this->panelError($request, 'Permission missing');
+        }
+
+        if ($this->userScope->isProjectCompleted($projectId)) {
+            return $this->panelError($request, 'This project is completed and cannot be edited');
+        }
+
+        if (!$row) {
+            $existing = DB::table('tbl_project_departments')
+                ->where('project_id', $projectId)
+                ->where('department_id', $departmentId)
+                ->where('is_delete', 0)
+                ->first();
+            if ($existing) {
+                $row = $this->projectDepartmentService->resolveDepartment((int) $existing->id);
+            }
+        }
+
+        if (!$row) {
+            $nameCol = $this->projectDepartmentService->departmentNameColumn();
+            $deptTable = $this->projectDepartmentService->departmentsTable();
+            $deptName = DB::table($deptTable)->where('id', $departmentId)->value($nameCol);
+            $row = [
+                'id' => 0,
+                'project_id' => $projectId,
+                'department_id' => $departmentId,
+                'department_name' => $deptName ?? 'Department',
+                'spoc_user_id' => null,
+                'spoc_name' => '',
+                'allow_parallel_next' => 0,
+                'planned_start_date' => null,
+                'planned_end_date' => null,
+            ];
+        }
+
+        $pageTitle = 'Configure — ' . ($row['department_name'] ?? 'Department');
+        $data = [
+            'row' => $row,
+            'project_id' => $projectId,
+            'department_id' => $departmentId,
+            'is_last' => $isLast,
+            'spoc_users' => $this->getSpocUserOptions('Department SPOC', !empty($row['spoc_user_id']) ? (int) $row['spoc_user_id'] : null),
+            'read_only' => false,
+        ];
+
+        return $this->panelView($request, 'project_wizard.panels.dept-setup-panel', compact('pageTitle', 'data'));
+    }
+
+    public function save_wizard_department_setup(Request $request)
+    {
+        try {
+            $postData = $this->parseWizardPost($request);
+            $projectId = (int) ($postData['project_id'] ?? 0);
+            $departmentId = (int) ($postData['department_id'] ?? 0);
+
+            if ($projectId <= 0 || $departmentId <= 0) {
+                $this->sendValidationErrorResponse('<li>Invalid project or department</li>');
+                return;
+            }
+
+            if ($this->denyWizardManageUnless($projectId) || $this->denyIfProjectCompleted($projectId)) {
+                return;
+            }
+
+            $ordered = $postData['department_order'] ?? [];
+            if (!is_array($ordered)) {
+                $ordered = array_filter(explode(',', (string) $ordered));
+            }
+            $ordered = array_values(array_filter(array_map('intval', $ordered)));
+            if (empty($ordered)) {
+                $ordered = [$departmentId];
+            }
+
+            $parallelRaw = $postData['department_parallel'] ?? '{}';
+            $parallelFlags = is_string($parallelRaw) ? (json_decode($parallelRaw, true) ?: []) : (is_array($parallelRaw) ? $parallelRaw : []);
+            $parallelFlags = array_map('intval', $parallelFlags);
+
+            $allowParallel = !empty($postData['allow_parallel_next']) ? 1 : 0;
+            $parallelFlags[$departmentId] = $allowParallel;
+
+            $dateErr = $this->validatePlannedDateRange(
+                $postData['planned_start_date'] ?? '',
+                $postData['planned_end_date'] ?? '',
+                'Planned end date'
+            );
+            if ($dateErr !== '') {
+                $this->sendValidationErrorResponse($dateErr);
+                return;
+            }
+
+            $spocUserId = !empty($postData['spoc_user_id']) ? (int) $postData['spoc_user_id'] : null;
+            $setup = [
+                'spoc_user_id' => $spocUserId ?: '',
+                'spoc_name' => trim($postData['spoc_name'] ?? ''),
+                'allow_parallel_next' => $allowParallel,
+                'planned_start_date' => $postData['planned_start_date'] ?? '',
+                'planned_end_date' => $postData['planned_end_date'] ?? '',
+            ];
+
+            $this->projectDepartmentService->syncProjectDepartments(
+                $projectId,
+                $ordered,
+                $parallelFlags,
+                [$departmentId => $setup]
+            );
+
+            if ($spocUserId) {
+                $this->assignUserToDepartment($spocUserId, $departmentId);
+            }
+
+            DB::table('tbl_projects')->where('id', $projectId)->where('is_delete', 0)->update([
+                'wizard_step' => max(2, (int) DB::table('tbl_projects')->where('id', $projectId)->value('wizard_step')),
+                'updated_by' => Auth::id(),
+                'updated_on' => current_datetime(),
+            ]);
+
+            $savedRow = DB::table('tbl_project_departments')
+                ->where('project_id', $projectId)
+                ->where('department_id', $departmentId)
+                ->where('is_delete', 0)
+                ->first();
+
+            $this->sendSuccessResponse('Department configuration saved.', 'Update', null, [
+                'department_id' => $departmentId,
+                'project_department_id' => $savedRow ? (int) $savedRow->id : 0,
+                'project_department_token' => $savedRow ? Crypt::encrypt((int) $savedRow->id) : '',
+                'spoc_user_id' => $savedRow->spoc_user_id ?? null,
+                'spoc_name' => $savedRow->spoc_name ?? '',
+                'allow_parallel_next' => (int) ($savedRow->allow_parallel_next ?? 0),
+                'planned_start_date' => $savedRow->planned_start_date ?? '',
+                'planned_end_date' => $savedRow->planned_end_date ?? '',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Wizard department setup save: ' . $e->getMessage());
+            $this->sendErrorResponse($e->getMessage(), 2);
+        }
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function parseDepartmentSpocPayload($raw): array
+    {
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true) ?: [];
+        } else {
+            $decoded = is_array($raw) ? $raw : [];
+        }
+
+        $out = [];
+        foreach ($decoded as $deptId => $setup) {
+            $deptId = (int) $deptId;
+            if ($deptId <= 0 || !is_array($setup)) {
+                continue;
+            }
+            $out[$deptId] = $setup;
+        }
+
+        return $out;
     }
 
     public function save_wizard_finish(Request $request)
@@ -346,6 +538,16 @@ class ProjectWizardController extends Controller
             }
 
             if ($this->denyIfProjectCompleted((int) $row->project_id)) {
+                return;
+            }
+
+            $dateErr = $this->validatePlannedDateRange(
+                $postData['planned_start_date'] ?? '',
+                $postData['planned_end_date'] ?? '',
+                'Planned end date'
+            );
+            if ($dateErr !== '') {
+                $this->sendValidationErrorResponse($dateErr);
                 return;
             }
 
@@ -906,7 +1108,23 @@ class ProjectWizardController extends Controller
                 $err .= '<li>Project ID already exists</li>';
             }
         }
+        $err .= $this->validatePlannedDateRange(
+            $postData['planned_start_date'] ?? '',
+            $postData['planned_completion_date'] ?? '',
+            'Planned completion date'
+        );
         return $err;
+    }
+
+    private function validatePlannedDateRange(?string $start, ?string $end, string $endLabel = 'Planned end date'): string
+    {
+        $start = $this->nullableDate($start ?? '');
+        $end = $this->nullableDate($end ?? '');
+        if ($start && $end && $end < $start) {
+            return '<li>' . $endLabel . ' cannot be earlier than planned start date</li>';
+        }
+
+        return '';
     }
 
     private function prepareProjectData(array $postData, string $operation): array

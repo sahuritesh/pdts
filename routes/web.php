@@ -75,7 +75,8 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::match(array('GET', 'POST'), '/projects/wizard/panel/attachments/{projectDepartmentId}', [ProjectWizardController::class, 'attachment_panel']);
     Route::match(array('GET', 'POST'), '/projects/wizard/new', [ProjectWizardController::class, 'wizard']);
     Route::match(array('GET', 'POST'), '/projects/wizard/{id}', [ProjectWizardController::class, 'wizard']);
-    Route::post('save_wizard_step1', [ProjectWizardController::class, 'save_wizard_step1']);
+    Route::match(array('GET', 'POST'), '/projects/wizard/dept-setup/{token}', [ProjectWizardController::class, 'department_setup_panel']);
+    Route::post('save_wizard_department_setup', [ProjectWizardController::class, 'save_wizard_department_setup']);
     Route::post('save_wizard_departments', [ProjectWizardController::class, 'save_wizard_departments']);
     Route::post('save_wizard_finish', [ProjectWizardController::class, 'save_wizard_finish']);
     Route::post('update_department_status', [ProjectWizardController::class, 'update_department_status']);
