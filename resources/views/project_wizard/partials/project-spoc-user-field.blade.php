@@ -4,9 +4,9 @@
 @endphp
 <div class="project-spoc-user-block" data-spoc-role="project">
     <div class="d-flex justify-content-between align-items-center mb-1">
-        <label class="mb-0">Project SPOC</label>
+        <label class="mb-0 width-100">Project SPOC</label>
         @if(modulePermissionExists('projects') || modulePermissionExists('users') || modulePermissionExists('my_projects'))
-        <button type="button" class="btn btn-link btn-sm p-0 toggle-spoc-add-form">
+        <button type="button" class="spoc-action-btn toggle-spoc-add-form">
             <i class="ri-user-add-line"></i> Add Project SPOC User
         </button>
         @endif
@@ -47,3 +47,61 @@
     </select>
     <input type="hidden" name="project_spoc_name" class="project-spoc-name-hidden" value="{{ $project['project_spoc_name'] ?? '' }}">
 </div>
+@push('styles')
+<style>
+
+.width-100{
+    width:100px;
+}
+.spoc-action-btn{
+       display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0px 1px;
+    border: 0px solid #dbeafe;
+    /* border-radius: 8px; */
+    background: #f8fbff;
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .3s ease;
+}
+
+.spoc-action-btn i{
+
+    width:22px;
+    height:22px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:6px;
+
+    background:#2563eb;
+
+    color:#fff;
+
+    font-size:11px;
+}
+
+.spoc-action-btn:hover{
+
+    background:#2563eb;
+
+    color:#fff;
+
+    border-color:#2563eb;
+}
+
+.spoc-action-btn:hover i{
+
+    background:#fff;
+
+    color:#2563eb;
+}
+
+
+</style>
+@endpush
