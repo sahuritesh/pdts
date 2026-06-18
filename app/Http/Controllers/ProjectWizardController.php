@@ -99,6 +99,33 @@ class ProjectWizardController extends Controller
         return false;
     }
 
+    private function denyDepartmentWorkflowUnlessSpoc($row): bool
+    {
+        if ($this->projectDepartmentService->hasDepartmentSpoc($row)) {
+            return false;
+        }
+
+        $this->sendErrorResponse('Assign a department SPOC in step 2 (Departments) before performing workflow actions.', 1);
+
+        return true;
+    }
+
+    private function denyDepartmentWorkflowUnlessSpocByPdId(int $projectDepartmentId): bool
+    {
+        $row = DB::table('tbl_project_departments')
+            ->where('id', $projectDepartmentId)
+            ->where('is_delete', 0)
+            ->first();
+
+        if (!$row) {
+            $this->sendErrorResponse('Department not found', 1);
+
+            return true;
+        }
+
+        return $this->denyDepartmentWorkflowUnlessSpoc($row);
+    }
+
     private function canAccessProject(int $projectId): bool
     {
         if (modulePermissionExists($this->module)) {
@@ -370,6 +397,7 @@ class ProjectWizardController extends Controller
             'row' => $row,
             'project_id' => $projectId,
             'department_id' => $departmentId,
+            'sort_index' => $sortIndex,
             'is_last' => $isLast,
             'spoc_users' => $this->getSpocUserOptions('Department SPOC', !empty($row['spoc_user_id']) ? (int) $row['spoc_user_id'] : null),
             'read_only' => false,
@@ -410,23 +438,11 @@ class ProjectWizardController extends Controller
             $allowParallel = !empty($postData['allow_parallel_next']) ? 1 : 0;
             $parallelFlags[$departmentId] = $allowParallel;
 
-            $dateErr = $this->validatePlannedDateRange(
-                $postData['planned_start_date'] ?? '',
-                $postData['planned_end_date'] ?? '',
-                'Planned end date'
-            );
-            if ($dateErr !== '') {
-                $this->sendValidationErrorResponse($dateErr);
-                return;
-            }
-
             $spocUserId = !empty($postData['spoc_user_id']) ? (int) $postData['spoc_user_id'] : null;
             $setup = [
                 'spoc_user_id' => $spocUserId ?: '',
                 'spoc_name' => trim($postData['spoc_name'] ?? ''),
                 'allow_parallel_next' => $allowParallel,
-                'planned_start_date' => $postData['planned_start_date'] ?? '',
-                'planned_end_date' => $postData['planned_end_date'] ?? '',
             ];
 
             $this->projectDepartmentService->syncProjectDepartments(
@@ -541,6 +557,10 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            if ($this->denyDepartmentWorkflowUnlessSpoc($row)) {
+                return;
+            }
+
             $dateErr = $this->validatePlannedDateRange(
                 $postData['planned_start_date'] ?? '',
                 $postData['planned_end_date'] ?? '',
@@ -548,6 +568,17 @@ class ProjectWizardController extends Controller
             );
             if ($dateErr !== '') {
                 $this->sendValidationErrorResponse($dateErr);
+                return;
+            }
+
+            $seqErr = $this->projectDepartmentService->validateSequentialDepartmentDates(
+                (int) $row->project_id,
+                (int) $row->department_id,
+                $postData['planned_start_date'] ?? '',
+                $postData['planned_end_date'] ?? ''
+            );
+            if ($seqErr !== '') {
+                $this->sendValidationErrorResponse($seqErr);
                 return;
             }
 
@@ -607,6 +638,10 @@ class ProjectWizardController extends Controller
             }
 
             if ($this->denyIfProjectCompleted((int) $row->project_id)) {
+                return;
+            }
+
+            if ($this->denyDepartmentWorkflowUnlessSpoc($row)) {
                 return;
             }
 
@@ -754,6 +789,10 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            if ($this->denyDepartmentWorkflowUnlessSpoc($ctx)) {
+                return;
+            }
+
             $title = trim($postData['delay_title'] ?? '');
             if ($title === '') {
                 $this->sendValidationErrorResponse('<li>Please enter delay title</li>');
@@ -838,6 +877,10 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            if ($this->denyDepartmentWorkflowUnlessSpocByPdId((int) ($delayRow->project_department_id ?? 0))) {
+                return;
+            }
+
             $mitigationId = $postData['mitigation_id'] ?? null;
             $operation = ($mitigationId && $mitigationId !== '') ? 'Update' : 'Add';
             $payload = [
@@ -886,6 +929,10 @@ class ProjectWizardController extends Controller
             }
 
             if ($this->denyIfProjectCompleted((int) $ctx['project_id'])) {
+                return;
+            }
+
+            if ($this->denyDepartmentWorkflowUnlessSpoc($ctx)) {
                 return;
             }
 
@@ -942,6 +989,10 @@ class ProjectWizardController extends Controller
             }
 
             if ($this->denyIfProjectCompleted((int) $ctx['project_id'])) {
+                return;
+            }
+
+            if ($this->denyDepartmentWorkflowUnlessSpoc($ctx)) {
                 return;
             }
 

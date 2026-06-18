@@ -302,6 +302,80 @@ class ProjectDepartmentService
         return $value !== '' ? $value : null;
     }
 
+    /**
+     * When the previous department is sequential, current planned dates must not precede the previous range.
+     *
+     * @param  array<int>|null  $orderedDepartmentIds
+     * @return string HTML error fragment (<li>...</li>) or empty
+     */
+    public function validateSequentialDepartmentDates(
+        int $projectId,
+        int $departmentId,
+        ?string $plannedStart,
+        ?string $plannedEnd,
+        ?array $orderedDepartmentIds = null
+    ): string {
+        if ($orderedDepartmentIds === null) {
+            $orderedDepartmentIds = DB::table('tbl_project_departments')
+                ->where('project_id', $projectId)
+                ->where('is_delete', 0)
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->pluck('department_id')
+                ->map(static fn ($id) => (int) $id)
+                ->values()
+                ->all();
+        }
+
+        $idx = array_search($departmentId, $orderedDepartmentIds, true);
+        if ($idx === false || $idx <= 0) {
+            return '';
+        }
+
+        $prevDeptId = (int) $orderedDepartmentIds[$idx - 1];
+        $prevRow = DB::table('tbl_project_departments')
+            ->where('project_id', $projectId)
+            ->where('department_id', $prevDeptId)
+            ->where('is_delete', 0)
+            ->first();
+
+        if (!$prevRow || $this->allowsParallelNext((array) $prevRow)) {
+            return '';
+        }
+
+        $minDate = $this->normalizeOptionalDate($prevRow->planned_end_date ?? null);
+        if (!$minDate) {
+            return '';
+        }
+
+        $prevResolved = $this->resolveDepartment((int) $prevRow->id);
+        $prevName = $prevResolved['department_name'] ?? 'previous department';
+
+        $start = $this->normalizeOptionalDate($plannedStart);
+        $end = $this->normalizeOptionalDate($plannedEnd);
+
+        if ($start && $start < $minDate) {
+            return '<li>Planned start must be on or after ' . e($minDate)
+                . ' (sequential step after ' . e($prevName) . ')</li>';
+        }
+        if ($end && $end < $minDate) {
+            return '<li>Planned end must be on or after ' . e($minDate)
+                . ' (sequential step after ' . e($prevName) . ')</li>';
+        }
+
+        return '';
+    }
+
+    public function hasDepartmentSpoc($row): bool
+    {
+        $row = (array) $row;
+        if (!empty($row['spoc_user_id'])) {
+            return true;
+        }
+
+        return trim((string) ($row['spoc_name'] ?? '')) !== '';
+    }
+
     public function updateDepartmentRow(int $projectDepartmentId, array $data): bool
     {
         $data['updated_by'] = Auth::id();

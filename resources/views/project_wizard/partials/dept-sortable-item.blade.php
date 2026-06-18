@@ -8,6 +8,8 @@
     $allowParallel = !empty($pd['allow_parallel_next']);
     $isLast = !empty($isLast);
     $encPdId = $pdId > 0 ? Crypt::encrypt($pdId) : '';
+    $plannedStartYmd = !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '';
+    $plannedEndYmd = !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '';
 @endphp
 <li class="list-group-item dept-sortable-item {{ $spocName !== '' ? 'dept-has-spoc' : 'dept-spoc-missing' }}"
     data-dept-id="{{ $deptId }}"
@@ -15,6 +17,8 @@
     data-spoc-user-id="{{ $spocUserId }}"
     data-spoc-name="{{ e($spocName) }}"
     data-allow-parallel="{{ $allowParallel ? 1 : 0 }}"
+    data-planned-start="{{ $plannedStartYmd }}"
+    data-planned-end="{{ $plannedEndYmd }}"
     data-pd-token="{{ $encPdId }}">
     <div class="dept-sortable-main flex-grow-1">
         <div class="dept-sortable-drag"><i class="ri-drag-move-2-line"></i></div>

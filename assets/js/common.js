@@ -829,6 +829,44 @@ function plannedDateRangeMessage(startVal, endVal, endLabel) {
     return '';
 }
 
+function getPlannedDateContainer($el) {
+    return $el.closest('.planned-date-range, .dept-meta-form, form');
+}
+
+function getSequentialMinStart($container) {
+    if (parseInt($container.data('seq-enforced'), 10) !== 1) {
+        return '';
+    }
+    return ($container.data('seq-min-start') || '').trim();
+}
+
+function plannedSequentialDateMessage($container, startVal, endVal) {
+    var minStart = getSequentialMinStart($container);
+    if (!minStart) {
+        return '';
+    }
+    var prevName = ($container.data('seq-prev-name') || 'previous department').trim();
+    if (startVal && startVal < minStart) {
+        return 'Planned start must be on or after ' + minStart + ' (sequential step after ' + prevName + ')';
+    }
+    if (endVal && endVal < minStart) {
+        return 'Planned end must be on or after ' + minStart + ' (sequential step after ' + prevName + ')';
+    }
+    return '';
+}
+
+function effectiveMinForEndPicker(pair) {
+    var startVal = (pair.$start.val() || '').trim();
+    var seqMin = getSequentialMinStart(getPlannedDateContainer(pair.$start));
+    if (!seqMin) {
+        return startVal;
+    }
+    if (!startVal || seqMin > startVal) {
+        return seqMin;
+    }
+    return startVal;
+}
+
 function plannedDateRangePairsInScope($scope) {
     var pairs = [];
     var $root = ($scope && $scope.length) ? $scope : $(document);
@@ -890,22 +928,41 @@ function ensurePlannedDateTextInput($input) {
     }
 }
 
+function applyPlannedStartConstraints(pair) {
+    var $container = getPlannedDateContainer(pair.$start);
+    var seqMin = getSequentialMinStart($container);
+    var seqDate = parseYmdToDate(seqMin);
+    var startVal = (pair.$start.val() || '').trim();
+
+    if (typeof $.fn.datepicker !== 'undefined' && pair.$start.data('datepicker')) {
+        if (seqDate) {
+            pair.$start.datepicker('setStartDate', seqDate);
+            if (startVal && startVal < seqMin) {
+                pair.$start.datepicker('setDate', seqMin);
+            }
+        } else {
+            pair.$start.datepicker('setStartDate', -Infinity);
+        }
+    }
+}
+
 function applyPlannedEndConstraints(pair) {
     var $start = pair.$start;
     var $end = pair.$end;
     var startVal = ($start.val() || '').trim();
-    var startDate = parseYmdToDate(startVal);
+    var effectiveMin = effectiveMinForEndPicker(pair);
+    var effectiveDate = parseYmdToDate(effectiveMin);
     var endVal = ($end.val() || '').trim();
 
     if (typeof $.fn.datepicker !== 'undefined' && $end.data('datepicker')) {
-        if (startDate) {
+        if (effectiveDate) {
             $end.prop('readonly', false).removeClass('planned-end-locked');
-            $end.datepicker('setStartDate', startDate);
-            if (endVal && endVal < startVal) {
-                $end.datepicker('setDate', startDate);
+            $end.datepicker('setStartDate', effectiveDate);
+            if (endVal && endVal < effectiveMin) {
+                $end.datepicker('setDate', effectiveMin);
             } else if (!endVal) {
                 try {
-                    $end.datepicker('setViewDate', startDate);
+                    $end.datepicker('setViewDate', effectiveDate);
                 } catch (e) {}
             }
         } else {
@@ -917,12 +974,17 @@ function applyPlannedEndConstraints(pair) {
     }
 
     syncPlannedEndMin($start, $end);
-    if (!startVal) {
+    if (!effectiveMin) {
         $end.prop('readonly', true).addClass('planned-end-locked');
         $end.val('');
     } else {
         $end.prop('readonly', false).removeClass('planned-end-locked');
     }
+}
+
+function applyPlannedDateConstraints(pair) {
+    applyPlannedStartConstraints(pair);
+    applyPlannedEndConstraints(pair);
 }
 
 function initPlannedDatePickerPair(pair) {
@@ -933,45 +995,60 @@ function initPlannedDatePickerPair(pair) {
     ensurePlannedDateTextInput($end);
 
     if (typeof $.fn.datepicker === 'undefined') {
-        applyPlannedEndConstraints(pair);
+        applyPlannedDateConstraints(pair);
         $start.off('change.plannedRange input.plannedRange').on('change.plannedRange input.plannedRange', function() {
-            applyPlannedEndConstraints(pair);
+            applyPlannedDateConstraints(pair);
         });
         return;
     }
 
     if (!$start.data('datepicker')) {
-        $start.datepicker($.extend({}, plannedDatePickerOptions))
+        $start.datepicker(plannedDatePickerOptionsFor($start))
+            .on('show.plannedRange', function() {
+                var seqMin = getSequentialMinStart(getPlannedDateContainer(pair.$start));
+                var seqDate = parseYmdToDate(seqMin);
+                if (seqDate) {
+                    try {
+                        pair.$start.datepicker('setViewDate', seqDate);
+                    } catch (e) {}
+                }
+            })
             .on('changeDate.plannedRange clearDate.plannedRange change.plannedRange', function() {
-                applyPlannedEndConstraints(pair);
+                applyPlannedDateConstraints(pair);
             });
     }
 
     if (!$end.data('datepicker')) {
-        $end.datepicker($.extend({}, plannedDatePickerOptions))
+        $end.datepicker(plannedDatePickerOptionsFor($end))
             .on('show.plannedRange', function() {
-                var startDate = parseYmdToDate(($start.val() || '').trim());
-                if (!startDate) {
+                var effectiveMin = effectiveMinForEndPicker(pair);
+                var minDate = parseYmdToDate(effectiveMin);
+                if (!minDate) {
                     return false;
                 }
                 try {
-                    $end.datepicker('setViewDate', startDate);
+                    $end.datepicker('setViewDate', minDate);
                 } catch (e) {}
             })
             .on('changeDate.plannedRange change.plannedRange', function() {
-                var endLabel = $end.data('label') || 'Planned end';
-                var msg = plannedDateRangeMessage(($start.val() || '').trim(), ($end.val() || '').trim(), endLabel);
+                var $container = getPlannedDateContainer(pair.$start);
+                var endLabel = pair.$end.data('label') || 'Planned end';
+                var startVal = (pair.$start.val() || '').trim();
+                var endVal = (pair.$end.val() || '').trim();
+                var msg = plannedDateRangeMessage(startVal, endVal, endLabel)
+                    || plannedSequentialDateMessage($container, startVal, endVal);
                 if (msg) {
                     toastr.error(msg);
-                    highlightErrorInput($end);
+                    highlightErrorInput(pair.$end);
                 } else {
-                    $end.removeClass('errorBorder');
+                    pair.$end.removeClass('errorBorder');
                 }
             });
     }
 
     $end.off('click.plannedRange focus.plannedRange').on('click.plannedRange focus.plannedRange', function(e) {
-        if (!($start.val() || '').trim()) {
+        var seqMin = getSequentialMinStart(getPlannedDateContainer(pair.$start));
+        if (!($start.val() || '').trim() && !seqMin) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $end.blur();
@@ -981,7 +1058,7 @@ function initPlannedDatePickerPair(pair) {
         }
     });
 
-    applyPlannedEndConstraints(pair);
+    applyPlannedDateConstraints(pair);
 }
 
 function bindPlannedDateRangeInputs($scope) {
@@ -993,11 +1070,21 @@ function bindPlannedDateRangeInputs($scope) {
 function validatePlannedDateRangesInScope($scope) {
     var valid = true;
     plannedDateRangePairsInScope($scope).forEach(function(pair) {
+        var $container = getPlannedDateContainer(pair.$start);
         var endLabel = pair.$end.data('label') || 'Planned end';
-        var msg = plannedDateRangeMessage(pair.$start.val(), pair.$end.val(), endLabel);
+        var startVal = (pair.$start.val() || '').trim();
+        var endVal = (pair.$end.val() || '').trim();
+        var msg = plannedDateRangeMessage(startVal, endVal, endLabel)
+            || plannedSequentialDateMessage($container, startVal, endVal);
         if (msg) {
             toastr.error('<li>' + msg + '</li>');
-            highlightErrorInput(pair.$end);
+            if (plannedDateRangeMessage(startVal, endVal, endLabel)) {
+                highlightErrorInput(pair.$end);
+            } else if (startVal && getSequentialMinStart($container) && startVal < getSequentialMinStart($container)) {
+                highlightErrorInput(pair.$start);
+            } else {
+                highlightErrorInput(pair.$end);
+            }
             valid = false;
         }
     });
@@ -1371,6 +1458,31 @@ function addRequiredStartToLabel() {
 
 addRequiredStartToLabel();
 
+function executeSideLayoutScripts($root) {
+    $root = ($root && $root.length) ? $root : $('#dynamicSideLayoutContent');
+    $root.find('script').each(function() {
+        var code = this.text || this.textContent || '';
+        if (!code.trim()) {
+            return;
+        }
+        if (typeof jQuery !== 'undefined' && jQuery.globalEval) {
+            jQuery.globalEval(code);
+        } else {
+            window.eval(code);
+        }
+        $(this).remove();
+    });
+}
+
+function plannedDatePickerOptionsFor($input) {
+    var opts = $.extend({}, plannedDatePickerOptions);
+    var $canvas = $input.closest('.offcanvas, .sidelayout-offcanvas');
+    if ($canvas.length) {
+        opts.container = $canvas.first();
+    }
+    return opts;
+}
+
 function openSideLayout(data, url, title, width = 75) {
     // Remove ALL TinyMCE editors first
     if (typeof tinyMCE !== 'undefined' && tinyMCE.editors.length > 0) {
@@ -1402,8 +1514,13 @@ function openSideLayout(data, url, title, width = 75) {
     var postKey = "sidelayoutContent";
     ajaxRequestPromiseHtml(fullUrl, data, postKey).then(function (response) {
         preloaderOverlay('hide');
-        $('#dynamicSideLayoutContent').html(response);
+        var $root = $('#dynamicSideLayoutContent');
+        $root.html(response);
+        executeSideLayoutScripts($root);
         addRequiredStartToLabel();
+        if (typeof bindPlannedDateRangeInputs === 'function') {
+            bindPlannedDateRangeInputs($root);
+        }
     }).catch(function (err) {
         console.log(err);
         preloaderOverlay('hide');

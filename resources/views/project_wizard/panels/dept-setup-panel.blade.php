@@ -5,13 +5,11 @@
     $isLast = !empty($data['is_last']);
     $spocUsers = $data['spoc_users'] ?? [];
     $pd = $row;
-    $plannedStartYmd = !empty($row['planned_start_date']) ? date('Y-m-d', strtotime($row['planned_start_date'])) : '';
-    $plannedEndYmd = !empty($row['planned_end_date']) ? date('Y-m-d', strtotime($row['planned_end_date'])) : '';
 @endphp
 <div class="sidelayout-panel dept-setup-panel">
     <div class="sidelayout-context mb-3">
         <strong>{{ $row['department_name'] ?? 'Department' }}</strong>
-        <p class="text-muted small mb-0">Assign the department SPOC and workflow options before execution begins.</p>
+        <p class="text-muted small mb-0">Assign the department SPOC and workflow options. Planned dates are set during execution.</p>
     </div>
 
     <form id="wizardDeptSetupForm">
@@ -22,19 +20,6 @@
         <input type="hidden" name="department_parallel" id="deptSetupParallel" value="">
 
         @include('project_wizard.partials.spoc-user-field', ['pd' => $pd, 'spocUsers' => $spocUsers])
-
-        <div class="row g-2 mt-2 planned-date-range">
-            <div class="col-md-6">
-                <label class="small text-muted">Planned start</label>
-                <input type="text" class="form-control form-control-sm planned-date-input js-planned-start" name="planned_start_date" autocomplete="off" placeholder="yyyy-mm-dd"
-                    value="{{ $plannedStartYmd }}">
-            </div>
-            <div class="col-md-6">
-                <label class="small text-muted">Planned end</label>
-                <input type="text" class="form-control form-control-sm planned-date-input js-planned-end" name="planned_end_date" data-label="Planned end" autocomplete="off" placeholder="yyyy-mm-dd"
-                    value="{{ $plannedEndYmd }}" @if($plannedStartYmd === '') readonly @endif>
-            </div>
-        </div>
 
         @if(!$isLast)
         <div class="card card-body p-3 mt-3 bg-light border-0">
@@ -59,7 +44,7 @@
     </form>
 </div>
 <script>
-$(function() {
+(function initDeptSetupPanelSideLayout() {
     $('.sidelayoutTitle').html(@json($pageTitle ?? 'Configure Department'));
 
     if (typeof syncProjectDepartmentOrder === 'function') {
@@ -76,16 +61,8 @@ $(function() {
         initSpocUserControls();
     }
 
-    if (typeof bindPlannedDateRangeInputs === 'function') {
-        bindPlannedDateRangeInputs($('#wizardDeptSetupForm'));
-    }
-
     $('#saveDeptSetupBtn').on('click', function() {
         var $btn = $(this);
-        if (typeof validatePlannedDateRangesInScope === 'function' &&
-            !validatePlannedDateRangesInScope($('#wizardDeptSetupForm'))) {
-            return;
-        }
         if (typeof syncProjectDepartmentOrder === 'function') {
             syncProjectDepartmentOrder();
             $('#deptSetupOrder').val($('#department_order').val());
@@ -126,5 +103,5 @@ $(function() {
                 }
             });
     });
-});
+})();
 </script>

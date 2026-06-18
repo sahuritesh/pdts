@@ -249,27 +249,58 @@
                         @if(empty($projectDepartments))
                         <div class="alert alert-info">Save departments in step 2 to begin execution tracking.</div>
                         @else
+                        <div class="dept-sortable-legend mb-3">
+                            <span class="dept-legend-item"><span class="dept-legend-bar dept-legend-bar-missing"></span> SPOC not assigned</span>
+                            <span class="dept-legend-item"><span class="dept-legend-bar dept-legend-bar-assigned"></span> SPOC assigned</span>
+                            <span class="dept-legend-item"><i class="ri-arrow-right-line"></i> Sequential</span>
+                            <span class="dept-legend-item"><i class="ri-git-branch-line"></i> Parallel</span>
+                        </div>
                         <div class="accordion" id="deptExecutionAccordion">
                             @foreach($projectDepartments as $index => $pd)
                             @php
                                 $status = $pd['department_status'] ?? 'pending';
+                                $totalDepts = count($projectDepartments);
+                                $isLastDept = ($index === $totalDepts - 1);
+                                $allowParallelNext = !empty($pd['allow_parallel_next']);
+                                $spocName = trim($pd['spoc_name'] ?? '');
+                                $spocBorderClass = $spocName !== '' ? 'dept-has-spoc' : 'dept-spoc-missing';
+                                $spocMissing = $spocName === '' && empty($pd['spoc_user_id']);
+                                $previousPd = $index > 0 ? $projectDepartments[$index - 1] : null;
+                                $prevAllowsParallel = $previousPd && !empty($previousPd['allow_parallel_next']);
+                                $sequentialEnforced = $previousPd && !$prevAllowsParallel;
+                                $sequentialMinStart = '';
+                                $sequentialPrevName = $previousPd['department_name'] ?? '';
+                                if ($sequentialEnforced && $previousPd && !empty($previousPd['planned_end_date'])) {
+                                    $sequentialMinStart = date('Y-m-d', strtotime($previousPd['planned_end_date']));
+                                }
                                 $isLocked = $projectDeptService->isDepartmentLocked($pd);
                                 $isPending = $isLocked;
+                                $actionsDisabled = $isPending || $spocMissing;
                                 $expanded = ($activeExpand && $activeExpand == $pd['id']) || (!$activeExpand && $index === 0 && !$isLocked);
                                 $encPdId = Crypt::encrypt($pd['id']);
                                 $badgeClass = ['pending'=>'secondary','start'=>'info','in_progress'=>'primary','delay'=>'warning','completed'=>'success'][$status] ?? 'secondary';
                             @endphp
-                            <div class="accordion-item dept-accordion-item {{ $status }} mb-2 border @if($isLocked) dept-accordion-locked @endif">
+                            <div class="accordion-item dept-accordion-item {{ $spocBorderClass }} {{ $status }} mb-2 @if($isLocked) dept-accordion-locked @endif">
                                 <h2 class="accordion-header">
                                     <button class="accordion-button @if(!$expanded) collapsed @endif @if($isLocked) disabled @endif" type="button"
                                         data-bs-toggle="collapse" data-bs-target="#collapse_{{ $pd['id'] }}"
                                         @if($isLocked) disabled @endif>
                                         <span class="me-2">{{ $pd['sort_order'] }}.</span>
                                         <strong>{{ $pd['department_name'] }}</strong>
-                                        @if(!empty($pd['spoc_name']))
-                                        <small class="text-muted ms-2 fw-normal">· {{ $pd['spoc_name'] }}</small>
-                                        @endif
+                                        <span class="dept-meta-spoc ms-2">
+                                            <i class="{{ $spocName !== '' ? 'ri-user-follow-line dept-icon-spoc-assigned' : 'ri-user-unfollow-line dept-icon-spoc-missing' }}"></i>
+                                            <span class="dept-meta-spoc-text">{{ $spocName !== '' ? $spocName : 'SPOC not assigned' }}</span>
+                                        </span>
                                         <span class="badge bg-{{ $badgeClass }} ms-2">{{ $statusLabels[$status] ?? ucfirst($status) }}</span>
+                                        @if(!$isLastDept)
+                                        <span class="dept-meta-parallel dept-meta-flow badge rounded-pill ms-2 {{ $allowParallelNext ? 'bg-info-subtle text-info dept-flow-parallel' : 'bg-secondary-subtle text-secondary dept-flow-sequential' }}">
+                                            <i class="{{ $allowParallelNext ? 'ri-git-branch-line' : 'ri-arrow-right-line' }}"></i>
+                                            <span>{{ $allowParallelNext ? 'Parallel' : 'Sequential' }}</span>
+                                        </span>
+                                        @endif
+                                        @if($spocMissing)
+                                        <span class="badge bg-warning-subtle text-warning ms-2">SPOC required</span>
+                                        @endif
                                         @if($isLocked && $status === 'pending')
                                         <span class="badge bg-light text-muted ms-2">Waiting for previous step</span>
                                         @endif
@@ -280,15 +311,17 @@
                                         <div class="row">
                                             <div class="col-md-8">
                                                 <p class="text-muted small">{{ $pd['department_description'] ?? '' }}</p>
-                                                @if(!empty($pd['spoc_name']))
-                                                <p class="small mb-2"><i class="ri-user-line me-1 text-muted"></i><strong>Department SPOC:</strong> {{ $pd['spoc_name'] }}</p>
-                                                @endif
+                                                @include('project_wizard.partials.dept-spoc-required-notice', ['spocMissing' => $spocMissing])
                                                 @if(!$isPending)
                                                 @include('project_wizard.partials.dept-workflow-fields', [
                                                     'pd' => $pd,
                                                     'status' => $status,
                                                     'showSpoc' => false,
                                                     'spocUsers' => $spocUsers,
+                                                    'sequentialEnforced' => $sequentialEnforced,
+                                                    'sequentialMinStart' => $sequentialMinStart,
+                                                    'sequentialPrevName' => $sequentialPrevName,
+                                                    'actionsDisabled' => $actionsDisabled,
                                                 ])
                                                 @endif
                                             </div>
@@ -297,6 +330,7 @@
                                                     'pd' => $pd,
                                                     'encPdId' => $encPdId,
                                                     'isPending' => $isPending,
+                                                    'actionsDisabled' => $actionsDisabled,
                                                 ])
                                             </div>
                                         </div>
@@ -842,22 +876,32 @@
     transition:.2s ease;
 }
 
-.dept-sortable-item.dept-spoc-missing{
+.dept-sortable-item.dept-spoc-missing,
+.dept-accordion-item.dept-spoc-missing{
     border-left-color:#f59e0b !important;
+}
+
+.dept-sortable-item.dept-has-spoc,
+.dept-accordion-item.dept-has-spoc{
+    border-left-color:#22c55e !important;
+}
+
+.dept-sortable-item.dept-spoc-missing{
     background:linear-gradient(90deg, #fffbeb 0%, #fff 28%);
 }
 
 .dept-sortable-item.dept-has-spoc{
-    border-left-color:#22c55e !important;
     background:linear-gradient(90deg, #f0fdf4 0%, #fff 22%);
 }
 
-.dept-sortable-item.dept-spoc-missing:hover{
+.dept-sortable-item.dept-spoc-missing:hover,
+.dept-accordion-item.dept-spoc-missing:hover{
     border-color:#fcd34d;
     box-shadow:0 4px 14px rgba(245,158,11,.12);
 }
 
-.dept-sortable-item.dept-has-spoc:hover{
+.dept-sortable-item.dept-has-spoc:hover,
+.dept-accordion-item.dept-has-spoc:hover{
     border-color:#86efac;
     box-shadow:0 4px 14px rgba(34,197,94,.12);
 }
@@ -1108,6 +1152,63 @@
     border-left:3px solid #2563eb;
 
     margin-bottom:18px;
+}
+
+.dept-accordion-item .accordion-button .dept-meta-flow{
+    margin-left:.35rem;
+}
+
+.dept-spoc-required-alert{
+    border-left:4px solid #f59e0b;
+    background:#fffbeb;
+    border-radius:10px;
+}
+
+.dept-actions-disabled .form-control,
+.dept-actions-disabled .btn{
+    pointer-events:none;
+}
+
+.dept-panel-actions .wizard-panel-btn:disabled{
+    opacity:.55;
+    cursor:not-allowed;
+    pointer-events:none;
+}
+
+.sidelayout-offcanvas .datepicker,
+.offcanvas .datepicker{
+    z-index:1090 !important;
+}
+
+/* Execution accordions — same SPOC left-border treatment as step 2 sortable */
+.dept-accordion-item.dept-spoc-missing,
+.dept-accordion-item.dept-has-spoc{
+    border:1px solid #e2e8f0 !important;
+    border-left-width:4px !important;
+}
+
+.dept-accordion-item.dept-spoc-missing{
+    background:linear-gradient(90deg, #fffbeb 0%, #fff 28%) !important;
+}
+
+.dept-accordion-item.dept-has-spoc{
+    background:linear-gradient(90deg, #f0fdf4 0%, #fff 22%) !important;
+}
+
+.dept-accordion-item .accordion-button .dept-meta-spoc{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:12px;
+    font-weight:500;
+    color:#64748b;
+}
+
+.dept-accordion-item .accordion-button .dept-meta-spoc-text{
+    max-width:180px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 
 /* Status Badges */
@@ -1424,6 +1525,28 @@ function setDeptLiAttr($li, key, value) {
     $li.removeData(key.replace(/-([a-z])/g, function(m, c) { return c.toUpperCase(); }));
 }
 
+function getDeptSequentialConstraint(sortIndex) {
+    var idx = parseInt(sortIndex, 10);
+    if (isNaN(idx) || idx <= 0) {
+        return null;
+    }
+    var $prev = $('#deptSortable li').eq(idx - 1);
+    if (!$prev.length) {
+        return null;
+    }
+    if (parseInt(getDeptLiAttr($prev, 'allow-parallel'), 10) === 1) {
+        return null;
+    }
+    var prevEnd = getDeptLiAttr($prev, 'planned-end').trim();
+    if (!prevEnd) {
+        return null;
+    }
+    return {
+        minStart: prevEnd,
+        prevName: $prev.find('.dept-sortable-title').text().trim() || 'previous department'
+    };
+}
+
 function deptFlowBadgeHtml(allowParallel) {
     if (allowParallel) {
         return '<span class="dept-meta-parallel dept-meta-flow badge rounded-pill bg-info-subtle text-info dept-flow-parallel">' +
@@ -1490,7 +1613,7 @@ function syncProjectDepartmentOrder() {
 function buildDeptSortableItem(dept) {
     var deptId = dept.id || dept.department_id;
     var deptName = dept.department_name || dept.label || 'Department';
-    var html = '<li class="list-group-item dept-sortable-item dept-spoc-missing" data-dept-id="' + deptId + '" data-pd-id="0" data-spoc-user-id="" data-spoc-name="" data-allow-parallel="0" data-pd-token="">' +
+    var html = '<li class="list-group-item dept-sortable-item dept-spoc-missing" data-dept-id="' + deptId + '" data-pd-id="0" data-spoc-user-id="" data-spoc-name="" data-allow-parallel="0" data-planned-start="" data-planned-end="" data-pd-token="">' +
         '<div class="dept-sortable-main flex-grow-1">' +
         '<div class="dept-sortable-drag"><i class="ri-drag-move-2-line"></i></div>' +
         '<div class="dept-sortable-content">' +
@@ -1530,6 +1653,8 @@ window.updateDeptSortableItem = function(res) {
     setDeptLiAttr($li, 'spoc-user-id', res.spoc_user_id || '');
     setDeptLiAttr($li, 'spoc-name', res.spoc_name || '');
     setDeptLiAttr($li, 'allow-parallel', parseInt(res.allow_parallel_next, 10) === 1 ? '1' : '0');
+    setDeptLiAttr($li, 'planned-start', res.planned_start_date ? String(res.planned_start_date).substring(0, 10) : '');
+    setDeptLiAttr($li, 'planned-end', res.planned_end_date ? String(res.planned_end_date).substring(0, 10) : '');
 
     refreshDeptSortableMeta($li);
     syncProjectDepartmentOrder();

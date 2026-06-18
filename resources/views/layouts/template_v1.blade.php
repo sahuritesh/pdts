@@ -382,7 +382,7 @@ Active
     <script src="{{ getAssetUrl('js/growl.js') }}"></script>
     <script src="{{ getAssetUrl('js/ajaxPromise.js') }}"></script>
     {{-- Bump querystring to bust browser cache when common utilities change --}}
-    <script src="{{ getAssetUrl('js/common.js') }}?v=2.3"></script>
+    <script src="{{ getAssetUrl('js/common.js') }}?v=2.5"></script>
     <script src="{{ getAssetUrl('js/custom_operations.js') }}"></script>
     <script src="{{ getAssetUrl('js/common-confirm.js') }}"></script>
     <!--confirm popup--->

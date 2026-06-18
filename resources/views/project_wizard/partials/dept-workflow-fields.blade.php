@@ -11,9 +11,16 @@
     $completeLabel = $completeLabel ?? 'Complete';
     $plannedStartYmd = !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '';
     $plannedEndYmd = !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '';
+    $sequentialEnforced = !empty($sequentialEnforced);
+    $sequentialMinStart = $sequentialMinStart ?? '';
+    $sequentialPrevName = $sequentialPrevName ?? '';
+    $actionsDisabled = !empty($actionsDisabled);
 @endphp
 @if(($status ?? 'pending') !== 'pending')
-<div class="dept-meta-form planned-date-range row g-2 {{ $formMarginClass }}" data-pd-id="{{ $pd['id'] }}">
+<div class="dept-meta-form planned-date-range row g-2 {{ $formMarginClass }} @if($actionsDisabled) dept-actions-disabled @endif" data-pd-id="{{ $pd['id'] }}"
+    data-seq-enforced="{{ $sequentialEnforced && $sequentialMinStart !== '' ? '1' : '0' }}"
+    data-seq-min-start="{{ $sequentialMinStart }}"
+    data-seq-prev-name="{{ e($sequentialPrevName) }}">
     <input type="hidden" name="project_department_id" value="{{ $pd['id'] }}">
     @if($showSpoc)
     <div class="col-md-6">
@@ -36,12 +43,12 @@
     <div class="col-md-6">
         <label class="small text-muted">Planned start</label>
         <input type="text" class="form-control form-control-sm planned-date-input js-planned-start" name="planned_start_date" autocomplete="off" placeholder="yyyy-mm-dd"
-            value="{{ $plannedStartYmd }}">
+            value="{{ $plannedStartYmd }}" @if($actionsDisabled) readonly @endif>
     </div>
     <div class="col-md-6">
         <label class="small text-muted">Planned end</label>
         <input type="text" class="form-control form-control-sm planned-date-input js-planned-end" name="planned_end_date" data-label="Planned end" autocomplete="off" placeholder="yyyy-mm-dd"
-            value="{{ $plannedEndYmd }}" @if($plannedStartYmd === '') readonly @endif>
+            value="{{ $plannedEndYmd }}" @if($plannedStartYmd === '' || $actionsDisabled) readonly @endif>
     </div>
     @if($showRemarks)
     <div class="col-12">
@@ -53,15 +60,15 @@
     </div>
     @else
     <div class="col-md-2 d-flex align-items-end">
-        <button type="button" class="btn btn-sm btn-outline-secondary save-dept-meta w-100">{{ $saveButtonLabel }}</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary save-dept-meta w-100" @if($actionsDisabled) disabled @endif>{{ $saveButtonLabel }}</button>
     </div>
     @endif
     @endif
 </div>
 @if(in_array($status, ['start', 'in_progress', 'delay']))
 <div class="btn-group btn-group-sm {{ $actionsMarginClass }}">
-    <button type="button" class="btn btn-outline-primary dept-action" data-id="{{ $pd['id'] }}" data-action="in_progress">{{ $inProgressLabel }}</button>
-    <button type="button" class="btn btn-outline-success dept-action" data-id="{{ $pd['id'] }}" data-action="complete">{{ $completeLabel }}</button>
+    <button type="button" class="btn btn-outline-primary dept-action" data-id="{{ $pd['id'] }}" data-action="in_progress" @if($actionsDisabled) disabled @endif>{{ $inProgressLabel }}</button>
+    <button type="button" class="btn btn-outline-success dept-action" data-id="{{ $pd['id'] }}" data-action="complete" @if($actionsDisabled) disabled @endif>{{ $completeLabel }}</button>
 </div>
 @endif
 @endif
