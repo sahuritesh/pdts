@@ -21,6 +21,9 @@ class ProjectWizardController extends Controller
 {
     use WebResponseTrait;
 
+    /** Single SPOC role — project vs department access is by assignment, not role name. */
+    private const SPOC_ROLE_NAME = 'Department SPOC';
+
     public $module = 'projects';
 
     protected AuditTrailService $auditTrail;
@@ -79,6 +82,20 @@ class ProjectWizardController extends Controller
             return true;
         }
 
+        if ($this->denyIfProjectCompleted((int) $projectId)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function denyIfProjectCompleted(int $projectId): bool
+    {
+        if ($projectId > 0 && $this->userScope->isProjectCompleted($projectId)) {
+            $this->sendErrorResponse('This project is completed and cannot be edited.', 1);
+            return true;
+        }
+
         return false;
     }
 
@@ -124,6 +141,7 @@ class ProjectWizardController extends Controller
         $projectId = null;
         $project = null;
         $step = 1;
+        $readOnly = false;
         $scopedFallbackUrl = getProjectsListingUrl();
 
         if ($id !== 'new') {
@@ -132,7 +150,8 @@ class ProjectWizardController extends Controller
                 if (!$this->canAccessProject($projectId)) {
                     return redirect($scopedFallbackUrl)->with('error', 'You do not have access to this project');
                 }
-                if (!$this->userScope->canEditProject($projectId)) {
+                $readOnly = $this->userScope->isProjectCompleted($projectId);
+                if (!$readOnly && !$this->userScope->canEditProject($projectId)) {
                     return redirect($scopedFallbackUrl)->with('error', 'You have view-only access to this project. Use My Department Tasks for your work.');
                 }
                 $project = DB::table('tbl_projects')->where('id', $projectId)->where('is_delete', 0)->first();
@@ -166,7 +185,8 @@ class ProjectWizardController extends Controller
             'project_departments' => $projectId ? $this->projectDepartmentService->getProjectDepartments($projectId) : [],
             'status_labels' => $this->projectDepartmentService->statusLabels(),
             'spoc_users' => $this->getSpocUserOptions('Department SPOC'),
-            'project_spoc_users' => $this->getSpocUserOptions('Project SPOC', $responsibleUserId ?: null),
+            'project_spoc_users' => $this->getSpocUserOptions(self::SPOC_ROLE_NAME, $responsibleUserId ?: null),
+            'read_only' => $readOnly,
         ];
 
         return view('project_wizard.wizard', compact('pageTitle', 'data'));
@@ -254,7 +274,15 @@ class ProjectWizardController extends Controller
                 return;
             }
 
-            $this->projectDepartmentService->syncProjectDepartments($projectId, $ordered);
+            $parallelRaw = $postData['department_parallel'] ?? '{}';
+            if (is_string($parallelRaw)) {
+                $parallelFlags = json_decode($parallelRaw, true) ?: [];
+            } else {
+                $parallelFlags = is_array($parallelRaw) ? $parallelRaw : [];
+            }
+            $parallelFlags = array_map('intval', $parallelFlags);
+
+            $this->projectDepartmentService->syncProjectDepartments($projectId, $ordered, $parallelFlags);
 
             DB::table('tbl_projects')->where('id', $projectId)->update([
                 'wizard_step' => 3,
@@ -317,6 +345,10 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            if ($this->denyIfProjectCompleted((int) $row->project_id)) {
+                return;
+            }
+
             $deptUpdate = [
                 'planned_start_date' => $this->nullableDate($postData['planned_start_date'] ?? ''),
                 'planned_end_date' => $this->nullableDate($postData['planned_end_date'] ?? ''),
@@ -369,6 +401,10 @@ class ProjectWizardController extends Controller
 
             if (!$this->assertDepartmentAccess($pdId)) {
                 $this->sendErrorResponse('You do not have access to this department task', 1);
+                return;
+            }
+
+            if ($this->denyIfProjectCompleted((int) $row->project_id)) {
                 return;
             }
 
@@ -512,6 +548,10 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            if ($this->denyIfProjectCompleted((int) $ctx['project_id'])) {
+                return;
+            }
+
             $title = trim($postData['delay_title'] ?? '');
             if ($title === '') {
                 $this->sendValidationErrorResponse('<li>Please enter delay title</li>');
@@ -592,6 +632,10 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            if ($this->denyIfProjectCompleted((int) $delayRow->project_id)) {
+                return;
+            }
+
             $mitigationId = $postData['mitigation_id'] ?? null;
             $operation = ($mitigationId && $mitigationId !== '') ? 'Update' : 'Add';
             $payload = [
@@ -636,6 +680,10 @@ class ProjectWizardController extends Controller
             $ctx = $this->projectDepartmentService->resolveDepartment($pdId);
             if (!$ctx || !$this->assertDepartmentAccess((int) $ctx['id'])) {
                 $this->sendErrorResponse('You do not have access to this department task', 1);
+                return;
+            }
+
+            if ($this->denyIfProjectCompleted((int) $ctx['project_id'])) {
                 return;
             }
 
@@ -688,6 +736,10 @@ class ProjectWizardController extends Controller
             $ctx = $this->projectDepartmentService->resolveDepartment($pdId);
             if (!$ctx || !$this->assertDepartmentAccess((int) $ctx['id'])) {
                 $this->sendErrorResponse('You do not have access to this department task', 1);
+                return;
+            }
+
+            if ($this->denyIfProjectCompleted((int) $ctx['project_id'])) {
                 return;
             }
 
@@ -938,7 +990,7 @@ class ProjectWizardController extends Controller
             return response()->json(['error' => 1, 'users' => []]);
         }
 
-        $roleName = ($request->input('spoc_role') === 'project') ? 'Project SPOC' : 'Department SPOC';
+        $roleName = self::SPOC_ROLE_NAME;
 
         return response()->json([
             'error' => 0,
@@ -965,6 +1017,10 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            if ($this->denyIfProjectCompleted($projectId)) {
+                return;
+            }
+
             $departmentId = (int) ($postData['department_id'] ?? 0);
             $isProjectSpoc = ($postData['spoc_role'] ?? 'department') === 'project';
 
@@ -974,9 +1030,9 @@ class ProjectWizardController extends Controller
                 return;
             }
 
-            $spocRoleId = $this->getSpocRoleId($isProjectSpoc ? 'Project SPOC' : 'Department SPOC');
+            $spocRoleId = $this->getSpocRoleId();
             if (!$spocRoleId) {
-                $this->sendErrorResponse(($isProjectSpoc ? 'Project' : 'Department') . ' SPOC role is not configured. Run roles seeder.', 1);
+                $this->sendErrorResponse('Unable to resolve SPOC role. Contact administrator.', 1);
                 return;
             }
 
@@ -1020,7 +1076,7 @@ class ProjectWizardController extends Controller
                 'name' => trim($payload['first_name'] . ' ' . $payload['last_name']),
             ];
 
-            $roleName = $isProjectSpoc ? 'Project SPOC' : 'Department SPOC';
+            $roleName = self::SPOC_ROLE_NAME;
             $this->sendSuccessResponse('SPOC user created successfully', 'Add', '', [
                 'user' => $userOption,
                 'users' => $this->getSpocUserOptions($roleName),
@@ -1065,14 +1121,81 @@ class ProjectWizardController extends Controller
             ->all();
     }
 
-    private function getSpocRoleId(string $roleName = 'Department SPOC'): ?int
+    private function getSpocRoleId(?string $roleName = null): ?int
     {
+        $roleName = $roleName ?: self::SPOC_ROLE_NAME;
+
+        if (!Schema::hasTable('tbl_roles')) {
+            return null;
+        }
+
         $roleId = DB::table('tbl_roles')
             ->where('role_name', $roleName)
+            ->where('is_delete', 0)
             ->where('status', ACTIVE)
             ->value('id');
 
-        return $roleId ? (int) $roleId : null;
+        if ($roleId) {
+            return (int) $roleId;
+        }
+
+        $inactiveId = DB::table('tbl_roles')
+            ->where('role_name', $roleName)
+            ->where('is_delete', 0)
+            ->value('id');
+
+        if ($inactiveId) {
+            DB::table('tbl_roles')->where('id', $inactiveId)->update([
+                'status' => ACTIVE,
+                'updated_by' => Auth::id() ?: 1,
+                'updated_on' => current_datetime(),
+            ]);
+
+            return (int) $inactiveId;
+        }
+
+        return $this->provisionSpocRole();
+    }
+
+    private function provisionSpocRole(): ?int
+    {
+        $spocDashboardWidgets = [
+            'dashboard_m1_kpis',
+            'dashboard_m1_chart_category',
+            'dashboard_m1_chart_mitigation',
+            'dashboard_m1_table_critical',
+            'dashboard_m1_chart_zone',
+        ];
+        $permissions = implode(',', array_merge(
+            ['dashboard_view', 'my_projects', 'spoc_tasks'],
+            $spocDashboardWidgets
+        ));
+
+        $userId = Auth::id() ?: 1;
+        $now = current_datetime();
+
+        try {
+            return (int) DB::table('tbl_roles')->insertGetId([
+                'role_name' => self::SPOC_ROLE_NAME,
+                'role_description' => 'Manage assigned projects and department tasks',
+                'permission_types' => $permissions,
+                'status' => ACTIVE,
+                'created_by' => $userId,
+                'created_on' => $now,
+                'updated_by' => $userId,
+                'updated_on' => $now,
+                'is_delete' => 0,
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('provisionSpocRole: ' . $e->getMessage());
+
+            $roleId = DB::table('tbl_roles')
+                ->where('role_name', self::SPOC_ROLE_NAME)
+                ->where('is_delete', 0)
+                ->value('id');
+
+            return $roleId ? (int) $roleId : null;
+        }
     }
 
     private function assignUserToDepartment(int $userId, int $departmentId): void

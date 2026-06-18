@@ -22,6 +22,8 @@
     }
     $canOpenDepartmentsTab = $enableClick && $savedWizardStep >= 2;
     $canOpenExecutionTab = $enableClick && $savedWizardStep >= 3;
+    $isProjectReadOnly = !empty($data['read_only']);
+    $projectDeptService = app(\App\Services\ProjectDepartmentService::class);
     $activeExpand = null;
     foreach ($projectDepartments as $pd) {
         if (in_array($pd['department_status'] ?? '', ['start', 'in_progress', 'delay'])) {
@@ -50,6 +52,13 @@
     </a>
 
 </div>
+
+                @if($isProjectReadOnly)
+                <div class="alert alert-success d-flex align-items-center gap-2 mb-3">
+                    <i class="ri-lock-line fs-5"></i>
+                    <span>This project is <strong>completed</strong> and is locked for editing. You can review details only.</span>
+                </div>
+                @endif
 
                 <input type="hidden" id="hdnForeignKeyId" value="{{ $projectId }}">
                 <a id="commonActionButton" href="{{ getProjectsListingUrl() }}" style="display:none"></a>
@@ -187,12 +196,22 @@
                                 </div>
                             </div>
                             <div class="col-md-7">
-                                <p class="text-muted small">Drag to set execution order (top = first).</p>
+                                <p class="text-muted small">Drag to set execution order (top = first). Use the parallel flag when the next department may start before the current one completes.</p>
                                 <ul id="deptSortable" class="list-group dept-sortable mb-0">
-                                    @foreach($projectDepartments as $pd)
-                                    <li class="list-group-item d-flex justify-content-between align-items-center" data-dept-id="{{ $pd['department_id'] }}">
-                                        <span><i class="ri-drag-move-2-line me-2 text-muted"></i>{{ $pd['department_name'] }}</span>
-                                        <button type="button" class="btn btn-sm btn-link text-danger remove-dept">&times;</button>
+                                    @foreach($projectDepartments as $pdIndex => $pd)
+                                    @php
+                                        $allowParallel = !empty($pd['allow_parallel_next']);
+                                        $isLastDept = ($pdIndex === count($projectDepartments) - 1);
+                                    @endphp
+                                    <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2" data-dept-id="{{ $pd['department_id'] }}">
+                                        <span class="dept-sortable-name"><i class="ri-drag-move-2-line me-2 text-muted"></i>{{ $pd['department_name'] }}</span>
+                                        <div class="dept-parallel-wrap form-check mb-0 @if($isLastDept) d-none @endif">
+                                            <input class="form-check-input allow-parallel-next" type="checkbox"
+                                                id="dept_parallel_{{ $pd['department_id'] }}"
+                                                @if($allowParallel) checked @endif>
+                                            <label class="form-check-label small" for="dept_parallel_{{ $pd['department_id'] }}">Allow next step parallely</label>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-link text-danger remove-dept ms-auto">&times;</button>
                                     </li>
                                     @endforeach
                                 </ul>
@@ -200,6 +219,7 @@
                             </div>
                         </div>
                         <input type="hidden" name="department_order" id="department_order" value="">
+                        <input type="hidden" name="department_parallel" id="department_parallel" value="">
                         <div class="wizard mt-3">
                             <div class="actions clearfix">
                                 <ul role="menu">
@@ -224,19 +244,23 @@
                             @foreach($projectDepartments as $index => $pd)
                             @php
                                 $status = $pd['department_status'] ?? 'pending';
-                                $isPending = $status === 'pending';
-                                $expanded = ($activeExpand && $activeExpand == $pd['id']) || (!$activeExpand && $index === 0 && !$isPending);
+                                $isLocked = $projectDeptService->isDepartmentLocked($pd);
+                                $isPending = $isLocked;
+                                $expanded = ($activeExpand && $activeExpand == $pd['id']) || (!$activeExpand && $index === 0 && !$isLocked);
                                 $encPdId = Crypt::encrypt($pd['id']);
                                 $badgeClass = ['pending'=>'secondary','start'=>'info','in_progress'=>'primary','delay'=>'warning','completed'=>'success'][$status] ?? 'secondary';
                             @endphp
-                            <div class="accordion-item dept-accordion-item {{ $status }} mb-2 border">
+                            <div class="accordion-item dept-accordion-item {{ $status }} mb-2 border @if($isLocked) dept-accordion-locked @endif">
                                 <h2 class="accordion-header">
-                                    <button class="accordion-button @if(!$expanded) collapsed @endif @if($isPending) disabled @endif" type="button"
+                                    <button class="accordion-button @if(!$expanded) collapsed @endif @if($isLocked) disabled @endif" type="button"
                                         data-bs-toggle="collapse" data-bs-target="#collapse_{{ $pd['id'] }}"
-                                        @if($isPending) disabled @endif>
+                                        @if($isLocked) disabled @endif>
                                         <span class="me-2">{{ $pd['sort_order'] }}.</span>
                                         <strong>{{ $pd['department_name'] }}</strong>
                                         <span class="badge bg-{{ $badgeClass }} ms-2">{{ $statusLabels[$status] ?? ucfirst($status) }}</span>
+                                        @if($isLocked && $status === 'pending')
+                                        <span class="badge bg-light text-muted ms-2">Waiting for previous step</span>
+                                        @endif
                                     </button>
                                 </h2>
                                 <div id="collapse_{{ $pd['id'] }}" class="accordion-collapse collapse @if($expanded) show @endif" data-bs-parent="#deptExecutionAccordion">
@@ -783,6 +807,40 @@
     }
 }
 /* ======================================
+   DEPARTMENT SORTABLE (STEP 2)
+====================================== */
+
+.dept-sortable .list-group-item{
+    border-radius:12px;
+    margin-bottom:8px;
+    border:1px solid #e2e8f0;
+}
+
+.dept-sortable-name{
+    flex:1 1 180px;
+    font-weight:600;
+    color:#1e293b;
+}
+
+.dept-parallel-wrap{
+    flex:1 1 220px;
+    padding:4px 10px;
+    border-radius:10px;
+    background:#f8fafc;
+    border:1px dashed #dbe2ea;
+}
+
+.dept-parallel-wrap .form-check-label{
+    color:#64748b;
+    line-height:1.3;
+}
+
+.dept-accordion-item.dept-accordion-locked .accordion-button.disabled{
+    opacity:.72;
+    cursor:not-allowed;
+}
+
+/* ======================================
    MODERN DEPARTMENT ACCORDION
 ====================================== */
 
@@ -1194,12 +1252,35 @@ var projectWizardInitialStep = {{ $initialStep }};
 var projectWizardEnableClick = {{ $enableClick ? 'true' : 'false' }};
 var projectWizardCanOpenDepartments = {{ $canOpenDepartmentsTab ? 'true' : 'false' }};
 var projectWizardCanOpenExecution = {{ $canOpenExecutionTab ? 'true' : 'false' }};
+var projectWizardReadOnly = {{ $isProjectReadOnly ? 'true' : 'false' }};
 
 function syncProjectDepartmentOrder() {
     var ids = [];
-    $('#deptSortable li').each(function() { ids.push($(this).data('dept-id')); });
+    var parallel = {};
+    $('#deptSortable li').each(function() {
+        var id = $(this).data('dept-id');
+        ids.push(id);
+        var $chk = $(this).find('.allow-parallel-next');
+        if ($chk.length) {
+            parallel[id] = $chk.is(':checked') ? 1 : 0;
+        }
+    });
     $('#department_order').val(ids.join(','));
+    $('#department_parallel').val(JSON.stringify(parallel));
     $('#deptSortableEmpty').toggle(ids.length === 0);
+    $('#deptSortable li .dept-parallel-wrap').removeClass('d-none');
+    $('#deptSortable li:last .dept-parallel-wrap').addClass('d-none');
+}
+
+function buildDeptSortableItem(dept, allowParallel) {
+    var checked = allowParallel ? ' checked' : '';
+    return '<li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2" data-dept-id="' + dept.id + '">' +
+        '<span class="dept-sortable-name"><i class="ri-drag-move-2-line me-2 text-muted"></i>' + dept.department_name + '</span>' +
+        '<div class="dept-parallel-wrap form-check mb-0">' +
+        '<input class="form-check-input allow-parallel-next" type="checkbox" id="dept_parallel_' + dept.id + '"' + checked + '>' +
+        '<label class="form-check-label small" for="dept_parallel_' + dept.id + '">Allow next step parallely</label>' +
+        '</div>' +
+        '<button type="button" class="btn btn-sm btn-link text-danger remove-dept ms-auto">&times;</button></li>';
 }
 
 function reloadWizardExecutionStep() {
@@ -1422,8 +1503,13 @@ $(function() {
     enableDisableSections(projectWizardInitialStep);
     $('.customWizard-' + projectWizardInitialStep).addClass('current');
 
-    $('#deptSortable').sortable({ placeholder: 'list-group-item bg-light' });
+    $('#deptSortable').sortable({
+        placeholder: 'list-group-item bg-light',
+        update: syncProjectDepartmentOrder
+    });
     syncProjectDepartmentOrder();
+
+    $(document).on('change', '.allow-parallel-next', syncProjectDepartmentOrder);
 
     $('.dept-pick').on('change', function() {
         var id = $(this).val();
@@ -1431,11 +1517,7 @@ $(function() {
             if (!$('#deptSortable li[data-dept-id="' + id + '"]').length) {
                 var dept = projectDeptMaster.find(function(d) { return String(d.id) === String(id); });
                 if (dept) {
-                    $('#deptSortable').append(
-                        '<li class="list-group-item d-flex justify-content-between align-items-center" data-dept-id="' + id + '">' +
-                        '<span><i class="ri-drag-move-2-line me-2 text-muted"></i>' + dept.department_name + '</span>' +
-                        '<button type="button" class="btn btn-sm btn-link text-danger remove-dept">&times;</button></li>'
-                    );
+                    $('#deptSortable').append(buildDeptSortableItem(dept, false));
                 }
             }
         } else {
@@ -1452,6 +1534,17 @@ $(function() {
     });
 
     bindExecutionPanelHandlers();
+
+    if (projectWizardReadOnly) {
+        $('.masterForm').find('input, select, textarea, button').prop('disabled', true);
+        $('.wizard .actions').hide();
+        $('.toggle-spoc-add-form, .save-spoc-user, .remove-dept').hide();
+        if ($('#deptSortable').data('ui-sortable')) {
+            $('#deptSortable').sortable('disable');
+        }
+        $('.dept-pick').prop('disabled', true);
+        $('.wizard-panel-btn').prop('disabled', true).addClass('disabled');
+    }
 });
 </script>
 @endsection

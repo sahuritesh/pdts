@@ -114,6 +114,28 @@ Always filter `is_delete = 0` in listings.
 
 ---
 
+## Project wizard & SPOC (application layer)
+
+See **[PDTS_PROJECT_GUIDE.md](PDTS_PROJECT_GUIDE.md)** for full flows. Summary:
+
+| Table | Purpose |
+|-------|---------|
+| `tbl_project_departments` | Department execution rows per project (+ `allow_parallel_next`, `department_status`, `spoc_user_id`) |
+| `tbl_user_departments` | User ↔ department pool for unclaimed SPOC tasks |
+| `tbl_locations` | Locations under `tbl_zones`; linked from `tbl_projects.location_id` |
+| `tbl_zones` | Zone master; dashboard filter + project grouping |
+
+**Assignment columns (no FK):**
+
+- `tbl_projects.responsible_user_id` → Project SPOC (My Projects owner)
+- `tbl_project_departments.spoc_user_id` → Department SPOC on that row
+- `tbl_project_departments.project_id` → `tbl_projects.id`
+- `tbl_project_departments.department_id` → `tbl_departments.id`
+
+Child tables (`tbl_delay_registers`, `tbl_delay_financial_impacts`, `tbl_delay_attachments`) link via `project_department_id`.
+
+---
+
 ## Seed Data
 
 `PdtsMasterDataSeeder` provides:

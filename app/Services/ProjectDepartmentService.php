@@ -194,10 +194,11 @@ class ProjectDepartmentService
             ->all();
     }
 
-    public function syncProjectDepartments(int $projectId, array $orderedDepartmentIds): void
+    public function syncProjectDepartments(int $projectId, array $orderedDepartmentIds, array $parallelFlags = []): void
     {
         $userId = Auth::id();
         $now = current_datetime();
+        $hasParallelColumn = Schema::hasColumn('tbl_project_departments', 'allow_parallel_next');
         $existing = DB::table('tbl_project_departments')
             ->where('project_id', $projectId)
             ->where('is_delete', 0)
@@ -205,33 +206,43 @@ class ProjectDepartmentService
             ->keyBy('department_id');
 
         $sort = 1;
+        $total = count(array_filter(array_map('intval', $orderedDepartmentIds)));
         foreach ($orderedDepartmentIds as $departmentId) {
             $departmentId = (int) $departmentId;
             if ($departmentId <= 0) {
                 continue;
             }
 
+            $allowParallel = ($hasParallelColumn && $sort < $total && !empty($parallelFlags[$departmentId])) ? 1 : 0;
+
             if (isset($existing[$departmentId])) {
+                $update = [
+                    'sort_order' => $sort,
+                    'updated_by' => $userId,
+                    'updated_on' => $now,
+                ];
+                if ($hasParallelColumn) {
+                    $update['allow_parallel_next'] = $allowParallel;
+                }
                 DB::table('tbl_project_departments')
                     ->where('id', $existing[$departmentId]->id)
-                    ->update([
-                        'sort_order' => $sort,
-                        'updated_by' => $userId,
-                        'updated_on' => $now,
-                    ]);
+                    ->update($update);
             } else {
-                $status = $sort === 1 ? self::STATUS_START : self::STATUS_PENDING;
-                DB::table('tbl_project_departments')->insert([
+                $insert = [
                     'project_id' => $projectId,
                     'department_id' => $departmentId,
                     'sort_order' => $sort,
-                    'department_status' => $status,
+                    'department_status' => self::STATUS_PENDING,
                     'created_by' => $userId,
                     'created_on' => $now,
                     'updated_by' => $userId,
                     'updated_on' => $now,
                     'is_delete' => 0,
-                ]);
+                ];
+                if ($hasParallelColumn) {
+                    $insert['allow_parallel_next'] = $allowParallel;
+                }
+                DB::table('tbl_project_departments')->insert($insert);
             }
             $sort++;
         }
@@ -246,7 +257,7 @@ class ProjectDepartmentService
                 'updated_on' => $now,
             ]);
 
-        $this->normalizeStatuses($projectId);
+        $this->recomputeDepartmentAvailability($projectId);
         $this->syncProjectRollupStatus($projectId);
     }
 
@@ -334,28 +345,53 @@ class ProjectDepartmentService
 
         $projectId = (int) ($row['project_id'] ?? 0);
         $sortOrder = (int) ($row['sort_order'] ?? 0);
-        if ($projectId <= 0 || $sortOrder <= 0) {
-            return false;
+        if ($projectId <= 0 || $sortOrder <= 1) {
+            return $sortOrder > 0;
         }
 
-        $blocked = DB::table('tbl_project_departments')
+        $prev = DB::table('tbl_project_departments')
             ->where('project_id', $projectId)
             ->where('is_delete', 0)
-            ->where('sort_order', '<', $sortOrder)
-            ->where('department_status', '!=', self::STATUS_COMPLETED)
-            ->exists();
+            ->where('sort_order', $sortOrder - 1)
+            ->first();
 
-        return !$blocked;
+        if (!$prev) {
+            return true;
+        }
+
+        if ($prev->department_status === self::STATUS_COMPLETED) {
+            return true;
+        }
+
+        return $this->allowsParallelNext((array) $prev);
     }
 
-    public function isAccordionExpandable(array $row, array $allRows): bool
+    public function isDepartmentLocked(array $row): bool
     {
         $status = $row['department_status'] ?? self::STATUS_PENDING;
         if ($status === self::STATUS_PENDING) {
+            return true;
+        }
+
+        if ($status === self::STATUS_COMPLETED) {
             return false;
         }
 
-        return $this->canEditDepartment($row) || $status === self::STATUS_COMPLETED;
+        return !$this->canEditDepartment($row);
+    }
+
+    public function isAccordionExpandable(array $row, array $allRows = []): bool
+    {
+        return !$this->isDepartmentLocked($row);
+    }
+
+    public function allowsParallelNext(array $row): bool
+    {
+        if (!Schema::hasColumn('tbl_project_departments', 'allow_parallel_next')) {
+            return false;
+        }
+
+        return !empty($row['allow_parallel_next']);
     }
 
     public function syncAllProjectRollupStatuses(): void
@@ -411,53 +447,50 @@ class ProjectDepartmentService
             ]);
     }
 
-    private function normalizeStatuses(int $projectId): void
+    public function recomputeDepartmentAvailability(int $projectId): void
     {
         $rows = DB::table('tbl_project_departments')
             ->where('project_id', $projectId)
             ->where('is_delete', 0)
             ->orderBy('sort_order')
+            ->orderBy('id')
             ->get();
 
-        $foundActive = false;
+        $prev = null;
         foreach ($rows as $row) {
             if ($row->department_status === self::STATUS_COMPLETED) {
+                $prev = $row;
                 continue;
             }
-            if (!$foundActive) {
+
+            $canActivate = $prev === null
+                || $prev->department_status === self::STATUS_COMPLETED
+                || $this->allowsParallelNext((array) $prev);
+
+            if ($canActivate) {
                 if ($row->department_status === self::STATUS_PENDING) {
                     DB::table('tbl_project_departments')->where('id', $row->id)->update([
                         'department_status' => self::STATUS_START,
+                        'updated_by' => Auth::id(),
                         'updated_on' => current_datetime(),
                     ]);
+                    $row = (object) array_merge((array) $row, ['department_status' => self::STATUS_START]);
                 }
-                $foundActive = true;
-            } else {
-                if ($row->department_status !== self::STATUS_DELAY && $row->department_status !== self::STATUS_IN_PROGRESS) {
-                    DB::table('tbl_project_departments')->where('id', $row->id)->update([
-                        'department_status' => self::STATUS_PENDING,
-                        'updated_on' => current_datetime(),
-                    ]);
-                }
+            } elseif (!in_array($row->department_status, [self::STATUS_IN_PROGRESS, self::STATUS_DELAY], true)) {
+                DB::table('tbl_project_departments')->where('id', $row->id)->update([
+                    'department_status' => self::STATUS_PENDING,
+                    'updated_by' => Auth::id(),
+                    'updated_on' => current_datetime(),
+                ]);
+                $row = (object) array_merge((array) $row, ['department_status' => self::STATUS_PENDING]);
             }
+
+            $prev = $row;
         }
     }
 
     private function activateNextDepartment(int $projectId): void
     {
-        $next = DB::table('tbl_project_departments')
-            ->where('project_id', $projectId)
-            ->where('is_delete', 0)
-            ->where('department_status', self::STATUS_PENDING)
-            ->orderBy('sort_order')
-            ->first();
-
-        if ($next) {
-            DB::table('tbl_project_departments')->where('id', $next->id)->update([
-                'department_status' => self::STATUS_START,
-                'updated_by' => Auth::id(),
-                'updated_on' => current_datetime(),
-            ]);
-        }
+        $this->recomputeDepartmentAvailability($projectId);
     }
 }

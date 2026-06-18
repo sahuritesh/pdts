@@ -5,7 +5,7 @@
 <div class="project-spoc-user-block" data-spoc-role="project">
     <div class="d-flex justify-content-between align-items-center mb-1">
         <label class="mb-0">Project SPOC</label>
-        @if(modulePermissionExists('projects') || modulePermissionExists('users'))
+        @if(modulePermissionExists('projects') || modulePermissionExists('users') || modulePermissionExists('my_projects'))
         <button type="button" class="btn btn-link btn-sm p-0 toggle-spoc-add-form">
             <i class="ri-user-add-line"></i> Add Project SPOC User
         </button>
@@ -35,7 +35,7 @@
                 <button type="button" class="btn btn-sm btn-light cancel-spoc-add">Cancel</button>
             </div>
         </div>
-        <p class="text-muted small mb-0 mt-1">New users are created with the <strong>Project SPOC</strong> role.</p>
+        <p class="text-muted small mb-0 mt-1">New users are created with the <strong>Department SPOC</strong> role. Assign them here as the project owner; department-level work appears under My Department Tasks.</p>
     </div>
     @endif
 

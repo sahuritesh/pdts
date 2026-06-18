@@ -96,6 +96,7 @@ class SpocTasksController extends Controller
         $pageTitle = 'My Task — ' . ($detail['department']['department_name'] ?? 'Department');
         $data = array_merge($detail, [
             'status_labels' => $this->projectDepartmentService->statusLabels(),
+            'read_only' => $this->userScope->isProjectCompleted((int) ($detail['department']['project_id'] ?? 0)),
         ]);
 
         if ($request->input('postKey') == 'sidelayoutContent') {

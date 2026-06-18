@@ -5,9 +5,15 @@
     $statusLabels = $data['status_labels'] ?? [];
     $encPdId = \Illuminate\Support\Facades\Crypt::encrypt($pd['id']);
     $badgeClass = ['pending'=>'secondary','start'=>'info','in_progress'=>'primary','delay'=>'warning','completed'=>'success'][$status] ?? 'secondary';
-    $isPending = $status === 'pending';
+    $isPending = app(\App\Services\ProjectDepartmentService::class)->isDepartmentLocked($pd);
+    $isProjectReadOnly = !empty($data['read_only']);
 @endphp
 <div class="spoc-task-detail">
+    @if($isProjectReadOnly)
+    <div class="alert alert-success small mb-3">
+        <i class="ri-lock-line"></i> This project is completed and locked for editing.
+    </div>
+    @endif
     <div class="mb-3">
         <h6 class="mb-1">{{ $project['project_code'] ?? '' }} — {{ $project['project_name'] ?? '' }}</h6>
         <p class="text-muted small mb-2">
@@ -42,6 +48,7 @@
 $(function() {
     $('.sidelayoutTitle').html(@json($pageTitle ?? 'My Department Task'));
 
+    @if(!$isProjectReadOnly)
     bindDepartmentWorkflowHandlers({
         saveUrl: "{{ getProjectUrl('save_project_department') }}",
         statusUrl: "{{ getProjectUrl('update_department_status') }}",
@@ -55,5 +62,8 @@ $(function() {
             }, 500);
         }
     });
+    @else
+    $('.spoc-task-detail').find('input, select, textarea, button').prop('disabled', true);
+    @endif
 });
 </script>

@@ -97,6 +97,12 @@ class ProjectsController extends Controller
 
             $projectId = $postData['project_id'] ?? null;
             $operation = ($projectId && $projectId !== '') ? 'Update' : 'Add';
+
+            if ($operation === 'Update' && $this->userScope->isProjectCompleted((int) $projectId)) {
+                $this->sendErrorResponse('This project is completed and cannot be edited.', 1);
+                return;
+            }
+
             $payload = $this->prepareProjectData($postData, $operation);
 
             if ($operation === 'Add') {
@@ -317,6 +323,9 @@ class ProjectsController extends Controller
             $editUrl = getProjectUrl('projects/wizard/' . $id);
             if ($this->userScope->canEditProject((int) $recordData->id)) {
                 $actionCell = '<a href="' . $editUrl . '" title="Open project wizard"><i class="ri-edit-fill"></i></a>';
+            } elseif ($this->userScope->isProjectCompleted((int) $recordData->id)
+                && $this->userScope->canAccessProject((int) $recordData->id)) {
+                $actionCell = '<a href="' . $editUrl . '" title="View completed project (read-only)"><i class="ri-eye-line"></i></a>';
             }
         }
 

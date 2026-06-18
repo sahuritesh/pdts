@@ -86,22 +86,7 @@ class RolesSeeder extends Seeder
             ],
             [
                 'role_name' => 'Department SPOC',
-                'role_description' => 'View related projects; manage department tasks',
-                'permission_types' => implode(',', array_merge(
-                    ['dashboard_view', 'my_projects', 'spoc_tasks'],
-                    $spocDashboardWidgets
-                )),
-                'replace_permissions' => true,
-                'status' => 1,
-                'created_by' => 1,
-                'created_on' => $now,
-                'updated_by' => 1,
-                'updated_on' => $now,
-                'is_delete' => 0,
-            ],
-            [
-                'role_name' => 'Project SPOC',
-                'role_description' => 'Edit assigned projects; manage all departments on those projects',
+                'role_description' => 'Manage assigned projects and department tasks (access is by project/department assignment)',
                 'permission_types' => implode(',', array_merge(
                     ['dashboard_view', 'my_projects', 'spoc_tasks'],
                     $spocDashboardWidgets

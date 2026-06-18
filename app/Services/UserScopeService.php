@@ -82,8 +82,25 @@ class UserScopeService
             ->exists();
     }
 
+    public function isProjectCompleted(int $projectId): bool
+    {
+        if ($projectId <= 0) {
+            return false;
+        }
+
+        return DB::table('tbl_projects')
+            ->where('id', $projectId)
+            ->where('is_delete', 0)
+            ->where('project_status', 'completed')
+            ->exists();
+    }
+
     public function canEditProject(int $projectId): bool
     {
+        if ($this->isProjectCompleted($projectId)) {
+            return false;
+        }
+
         if ($this->hasFullProjectsPermission()) {
             return true;
         }
