@@ -21,7 +21,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `migrations` */
 
@@ -62,7 +62,12 @@ insert  into `migrations`(`id`,`migration`,`batch`) values
 (34,'2026_06_10_100100_create_tbl_project_departments',6),
 (35,'2026_06_10_100200_add_project_department_id_to_child_tables',6),
 (36,'2026_06_11_100000_create_tbl_locations',7),
-(37,'2026_06_11_100100_create_tbl_user_departments',7);
+(37,'2026_06_11_100100_create_tbl_user_departments',7),
+(38,'2026_06_12_100000_add_allow_parallel_next_to_project_departments',8),
+(39,'2026_06_12_100100_ensure_project_spoc_role_exists',9),
+(40,'2026_06_12_100200_consolidate_spoc_roles',10),
+(41,'2026_06_18_100000_create_tbl_hospitals_and_add_hospital_id_to_projects',11),
+(42,'2026_06_18_100100_ensure_hospitals_permission_on_roles',12);
 
 /*Table structure for table `personal_access_tokens` */
 
@@ -106,7 +111,7 @@ CREATE TABLE `tbl_audit_trails` (
   KEY `tbl_audit_trails_entity_type_entity_id_index` (`entity_type`,`entity_id`),
   KEY `tbl_audit_trails_created_by_index` (`created_by`),
   KEY `tbl_audit_trails_created_on_index` (`created_on`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_audit_trails` */
 
@@ -120,7 +125,14 @@ insert  into `tbl_audit_trails`(`id`,`entity_type`,`entity_id`,`action`,`old_val
 (7,'project',1,'update','{\"id\":1,\"project_code\":\"AH-Gurugram\",\"project_name\":\"Apollo Gurugram Annex \\u2014 Emergency Wing\",\"project_type_id\":2,\"project_type_label\":\"Brown Field\",\"project_scope\":\"test\",\"location\":\"Central HQ Campus\",\"hospital_name\":\"Apollo Hospitals\",\"contractor_name\":\"test\",\"zone_department\":\"Central Zone\",\"zone_id\":9,\"location_id\":7,\"area_facility\":\"test\",\"responsible_user_id\":2,\"responsibility_name\":\"test test\",\"project_spoc_name\":\"test test\",\"planned_start_date\":\"2026-06-26\",\"planned_completion_date\":\"2026-06-30\",\"actual_completion_date\":null,\"target_revised_completion_date\":null,\"project_status\":\"delayed\",\"wizard_step\":2,\"total_delay_cost\":\"0.00\",\"created_by\":1,\"created_on\":\"2026-06-12 18:47:29\",\"updated_by\":3,\"updated_on\":\"2026-06-16 15:34:59\",\"is_delete\":0}','{\"project_code\":\"AH-Gurugram\",\"project_name\":\"Apollo Gurugram Annex \\u2014 Emergency Wing\",\"project_scope\":\"test\",\"location\":\"Central HQ Campus\",\"hospital_name\":\"Apollo Hospitals\",\"contractor_name\":\"test\",\"zone_id\":9,\"zone_department\":\"Central Zone\",\"area_facility\":\"test\",\"project_type_id\":2,\"project_type_label\":\"Brown Field\",\"project_spoc_name\":\"test test\",\"responsibility_name\":\"test test\",\"planned_start_date\":\"2026-06-26\",\"planned_completion_date\":\"2026-06-30\",\"target_revised_completion_date\":null,\"updated_by\":1,\"updated_on\":\"2026-06-16 15:41:46\",\"responsible_user_id\":2,\"location_id\":7,\"wizard_step\":2}',1,'2026-06-16 15:41:47',1,'2026-06-16 15:41:47','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
 (8,'project',2,'update','{\"id\":2,\"project_code\":\"AH-Hyderabad\",\"project_name\":\"Apollo Hyderabad Emergency wing\",\"project_type_id\":1,\"project_type_label\":\"Green Field\",\"project_scope\":\"test\",\"location\":\"South Site A\",\"hospital_name\":\"Apollo\",\"contractor_name\":\"spoc3\",\"zone_department\":\"South Zone\",\"zone_id\":2,\"location_id\":4,\"area_facility\":\"Hyderabad\",\"responsible_user_id\":3,\"responsibility_name\":\"spoc2 user\",\"project_spoc_name\":\"spoc2 user\",\"planned_start_date\":\"2026-06-23\",\"planned_completion_date\":\"2026-06-29\",\"actual_completion_date\":null,\"target_revised_completion_date\":null,\"project_status\":\"active\",\"wizard_step\":2,\"total_delay_cost\":\"0.00\",\"created_by\":1,\"created_on\":\"2026-06-15 19:39:15\",\"updated_by\":1,\"updated_on\":\"2026-06-16 15:43:35\",\"is_delete\":0}','{\"project_code\":\"AH-Hyderabad\",\"project_name\":\"Apollo Hyderabad Emergency wing\",\"project_scope\":\"test\",\"location\":\"South Site A\",\"hospital_name\":\"Apollo\",\"contractor_name\":\"spoc3\",\"zone_id\":2,\"zone_department\":\"South Zone\",\"area_facility\":\"Hyderabad\",\"project_type_id\":1,\"project_type_label\":\"Green Field\",\"project_spoc_name\":\"test test\",\"responsibility_name\":\"test test\",\"planned_start_date\":\"2026-06-23\",\"planned_completion_date\":\"2026-06-29\",\"target_revised_completion_date\":null,\"updated_by\":1,\"updated_on\":\"2026-06-16 15:44:23\",\"responsible_user_id\":2,\"location_id\":4,\"wizard_step\":2}',1,'2026-06-16 15:44:23',1,'2026-06-16 15:44:23','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
 (9,'project',2,'update','{\"id\":2,\"project_code\":\"AH-Hyderabad\",\"project_name\":\"Apollo Hyderabad Emergency wing\",\"project_type_id\":1,\"project_type_label\":\"Green Field\",\"project_scope\":\"test\",\"location\":\"South Site A\",\"hospital_name\":\"Apollo\",\"contractor_name\":\"spoc3\",\"zone_department\":\"South Zone\",\"zone_id\":2,\"location_id\":4,\"area_facility\":\"Hyderabad\",\"responsible_user_id\":2,\"responsibility_name\":\"test test\",\"project_spoc_name\":\"test test\",\"planned_start_date\":\"2026-06-23\",\"planned_completion_date\":\"2026-06-29\",\"actual_completion_date\":null,\"target_revised_completion_date\":null,\"project_status\":\"active\",\"wizard_step\":2,\"total_delay_cost\":\"0.00\",\"created_by\":1,\"created_on\":\"2026-06-15 19:39:15\",\"updated_by\":1,\"updated_on\":\"2026-06-16 15:44:23\",\"is_delete\":0}','{\"project_code\":\"AH-Hyderabad\",\"project_name\":\"Apollo Hyderabad Emergency wing\",\"project_scope\":\"test\",\"location\":\"South Site A\",\"hospital_name\":\"Apollo\",\"contractor_name\":\"spoc3\",\"zone_id\":2,\"zone_department\":\"South Zone\",\"area_facility\":\"Hyderabad\",\"project_type_id\":1,\"project_type_label\":\"Green Field\",\"project_spoc_name\":\"spoc2 user\",\"responsibility_name\":\"spoc2 user\",\"planned_start_date\":\"2026-06-23\",\"planned_completion_date\":\"2026-06-29\",\"target_revised_completion_date\":null,\"updated_by\":1,\"updated_on\":\"2026-06-16 15:55:43\",\"responsible_user_id\":3,\"location_id\":4,\"wizard_step\":2}',1,'2026-06-16 15:55:43',1,'2026-06-16 15:55:43','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
-(10,'location',7,'update','{\"id\":7,\"location_code\":\"central_hq\",\"location_name\":\"Central HQ Campus\",\"zone_id\":9,\"description\":\"Central HQ Campus \\u2014 Central zone\",\"status\":1,\"created_by\":1,\"created_on\":\"2026-06-12 18:43:36\",\"updated_by\":1,\"updated_on\":\"2026-06-12 18:43:36\",\"is_delete\":0}','{\"location_code\":\"central_hq\",\"location_name\":\"Central HQ Campus\",\"zone_id\":9,\"description\":\"Central HQ Campus \\u2014 Central zone\",\"status\":1,\"updated_by\":1,\"updated_on\":\"2026-06-16 16:34:05\"}',1,'2026-06-16 16:34:05',1,'2026-06-16 16:34:05','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36');
+(10,'location',7,'update','{\"id\":7,\"location_code\":\"central_hq\",\"location_name\":\"Central HQ Campus\",\"zone_id\":9,\"description\":\"Central HQ Campus \\u2014 Central zone\",\"status\":1,\"created_by\":1,\"created_on\":\"2026-06-12 18:43:36\",\"updated_by\":1,\"updated_on\":\"2026-06-12 18:43:36\",\"is_delete\":0}','{\"location_code\":\"central_hq\",\"location_name\":\"Central HQ Campus\",\"zone_id\":9,\"description\":\"Central HQ Campus \\u2014 Central zone\",\"status\":1,\"updated_by\":1,\"updated_on\":\"2026-06-16 16:34:05\"}',1,'2026-06-16 16:34:05',1,'2026-06-16 16:34:05','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(11,'project',3,'create',NULL,'{\"project_code\":\"AH-Banglore\",\"project_name\":\"Apollo Banglore Emergency wing\",\"project_scope\":\"test\",\"location\":\"South Site A\",\"hospital_name\":\"Apollo Hospitals\",\"contractor_name\":\"test\",\"zone_id\":2,\"zone_department\":\"South Zone\",\"area_facility\":\"Banglore\",\"project_type_id\":2,\"project_type_label\":\"Brown Field\",\"project_spoc_name\":\"Spoc3 banglore\",\"responsibility_name\":\"Spoc3 banglore\",\"planned_start_date\":\"2026-06-28\",\"planned_completion_date\":\"2026-09-29\",\"target_revised_completion_date\":null,\"updated_by\":1,\"updated_on\":\"2026-06-18 10:52:04\",\"responsible_user_id\":4,\"location_id\":4,\"project_status\":\"active\",\"wizard_step\":2,\"total_delay_cost\":0,\"created_by\":1,\"created_on\":\"2026-06-18 10:52:05\",\"is_delete\":0}',1,'2026-06-18 10:52:05',1,'2026-06-18 10:52:05','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(12,'project',3,'update','{\"id\":3,\"project_code\":\"AH-Banglore\",\"project_name\":\"Apollo Banglore Emergency wing\",\"project_type_id\":2,\"project_type_label\":\"Brown Field\",\"project_scope\":\"test\",\"location\":\"South Site A\",\"hospital_name\":\"Apollo Hospitals\",\"contractor_name\":\"test\",\"zone_department\":\"South Zone\",\"zone_id\":2,\"location_id\":4,\"area_facility\":\"Banglore\",\"responsible_user_id\":4,\"responsibility_name\":\"Spoc3 banglore\",\"project_spoc_name\":\"Spoc3 banglore\",\"planned_start_date\":\"2026-06-28\",\"planned_completion_date\":\"2026-09-29\",\"actual_completion_date\":null,\"target_revised_completion_date\":null,\"project_status\":\"active\",\"wizard_step\":3,\"total_delay_cost\":\"0.00\",\"created_by\":1,\"created_on\":\"2026-06-18 10:52:05\",\"updated_by\":2,\"updated_on\":\"2026-06-18 12:56:52\",\"is_delete\":0}','{\"project_code\":\"AH-Banglore\",\"project_name\":\"Apollo Banglore Emergency wing\",\"project_scope\":\"test\",\"location\":\"South Site A\",\"hospital_name\":\"Apollo Hospitals\",\"contractor_name\":\"test\",\"zone_id\":2,\"zone_department\":\"South Zone\",\"area_facility\":\"Banglore\",\"project_type_id\":2,\"project_type_label\":\"Brown Field\",\"project_spoc_name\":\"Spoc3 banglore\",\"responsibility_name\":\"Spoc3 banglore\",\"planned_start_date\":\"2026-06-17\",\"planned_completion_date\":\"2026-12-23\",\"target_revised_completion_date\":null,\"updated_by\":1,\"updated_on\":\"2026-06-18 13:10:45\",\"responsible_user_id\":4,\"location_id\":4,\"wizard_step\":3}',1,'2026-06-18 13:10:45',1,'2026-06-18 13:10:45','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(13,'delay_register',3,'create',NULL,'{\"project_id\":3,\"project_department_id\":13,\"delay_category_id\":20,\"delay_title\":\"test\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":5,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-17\",\"delay_end_date\":\"2026-06-26\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":1,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:08:48\",\"delay_days\":9,\"severity\":\"showstopper\",\"alert_level\":\"black\",\"escalation_level\":4,\"created_by\":1,\"created_on\":\"2026-06-18 17:08:48\",\"is_delete\":0}',1,'2026-06-18 17:08:48',1,'2026-06-18 17:08:48','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(14,'delay_register',2,'create',NULL,'{\"project_id\":3,\"project_department_id\":13,\"delay_category_id\":20,\"delay_title\":\"test\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":5,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-17\",\"delay_end_date\":\"2026-06-26\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":1,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:08:48\",\"delay_days\":9,\"severity\":\"showstopper\",\"alert_level\":\"black\",\"escalation_level\":4,\"created_by\":1,\"created_on\":\"2026-06-18 17:08:48\",\"is_delete\":0}',1,'2026-06-18 17:08:48',1,'2026-06-18 17:08:48','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(15,'delay_register',4,'create',NULL,'{\"project_id\":3,\"project_department_id\":14,\"delay_category_id\":21,\"delay_title\":\"testtest\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":1,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-07\",\"delay_end_date\":\"2026-07-05\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":0,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:11:17\",\"delay_days\":28,\"severity\":\"moderate\",\"alert_level\":\"amber\",\"escalation_level\":2,\"created_by\":1,\"created_on\":\"2026-06-18 17:11:17\",\"is_delete\":0}',1,'2026-06-18 17:11:17',1,'2026-06-18 17:11:17','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(16,'delay_register',5,'create',NULL,'{\"project_id\":3,\"project_department_id\":14,\"delay_category_id\":21,\"delay_title\":\"testtest\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":1,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-07\",\"delay_end_date\":\"2026-07-05\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":0,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:11:17\",\"delay_days\":28,\"severity\":\"moderate\",\"alert_level\":\"amber\",\"escalation_level\":2,\"created_by\":1,\"created_on\":\"2026-06-18 17:11:17\",\"is_delete\":0}',1,'2026-06-18 17:11:17',1,'2026-06-18 17:11:17','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(17,'delay_register',6,'create',NULL,'{\"project_id\":1,\"project_department_id\":3,\"delay_category_id\":21,\"delay_title\":\"test delay\",\"primary_delay_drivers\":\"testd d\",\"specific_event_description\":\"test d\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":2,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-19\",\"delay_end_date\":\"2026-06-20\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":1,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:18:14\",\"delay_days\":1,\"severity\":\"showstopper\",\"alert_level\":\"black\",\"escalation_level\":4,\"created_by\":1,\"created_on\":\"2026-06-18 17:18:14\",\"is_delete\":0}',1,'2026-06-18 17:18:14',1,'2026-06-18 17:18:14','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36');
 
 /*Table structure for table `tbl_delay_attachments` */
 
@@ -259,12 +271,17 @@ CREATE TABLE `tbl_delay_registers` (
   KEY `tbl_delay_registers_delay_start_date_index` (`delay_start_date`),
   KEY `tbl_delay_registers_is_delete_index` (`is_delete`),
   KEY `tbl_delay_registers_project_department_id_index` (`project_department_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_delay_registers` */
 
 insert  into `tbl_delay_registers`(`id`,`project_id`,`project_department_id`,`delay_title`,`delay_description`,`primary_delay_drivers`,`specific_event_description`,`impacted_task`,`root_cause_id`,`root_cause_label`,`delay_start_date`,`delay_end_date`,`target_revised_completion_date`,`delay_days`,`delay_category_id`,`responsibility_user_id`,`responsibility_name`,`severity`,`licensing_openings_affected`,`alert_level`,`escalation_level`,`register_status`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,1,2,'test',NULL,'test','test','',2,'','2026-06-30','2026-06-29',NULL,0,20,NULL,'','showstopper',1,'black',4,'open',1,'2026-06-15 12:52:41',1,'2026-06-15 12:52:41',0);
+(1,1,2,'test',NULL,'test','test','',2,'','2026-06-30','2026-06-29',NULL,0,20,NULL,'','showstopper',1,'black',4,'open',1,'2026-06-15 12:52:41',1,'2026-06-15 12:52:41',0),
+(2,3,13,'test',NULL,'test','test','',5,'','2026-06-17','2026-06-26',NULL,9,20,NULL,'','showstopper',1,'black',4,'open',1,'2026-06-18 17:08:48',1,'2026-06-18 17:08:48',0),
+(3,3,13,'test',NULL,'test','test','',5,'','2026-06-17','2026-06-26',NULL,9,20,NULL,'','showstopper',1,'black',4,'open',1,'2026-06-18 17:08:48',1,'2026-06-18 17:08:48',0),
+(4,3,14,'testtest',NULL,'test','test','',1,'','2026-06-07','2026-07-05',NULL,28,21,NULL,'','moderate',0,'amber',2,'open',1,'2026-06-18 17:11:17',1,'2026-06-18 17:11:17',0),
+(5,3,14,'testtest',NULL,'test','test','',1,'','2026-06-07','2026-07-05',NULL,28,21,NULL,'','moderate',0,'amber',2,'open',1,'2026-06-18 17:11:17',1,'2026-06-18 17:11:17',0),
+(6,1,3,'test delay',NULL,'testd d','test d','',2,'','2026-06-19','2026-06-20',NULL,1,21,NULL,'','showstopper',1,'black',4,'open',1,'2026-06-18 17:18:14',1,'2026-06-18 17:18:14',0);
 
 /*Table structure for table `tbl_delay_severity_rules` */
 
@@ -294,10 +311,10 @@ CREATE TABLE `tbl_delay_severity_rules` (
 /*Data for the table `tbl_delay_severity_rules` */
 
 insert  into `tbl_delay_severity_rules`(`id`,`severity_code`,`severity_label`,`min_delay_days`,`max_delay_days`,`requires_licensing_flag`,`default_escalation_level`,`sort_order`,`status`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,'minor','Minor (1-7 days)',1,7,0,1,1,1,1,'2026-06-08 12:47:40',1,'2026-06-12 18:43:36',0),
-(2,'moderate','Moderate (8-30 days)',8,30,0,2,2,1,1,'2026-06-08 12:47:40',1,'2026-06-12 18:43:36',0),
-(3,'critical','Critical (>30 days)',31,NULL,0,3,3,1,1,'2026-06-08 12:47:40',1,'2026-06-12 18:43:36',0),
-(4,'showstopper','Showstopper (impacts licensing/opening)',NULL,NULL,1,4,4,1,1,'2026-06-08 12:47:40',1,'2026-06-12 18:43:36',0);
+(1,'minor','Minor (1-7 days)',1,7,0,1,1,1,1,'2026-06-08 12:47:40',1,'2026-06-18 16:36:07',0),
+(2,'moderate','Moderate (8-30 days)',8,30,0,2,2,1,1,'2026-06-08 12:47:40',1,'2026-06-18 16:36:07',0),
+(3,'critical','Critical (>30 days)',31,NULL,0,3,3,1,1,'2026-06-08 12:47:40',1,'2026-06-18 16:36:07',0),
+(4,'showstopper','Showstopper (impacts licensing/opening)',NULL,NULL,1,4,4,1,1,'2026-06-08 12:47:40',1,'2026-06-18 16:36:07',0);
 
 /*Table structure for table `tbl_departments` */
 
@@ -332,7 +349,7 @@ insert  into `tbl_departments`(`id`,`department_name`,`description`,`default_sor
 (7,'Resource unavailability',NULL,0,0,1,'2026-06-08 12:47:40',1,'2026-06-08 15:37:42',1),
 (8,'Other',NULL,0,0,1,'2026-06-08 12:47:40',1,'2026-06-08 15:37:42',1),
 (9,'Regulatory & Permitting','Long wait times for environmental, fire safety, PCPNDT, AERB approvals',0,0,1,'2026-06-08 15:37:42',1,'2026-06-12 14:53:59',1),
-(10,'MEP','Mechanical, electrical, plumbing, and HVAC',4,1,1,'2026-06-08 15:37:42',1,'2026-06-12 18:43:36',0),
+(10,'MEP','Mechanical, electrical, plumbing, and HVAC',4,1,1,'2026-06-08 15:37:42',1,'2026-06-18 16:36:07',0),
 (11,'Supply Chain & Procurement','Long-lead items (MRI, custom AHUs) delayed by vendor halting final inspection',0,0,1,'2026-06-08 15:37:42',1,'2026-06-12 14:53:59',1),
 (12,'Design & Scope','Mid-construction changes; late-stage clinician requests for layout or equipment',0,0,1,'2026-06-08 15:37:42',1,'2026-06-12 14:53:59',1),
 (13,'Medical Equipment Installations','Delays in medical equipment delivery, installation, or commissioning',0,0,1,'2026-06-08 15:37:42',1,'2026-06-12 14:53:59',1),
@@ -341,15 +358,15 @@ insert  into `tbl_departments`(`id`,`department_name`,`description`,`default_sor
 (16,'Site Condition Surprises','Unplanned structural, plumbing, or site discovery issues',0,0,1,'2026-06-08 15:37:42',1,'2026-06-12 14:53:59',1),
 (17,'Operational Readiness','Staff hiring/training delays; IT systems not ready for go-live',0,0,1,'2026-06-08 15:37:42',1,'2026-06-12 14:53:59',1),
 (18,'Infection Control Compliance','Dust barriers, air pressure, or infection control clearance delays',0,0,1,'2026-06-08 15:37:42',1,'2026-06-12 14:53:59',1),
-(19,'Design & Planning','Architectural, structural, and layout design approvals',1,1,1,'2026-06-12 14:53:59',1,'2026-06-12 18:43:36',0),
-(20,'Fire Safety / NOC','Fire NOC, safety compliance, and statutory clearances',2,1,1,'2026-06-12 14:53:59',1,'2026-06-12 18:43:36',0),
-(21,'Civil','Civil works, structure, and finishing',3,1,1,'2026-06-12 14:53:59',1,'2026-06-12 18:43:36',0),
-(22,'Medical Equipment','Equipment delivery, installation, and commissioning',5,1,1,'2026-06-12 14:53:59',1,'2026-06-12 18:43:36',0),
-(23,'Regulatory & Licensing','PCPNDT, AERB, pollution, and other licenses',6,1,1,'2026-06-12 14:53:59',1,'2026-06-12 18:43:36',0),
-(24,'Procurement','Long-lead materials and vendor coordination',7,1,1,'2026-06-12 14:53:59',1,'2026-06-12 18:43:36',0),
-(25,'Infection Control','Dust barriers, pressure regimes, and IC clearance',8,1,1,'2026-06-12 14:53:59',1,'2026-06-12 18:43:36',0),
-(26,'IT & Operational Readiness','IT, HR, training, and go-live readiness',9,1,1,'2026-06-12 14:53:59',1,'2026-06-12 18:43:36',0),
-(27,'Commissioning & Handover','Testing, snagging, and handover to operations',10,1,1,'2026-06-12 14:53:59',1,'2026-06-12 18:43:36',0);
+(19,'Design & Planning','Architectural, structural, and layout design approvals',1,1,1,'2026-06-12 14:53:59',1,'2026-06-18 16:36:07',0),
+(20,'Fire Safety / NOC','Fire NOC, safety compliance, and statutory clearances',2,1,1,'2026-06-12 14:53:59',1,'2026-06-18 16:36:07',0),
+(21,'Civil','Civil works, structure, and finishing',3,1,1,'2026-06-12 14:53:59',1,'2026-06-18 16:36:07',0),
+(22,'Medical Equipment','Equipment delivery, installation, and commissioning',5,1,1,'2026-06-12 14:53:59',1,'2026-06-18 16:36:07',0),
+(23,'Regulatory & Licensing','PCPNDT, AERB, pollution, and other licenses',6,1,1,'2026-06-12 14:53:59',1,'2026-06-18 16:36:07',0),
+(24,'Procurement','Long-lead materials and vendor coordination',7,1,1,'2026-06-12 14:53:59',1,'2026-06-18 16:36:07',0),
+(25,'Infection Control','Dust barriers, pressure regimes, and IC clearance',8,1,1,'2026-06-12 14:53:59',1,'2026-06-18 16:36:07',0),
+(26,'IT & Operational Readiness','IT, HR, training, and go-live readiness',9,1,1,'2026-06-12 14:53:59',1,'2026-06-18 16:36:07',0),
+(27,'Commissioning & Handover','Testing, snagging, and handover to operations',10,1,1,'2026-06-12 14:53:59',1,'2026-06-18 16:36:07',0);
 
 /*Table structure for table `tbl_ews_alert_levels` */
 
@@ -460,6 +477,39 @@ insert  into `tbl_ews_prediction_config`(`id`,`config_key`,`config_value`,`descr
 (1,'max_task_completion_percent','50','Task completion must be below this % for EWS alert',1,1,'2026-06-08 12:47:40'),
 (2,'min_consumed_duration_percent','80','Consumed duration must exceed this % for EWS alert',1,1,'2026-06-08 12:47:40');
 
+/*Table structure for table `tbl_hospitals` */
+
+DROP TABLE IF EXISTS `tbl_hospitals`;
+
+CREATE TABLE `tbl_hospitals` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `hospital_code` varchar(50) NOT NULL,
+  `hospital_name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `status` int(11) NOT NULL DEFAULT 1,
+  `created_by` int(11) DEFAULT NULL,
+  `created_on` datetime DEFAULT NULL,
+  `updated_by` int(11) DEFAULT NULL,
+  `updated_on` datetime DEFAULT NULL,
+  `is_delete` tinyint(4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tbl_hospitals_hospital_code_unique` (`hospital_code`),
+  KEY `tbl_hospitals_hospital_name_index` (`hospital_name`),
+  KEY `tbl_hospitals_status_index` (`status`),
+  KEY `tbl_hospitals_is_delete_index` (`is_delete`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/*Data for the table `tbl_hospitals` */
+
+insert  into `tbl_hospitals`(`id`,`hospital_code`,`hospital_name`,`description`,`status`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
+(1,'apollo','Apollo',NULL,1,1,'2026-06-18 16:36:01',1,'2026-06-18 16:36:01',0),
+(2,'apollo_hospitals','Apollo Hospitals',NULL,1,1,'2026-06-18 16:36:01',1,'2026-06-18 16:36:01',0),
+(3,'apollo_gurugram','Apollo Hospitals — Gurugram','Apollo Hospitals campus in Gurugram',1,1,'2026-06-18 16:36:07',1,'2026-06-18 16:36:07',0),
+(4,'apollo_hyderabad','Apollo Hospitals — Hyderabad','Apollo Hospitals campus in Hyderabad',1,1,'2026-06-18 16:36:07',1,'2026-06-18 16:36:07',0),
+(5,'apollo_chennai','Apollo Hospitals — Chennai','Apollo Hospitals campus in Chennai',1,1,'2026-06-18 16:36:07',1,'2026-06-18 16:36:07',0),
+(6,'apollo_bangalore','Apollo Hospitals — Bengaluru','Apollo Hospitals campus in Bengaluru',1,1,'2026-06-18 16:36:07',1,'2026-06-18 16:36:07',0),
+(7,'apollo_delhi','Apollo Hospitals — Delhi','Apollo Hospitals campus in Delhi NCR',1,1,'2026-06-18 16:36:07',1,'2026-06-18 16:36:07',0);
+
 /*Table structure for table `tbl_locations` */
 
 DROP TABLE IF EXISTS `tbl_locations`;
@@ -525,6 +575,7 @@ CREATE TABLE `tbl_project_departments` (
   `project_id` int(11) NOT NULL COMMENT 'tbl_projects.id',
   `department_id` int(11) NOT NULL COMMENT 'tbl_departments.id',
   `sort_order` smallint(5) unsigned NOT NULL DEFAULT 0,
+  `allow_parallel_next` tinyint(3) unsigned NOT NULL DEFAULT 0 COMMENT '1 = next department may start before this one completes',
   `department_status` varchar(30) NOT NULL DEFAULT 'pending' COMMENT 'pending, start, in_progress, delay, completed',
   `spoc_name` varchar(255) DEFAULT NULL,
   `spoc_user_id` int(11) DEFAULT NULL COMMENT 'tbl_user.id',
@@ -545,20 +596,26 @@ CREATE TABLE `tbl_project_departments` (
   KEY `tbl_project_departments_sort_order_index` (`sort_order`),
   KEY `tbl_project_departments_department_status_index` (`department_status`),
   KEY `tbl_project_departments_is_delete_index` (`is_delete`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_project_departments` */
 
-insert  into `tbl_project_departments`(`id`,`project_id`,`department_id`,`sort_order`,`department_status`,`spoc_name`,`spoc_user_id`,`planned_start_date`,`planned_end_date`,`actual_start_date`,`actual_end_date`,`delay_days`,`remarks`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,1,19,1,'completed','test test',2,'2026-06-08','2026-06-15','2026-06-15','2026-06-15',0,'',1,'2026-06-12 18:47:37',2,'2026-06-16 16:41:59',0),
-(2,1,20,2,'delay','spoc2 user',3,'2026-06-30','2026-06-22','2026-06-15',NULL,0,'',1,'2026-06-12 18:47:37',2,'2026-06-16 16:41:53',0),
-(3,1,21,3,'pending',NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-12 18:47:37',2,'2026-06-16 16:41:53',0),
-(4,1,10,4,'pending',NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-12 18:47:37',2,'2026-06-16 16:41:53',0),
-(5,2,19,1,'completed','spoc2 user',3,'2026-06-29','2026-06-29','2026-06-15','2026-06-15',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:06',0),
-(6,2,24,2,'completed','spoc2 user',3,'2026-06-23','2026-06-28','2026-06-16','2026-06-16',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:06',0),
-(7,2,20,3,'completed','spoc2 user',3,'2026-06-16','2026-06-22','2026-06-16','2026-06-16',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:06',0),
-(8,2,21,4,'completed','spoc2 user',3,'2026-06-29','2026-07-06','2026-06-16','2026-06-16',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:34',0),
-(9,2,10,5,'completed','spoc2 user',3,'2026-06-28','2026-06-28','2026-06-16','2026-06-16',0,'test',1,'2026-06-15 19:39:40',1,'2026-06-16 16:29:05',0);
+insert  into `tbl_project_departments`(`id`,`project_id`,`department_id`,`sort_order`,`allow_parallel_next`,`department_status`,`spoc_name`,`spoc_user_id`,`planned_start_date`,`planned_end_date`,`actual_start_date`,`actual_end_date`,`delay_days`,`remarks`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
+(1,1,19,1,0,'completed','spoc2 user',3,'2026-06-08','2026-06-15','2026-06-15','2026-06-15',0,'',1,'2026-06-12 18:47:37',1,'2026-06-18 17:17:45',0),
+(2,1,20,2,0,'completed','spoc2 user',3,'2026-06-30','2026-06-30','2026-06-15','2026-06-18',0,'',1,'2026-06-12 18:47:37',1,'2026-06-18 17:17:45',0),
+(3,1,21,3,0,'delay','test test',2,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-12 18:47:37',1,'2026-06-18 17:18:14',0),
+(4,1,10,4,0,'pending',NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-12 18:47:37',1,'2026-06-18 17:17:46',0),
+(5,2,19,1,0,'completed','spoc2 user',3,'2026-06-29','2026-06-29','2026-06-15','2026-06-15',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:06',0),
+(6,2,24,2,0,'completed','spoc2 user',3,'2026-06-23','2026-06-28','2026-06-16','2026-06-16',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:06',0),
+(7,2,20,3,0,'completed','spoc2 user',3,'2026-06-16','2026-06-22','2026-06-16','2026-06-16',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:06',0),
+(8,2,21,4,0,'completed','spoc2 user',3,'2026-06-29','2026-07-06','2026-06-16','2026-06-16',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:34',0),
+(9,2,10,5,0,'completed','spoc2 user',3,'2026-06-28','2026-06-28','2026-06-16','2026-06-16',0,'test',1,'2026-06-15 19:39:40',1,'2026-06-16 16:29:05',0),
+(10,3,19,1,0,'completed','spoc4 banglore',5,'2026-06-30','2026-07-08','2026-06-18','2026-06-18',0,'',1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0),
+(11,3,24,2,1,'completed','spoc5 banglore',6,'2026-07-08','2026-10-22',NULL,'2026-06-18',0,'',1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0),
+(12,3,23,3,0,'completed','Spoc3 banglore',4,'2026-06-28','2026-06-30','2026-06-18','2026-06-18',0,'',1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0),
+(13,3,20,4,1,'delay','spoc5 banglore',6,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0),
+(14,3,21,5,0,'delay','spoc5 banglore',6,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-18 10:52:44',1,'2026-06-18 17:11:17',0),
+(15,3,10,6,0,'pending',NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0);
 
 /*Table structure for table `tbl_project_types` */
 
@@ -601,6 +658,7 @@ CREATE TABLE `tbl_projects` (
   `project_scope` text DEFAULT NULL,
   `location` varchar(255) DEFAULT NULL,
   `hospital_name` varchar(255) DEFAULT NULL COMMENT 'For delay analytics by hospital',
+  `hospital_id` int(11) DEFAULT NULL COMMENT 'tbl_hospitals.id',
   `contractor_name` varchar(255) DEFAULT NULL COMMENT 'For delay analytics by contractor',
   `zone_department` varchar(255) DEFAULT NULL,
   `zone_id` int(11) DEFAULT NULL COMMENT 'tbl_zones.id',
@@ -630,14 +688,16 @@ CREATE TABLE `tbl_projects` (
   KEY `tbl_projects_planned_completion_date_index` (`planned_completion_date`),
   KEY `tbl_projects_is_delete_index` (`is_delete`),
   KEY `tbl_projects_zone_id_index` (`zone_id`),
-  KEY `tbl_projects_location_id_index` (`location_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `tbl_projects_location_id_index` (`location_id`),
+  KEY `tbl_projects_hospital_id_index` (`hospital_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_projects` */
 
-insert  into `tbl_projects`(`id`,`project_code`,`project_name`,`project_type_id`,`project_type_label`,`project_scope`,`location`,`hospital_name`,`contractor_name`,`zone_department`,`zone_id`,`location_id`,`area_facility`,`responsible_user_id`,`responsibility_name`,`project_spoc_name`,`planned_start_date`,`planned_completion_date`,`actual_completion_date`,`target_revised_completion_date`,`project_status`,`wizard_step`,`total_delay_cost`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,'AH-Gurugram','Apollo Gurugram Annex — Emergency Wing',2,'Brown Field','test','Central HQ Campus','Apollo Hospitals','test','Central Zone',9,7,'test',2,'test test','test test','2026-06-26','2026-06-30',NULL,NULL,'delayed',3,0.00,1,'2026-06-12 18:47:29',2,'2026-06-16 16:41:53',0),
-(2,'AH-Hyderabad','Apollo Hyderabad Emergency wing',1,'Green Field','test','South Site A','Apollo','spoc3','South Zone',2,4,'Hyderabad',3,'spoc2 user','spoc2 user','2026-06-23','2026-06-29',NULL,NULL,'completed',3,0.00,1,'2026-06-15 19:39:15',1,'2026-06-16 16:28:07',0);
+insert  into `tbl_projects`(`id`,`project_code`,`project_name`,`project_type_id`,`project_type_label`,`project_scope`,`location`,`hospital_name`,`hospital_id`,`contractor_name`,`zone_department`,`zone_id`,`location_id`,`area_facility`,`responsible_user_id`,`responsibility_name`,`project_spoc_name`,`planned_start_date`,`planned_completion_date`,`actual_completion_date`,`target_revised_completion_date`,`project_status`,`wizard_step`,`total_delay_cost`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
+(1,'AH-Gurugram','Apollo Gurugram Annex — Emergency Wing',2,'Brown Field','test','Central HQ Campus','Apollo Hospitals',2,'test','Central Zone',9,7,'test',2,'test test','test test','2026-06-26','2026-06-30',NULL,NULL,'delayed',3,0.00,1,'2026-06-12 18:47:29',1,'2026-06-19 08:34:22',0),
+(2,'AH-Hyderabad','Apollo Hyderabad Emergency wing',1,'Green Field','test','South Site A','Apollo',1,'spoc3','South Zone',2,4,'Hyderabad',3,'spoc2 user','spoc2 user','2026-06-23','2026-06-29',NULL,NULL,'completed',3,0.00,1,'2026-06-15 19:39:15',1,'2026-06-19 08:34:22',0),
+(3,'AH-Banglore','Apollo Banglore Emergency wing',2,'Brown Field','test','South Site A','Apollo Hospitals',2,'test','South Zone',2,4,'Banglore',4,'Spoc3 banglore','Spoc3 banglore','2026-06-17','2026-12-23',NULL,NULL,'delayed',3,0.00,1,'2026-06-18 10:52:05',1,'2026-06-19 08:34:22',0);
 
 /*Table structure for table `tbl_renovation_approvals` */
 
@@ -926,16 +986,17 @@ CREATE TABLE `tbl_roles` (
   KEY `tbl_roles_role_name_index` (`role_name`),
   KEY `tbl_roles_status_index` (`status`),
   KEY `tbl_roles_is_delete_index` (`is_delete`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_roles` */
 
 insert  into `tbl_roles`(`id`,`role_name`,`role_description`,`permission_types`,`status`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,'Super Admin','Full PDTS access including roles and settings','dashboard_view,dashboard_m1_kpis,dashboard_m1_chart_severity,dashboard_m1_chart_category,dashboard_m1_chart_project_status,dashboard_m1_chart_mitigation,dashboard_m1_chart_financial,dashboard_m1_chart_trend,dashboard_m1_chart_hospital,dashboard_m1_table_critical,roles,users,delay_categories,projects,delay_registers,mitigations,financial_impacts,delay_attachments,renovation_projects,departments,dashboard_m3_kpis,dashboard_m3_chart_project_status,dashboard_m3_chart_type,dashboard_m3_chart_task_status,dashboard_m3_chart_task_risk,dashboard_m3_chart_escalation,dashboard_m3_chart_tasks_category,dashboard_m3_chart_delay_trend,dashboard_m3_table_escalated,locations,spoc_department_access,spoc_tasks,dashboard_m1_chart_zone',1,1,'2026-06-08 12:47:29',1,'2026-06-12 18:43:39',0),
-(2,'Admin','PDTS admin without role management','dashboard_view,users_creation,users_list,email_templates,settings,smtp_settings,razorpay_settings,send_push_notification,push_notifications_listing,projects,projects_list,projects_create,delay_registers,delay_registers_list,delay_registers_create,mitigations,mitigations_list,financial_impacts,financial_impacts_list,delay_attachments,ews_alerts,ews_config,renovation_projects,renovation_projects_list,renovation_projects_create,renovation_tasks,renovation_tasks_list,renovation_daily_logs,renovation_daily_logs_list,renovation_procurements,renovation_approvals,renovation_change_orders,renovation_costs,renovation_risks,executive_dashboard,delay_analytics,renovation_dashboard,audit_trail,delay_categories,delay_categories_list,users,departments,dashboard_m1_kpis,dashboard_m1_chart_severity,dashboard_m1_chart_category,dashboard_m1_chart_project_status,dashboard_m1_chart_mitigation,dashboard_m1_chart_financial,dashboard_m1_chart_trend,dashboard_m1_chart_hospital,dashboard_m1_table_critical,dashboard_m3_kpis,dashboard_m3_chart_project_status,dashboard_m3_chart_type,dashboard_m3_chart_task_status,dashboard_m3_chart_task_risk,dashboard_m3_chart_escalation,dashboard_m3_chart_tasks_category,dashboard_m3_chart_delay_trend,dashboard_m3_table_escalated,locations,spoc_department_access,spoc_tasks,dashboard_m1_chart_zone',1,1,'2026-06-08 12:47:29',1,'2026-06-12 18:43:39',0),
-(3,'Manager','Manage delays, renovation projects, and reports','dashboard_view,users_list,projects,projects_list,projects_create,delay_registers,delay_registers_list,delay_registers_create,mitigations,mitigations_list,financial_impacts,financial_impacts_list,delay_attachments,ews_alerts,renovation_projects,renovation_projects_list,renovation_projects_create,renovation_tasks,renovation_tasks_list,renovation_daily_logs,renovation_daily_logs_list,renovation_procurements,renovation_approvals,renovation_change_orders,renovation_costs,renovation_risks,executive_dashboard,delay_analytics,renovation_dashboard,send_push_notification,push_notifications_listing,users,departments,dashboard_m1_kpis,dashboard_m1_chart_severity,dashboard_m1_chart_category,dashboard_m1_chart_project_status,dashboard_m1_chart_mitigation,dashboard_m1_chart_financial,dashboard_m1_chart_trend,dashboard_m1_chart_hospital,dashboard_m1_table_critical,dashboard_m3_kpis,dashboard_m3_chart_project_status,dashboard_m3_chart_type,dashboard_m3_chart_task_status,dashboard_m3_chart_task_risk,dashboard_m3_chart_escalation,dashboard_m3_chart_tasks_category,dashboard_m3_chart_delay_trend,dashboard_m3_table_escalated,locations,dashboard_m1_chart_zone',1,1,'2026-06-08 12:47:29',1,'2026-06-12 18:43:39',0),
-(4,'Viewer','Read-only dashboards and listings','dashboard_view,projects_list,delay_registers_list,mitigations_list,financial_impacts_list,renovation_projects_list,renovation_tasks_list,renovation_daily_logs_list,executive_dashboard,delay_analytics,renovation_dashboard,delay_categories_list,departments,projects,dashboard_m1_kpis,dashboard_m1_chart_severity,dashboard_m1_chart_category,dashboard_m1_chart_project_status,dashboard_m1_chart_mitigation,dashboard_m1_chart_financial,dashboard_m1_chart_trend,dashboard_m1_chart_hospital,dashboard_m1_table_critical,dashboard_m3_kpis,dashboard_m3_chart_project_status,dashboard_m3_chart_type,dashboard_m3_chart_task_status,dashboard_m3_chart_task_risk,dashboard_m3_chart_escalation,dashboard_m3_chart_tasks_category,dashboard_m3_chart_delay_trend,dashboard_m3_table_escalated,dashboard_m1_chart_zone',1,1,'2026-06-08 12:47:29',1,'2026-06-12 18:43:39',0),
-(5,'Department SPOC','Department-scoped dashboard and task access','dashboard_view,dashboard_m1_kpis,dashboard_m1_chart_category,dashboard_m1_chart_mitigation,dashboard_m1_table_critical,dashboard_m1_chart_zone,spoc_department_access,spoc_project_access,spoc_tasks',1,1,'2026-06-12 18:43:39',1,'2026-06-16 15:42:24',0);
+(1,'Super Admin','Full PDTS access including roles and settings','dashboard_view,dashboard_m1_kpis,dashboard_m1_chart_severity,dashboard_m1_chart_category,dashboard_m1_chart_project_status,dashboard_m1_chart_mitigation,dashboard_m1_chart_financial,dashboard_m1_chart_trend,dashboard_m1_chart_hospital,dashboard_m1_table_critical,roles,users,delay_categories,projects,delay_registers,mitigations,financial_impacts,delay_attachments,renovation_projects,departments,dashboard_m3_kpis,dashboard_m3_chart_project_status,dashboard_m3_chart_type,dashboard_m3_chart_task_status,dashboard_m3_chart_task_risk,dashboard_m3_chart_escalation,dashboard_m3_chart_tasks_category,dashboard_m3_chart_delay_trend,dashboard_m3_table_escalated,locations,spoc_department_access,spoc_tasks,dashboard_m1_chart_zone,hospitals',1,1,'2026-06-08 12:47:29',1,'2026-06-18 16:36:37',0),
+(2,'Admin','PDTS admin without role management','dashboard_view,users_creation,users_list,email_templates,settings,smtp_settings,razorpay_settings,send_push_notification,push_notifications_listing,projects,projects_list,projects_create,delay_registers,delay_registers_list,delay_registers_create,mitigations,mitigations_list,financial_impacts,financial_impacts_list,delay_attachments,ews_alerts,ews_config,renovation_projects,renovation_projects_list,renovation_projects_create,renovation_tasks,renovation_tasks_list,renovation_daily_logs,renovation_daily_logs_list,renovation_procurements,renovation_approvals,renovation_change_orders,renovation_costs,renovation_risks,executive_dashboard,delay_analytics,renovation_dashboard,audit_trail,delay_categories,delay_categories_list,users,departments,dashboard_m1_kpis,dashboard_m1_chart_severity,dashboard_m1_chart_category,dashboard_m1_chart_project_status,dashboard_m1_chart_mitigation,dashboard_m1_chart_financial,dashboard_m1_chart_trend,dashboard_m1_chart_hospital,dashboard_m1_table_critical,dashboard_m3_kpis,dashboard_m3_chart_project_status,dashboard_m3_chart_type,dashboard_m3_chart_task_status,dashboard_m3_chart_task_risk,dashboard_m3_chart_escalation,dashboard_m3_chart_tasks_category,dashboard_m3_chart_delay_trend,dashboard_m3_table_escalated,locations,spoc_department_access,spoc_tasks,dashboard_m1_chart_zone,hospitals',1,1,'2026-06-08 12:47:29',1,'2026-06-18 16:36:37',0),
+(3,'Manager','Manage delays, renovation projects, and reports','dashboard_view,users_list,projects,projects_list,projects_create,delay_registers,delay_registers_list,delay_registers_create,mitigations,mitigations_list,financial_impacts,financial_impacts_list,delay_attachments,ews_alerts,renovation_projects,renovation_projects_list,renovation_projects_create,renovation_tasks,renovation_tasks_list,renovation_daily_logs,renovation_daily_logs_list,renovation_procurements,renovation_approvals,renovation_change_orders,renovation_costs,renovation_risks,executive_dashboard,delay_analytics,renovation_dashboard,send_push_notification,push_notifications_listing,users,departments,dashboard_m1_kpis,dashboard_m1_chart_severity,dashboard_m1_chart_category,dashboard_m1_chart_project_status,dashboard_m1_chart_mitigation,dashboard_m1_chart_financial,dashboard_m1_chart_trend,dashboard_m1_chart_hospital,dashboard_m1_table_critical,dashboard_m3_kpis,dashboard_m3_chart_project_status,dashboard_m3_chart_type,dashboard_m3_chart_task_status,dashboard_m3_chart_task_risk,dashboard_m3_chart_escalation,dashboard_m3_chart_tasks_category,dashboard_m3_chart_delay_trend,dashboard_m3_table_escalated,locations,dashboard_m1_chart_zone,hospitals',1,1,'2026-06-08 12:47:29',1,'2026-06-18 16:36:37',0),
+(4,'Viewer','Read-only dashboards and listings','dashboard_view,projects_list,delay_registers_list,mitigations_list,financial_impacts_list,renovation_projects_list,renovation_tasks_list,renovation_daily_logs_list,executive_dashboard,delay_analytics,renovation_dashboard,delay_categories_list,departments,projects,dashboard_m1_kpis,dashboard_m1_chart_severity,dashboard_m1_chart_category,dashboard_m1_chart_project_status,dashboard_m1_chart_mitigation,dashboard_m1_chart_financial,dashboard_m1_chart_trend,dashboard_m1_chart_hospital,dashboard_m1_table_critical,dashboard_m3_kpis,dashboard_m3_chart_project_status,dashboard_m3_chart_type,dashboard_m3_chart_task_status,dashboard_m3_chart_task_risk,dashboard_m3_chart_escalation,dashboard_m3_chart_tasks_category,dashboard_m3_chart_delay_trend,dashboard_m3_table_escalated,dashboard_m1_chart_zone,hospitals',1,1,'2026-06-08 12:47:29',1,'2026-06-18 16:36:37',0),
+(5,'Department SPOC','Department-scoped dashboard and task access','dashboard_view,dashboard_m1_kpis,dashboard_m1_chart_category,dashboard_m1_chart_mitigation,dashboard_m1_table_critical,dashboard_m1_chart_zone,spoc_department_access,spoc_project_access,spoc_tasks',1,1,'2026-06-12 18:43:39',1,'2026-06-16 15:42:24',0),
+(6,'Project SPOC','Edit assigned projects; manage all departments on those projects','dashboard_view,my_projects,spoc_tasks,dashboard_m1_kpis,dashboard_m1_chart_category,dashboard_m1_chart_mitigation,dashboard_m1_table_critical,dashboard_m1_chart_zone',2,1,'2026-06-18 10:46:22',1,'2026-06-18 10:48:49',1);
 
 /*Table structure for table `tbl_root_causes` */
 
@@ -1006,14 +1067,17 @@ CREATE TABLE `tbl_user` (
   KEY `tbl_user_reference_id_index` (`reference_id`),
   KEY `tbl_user_serial_number_index` (`serial_number`),
   KEY `tbl_user_is_delete_index` (`is_delete`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_user` */
 
 insert  into `tbl_user`(`id`,`username`,`email_id`,`password`,`first_name`,`last_name`,`mobile_no`,`user_type`,`status`,`remember_token`,`last_logged_on`,`profile_image`,`address`,`reference_id`,`serial_number`,`qr_code`,`otp_code`,`otp_expiry`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,'admin','admin@pdts.com','$2y$10$6ENWaU36KzJSV5YAo1ezIenuJwKNYrUBFdGk51lIB2ZsQ0c1Pn25e','Admin','User','4323214324',1,1,NULL,'2026-06-16 15:57:05',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-08 12:47:40',1,'2026-06-12 16:35:39',0),
-(2,NULL,'spoc1@pdts.com','$2y$10$PtK3sYMlvaLecDxhHXt2EeLF2T4jZE8aA4jfAAbRRcL8G41Fa1T1S','test','test','6768687686',5,1,NULL,'2026-06-16 16:10:20',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-15 12:50:33',1,'2026-06-15 12:50:33',0),
-(3,NULL,'spoc2@pdts.com','$2y$10$C8gq6aoc0XRviQa/iTwQteDJqqerS.rLpYqonZ1fWE159LUY1qoQq','spoc2','user','8437598437',5,1,NULL,'2026-06-16 15:42:49',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-15 12:52:05',1,'2026-06-15 12:52:05',0);
+(1,'admin','admin@pdts.com','$2y$10$6ENWaU36KzJSV5YAo1ezIenuJwKNYrUBFdGk51lIB2ZsQ0c1Pn25e','Admin','User','4323214324',1,1,NULL,'2026-06-19 08:34:20',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-08 12:47:40',1,'2026-06-12 16:35:39',0),
+(2,NULL,'spoc1@pdts.com','$2y$10$PtK3sYMlvaLecDxhHXt2EeLF2T4jZE8aA4jfAAbRRcL8G41Fa1T1S','test','test','6768687686',5,1,NULL,'2026-06-18 12:56:50',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-15 12:50:33',1,'2026-06-15 12:50:33',0),
+(3,NULL,'spoc2@pdts.com','$2y$10$C8gq6aoc0XRviQa/iTwQteDJqqerS.rLpYqonZ1fWE159LUY1qoQq','spoc2','user','8437598437',5,1,NULL,'2026-06-16 15:42:49',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-15 12:52:05',1,'2026-06-15 12:52:05',0),
+(4,NULL,'spoc3@pdts.com','$2y$10$s4pp0G8OsoPoSur8ZWNNV.BYdG76v0CBe285M.j98spIvSMV2dUpu','Spoc3','banglore','3243214324',5,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-18 10:51:48',1,'2026-06-18 10:51:48',0),
+(5,NULL,'spoc4@pdts.com','$2y$10$RzwkOUO5xK4Lr9OZiy3ereynkGKTLRvad2lEAUjT7FMcBH77l3dfO','spoc4','banglore','3243243243',5,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-18 11:48:37',1,'2026-06-18 11:48:37',0),
+(6,NULL,'spoc5@pdts.com','$2y$10$OT610W0P2gPmhUG7Ldd6JupDxHmzAKBd7xXOW8LZYDTIU6nhRgKNO','spoc5','banglore','4324324324',5,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-18 11:56:07',1,'2026-06-18 11:56:07',0);
 
 /*Table structure for table `tbl_user_departments` */
 
@@ -1033,17 +1097,25 @@ CREATE TABLE `tbl_user_departments` (
   PRIMARY KEY (`id`),
   KEY `tbl_user_departments_user_id_department_id_index` (`user_id`,`department_id`),
   KEY `tbl_user_departments_is_delete_index` (`is_delete`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_user_departments` */
 
 insert  into `tbl_user_departments`(`id`,`user_id`,`department_id`,`is_primary`,`status`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,2,19,1,1,1,'2026-06-15 12:50:33',1,'2026-06-15 12:50:33',0),
+(1,2,19,1,1,1,'2026-06-15 12:50:33',1,'2026-06-18 17:17:46',0),
 (2,3,20,1,1,1,'2026-06-15 12:52:05',1,'2026-06-16 16:21:07',0),
 (3,3,19,1,1,1,'2026-06-16 16:12:41',1,'2026-06-16 16:21:07',0),
 (4,3,24,1,1,1,'2026-06-16 16:12:48',1,'2026-06-16 16:21:07',0),
 (5,3,21,1,1,1,'2026-06-16 16:20:18',1,'2026-06-16 16:21:07',0),
-(6,3,10,1,1,1,'2026-06-16 16:21:07',1,'2026-06-16 16:21:07',0);
+(6,3,10,1,1,1,'2026-06-16 16:21:07',1,'2026-06-16 16:21:07',0),
+(7,4,19,1,1,1,'2026-06-18 10:53:23',1,'2026-06-18 10:54:07',0),
+(8,4,23,1,1,1,'2026-06-18 10:54:07',1,'2026-06-18 10:54:07',0),
+(9,5,19,1,1,1,'2026-06-18 11:48:37',1,'2026-06-18 11:48:37',0),
+(10,6,24,1,1,1,'2026-06-18 11:56:07',1,'2026-06-18 17:10:38',0),
+(11,6,20,1,1,1,'2026-06-18 16:14:24',1,'2026-06-18 17:10:38',0),
+(12,6,20,1,1,1,'2026-06-18 16:14:24',1,'2026-06-18 16:14:24',0),
+(13,6,21,1,1,1,'2026-06-18 17:10:38',1,'2026-06-18 17:10:38',0),
+(14,2,21,1,1,1,'2026-06-18 17:17:46',1,'2026-06-18 17:17:46',0);
 
 /*Table structure for table `tbl_user_device_tokens` */
 
