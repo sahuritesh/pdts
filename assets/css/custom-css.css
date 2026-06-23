@@ -48,6 +48,10 @@ body{
     margin-left: 10px;
     margin-bottom:0px;
 }
+.form-check-input:checked {
+    background-color: #0f8c91;
+    border-color: #0f8c91;
+}
 .btn-primary{ 
     border-radius: 30px;
     background-color: var(--dark-blue);
@@ -2559,4 +2563,7 @@ table.dataTable th {
     background: #0f8c91;
     color: #fff;
     border: 0px;
+}
+.save-dept-meta:hover{
+     background: #0f8c91;
 }
