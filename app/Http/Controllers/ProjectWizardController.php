@@ -576,6 +576,16 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            $projectDateErr = $this->projectDepartmentService->validateDepartmentDatesAgainstProject(
+                (int) $row->project_id,
+                $postData['planned_start_date'] ?? '',
+                $postData['planned_end_date'] ?? ''
+            );
+            if ($projectDateErr !== '') {
+                $this->sendValidationErrorResponse($projectDateErr);
+                return;
+            }
+
             $seqErr = $this->projectDepartmentService->validateSequentialDepartmentDates(
                 (int) $row->project_id,
                 (int) $row->department_id,

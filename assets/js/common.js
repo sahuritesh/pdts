@@ -840,6 +840,36 @@ function getSequentialMinStart($container) {
     return ($container.data('seq-min-start') || '').trim();
 }
 
+function getProjectPlannedMinStart($container) {
+    return ($container.data('project-min-start') || '').trim();
+}
+
+function maxYmd(a, b) {
+    if (!a) {
+        return b || '';
+    }
+    if (!b) {
+        return a || '';
+    }
+    return a > b ? a : b;
+}
+
+function effectiveDeptPlannedMinStart($container) {
+    return maxYmd(getSequentialMinStart($container), getProjectPlannedMinStart($container));
+}
+
+function plannedProjectDateMessage($container, startVal, endVal) {
+    var projectMin = getProjectPlannedMinStart($container);
+
+    if (projectMin && startVal && startVal < projectMin) {
+        return 'Planned start cannot be earlier than the project planned start date (' + projectMin + ')';
+    }
+    if (projectMin && endVal && endVal < projectMin) {
+        return 'Planned end cannot be earlier than the project planned start date (' + projectMin + ')';
+    }
+    return '';
+}
+
 function plannedSequentialDateMessage($container, startVal, endVal) {
     var minStart = getSequentialMinStart($container);
     if (!minStart) {
@@ -855,14 +885,37 @@ function plannedSequentialDateMessage($container, startVal, endVal) {
     return '';
 }
 
+function highlightPlannedDateRangeError(pair, $container, startVal, endVal, endLabel) {
+    if (plannedDateRangeMessage(startVal, endVal, endLabel)) {
+        highlightErrorInput(pair.$end);
+        return;
+    }
+    if (plannedProjectDateMessage($container, startVal, endVal)) {
+        var projectMin = getProjectPlannedMinStart($container);
+        if (startVal && projectMin && startVal < projectMin) {
+            highlightErrorInput(pair.$start);
+        } else {
+            highlightErrorInput(pair.$end);
+        }
+        return;
+    }
+    if (startVal && getSequentialMinStart($container) && startVal < getSequentialMinStart($container)) {
+        highlightErrorInput(pair.$start);
+    } else {
+        highlightErrorInput(pair.$end);
+    }
+}
+
 function effectiveMinForEndPicker(pair) {
     var startVal = (pair.$start.val() || '').trim();
     var seqMin = getSequentialMinStart(getPlannedDateContainer(pair.$start));
-    if (!seqMin) {
+    var projectMin = getProjectPlannedMinStart(getPlannedDateContainer(pair.$start));
+    var floor = maxYmd(seqMin, projectMin);
+    if (!floor) {
         return startVal;
     }
-    if (!startVal || seqMin > startVal) {
-        return seqMin;
+    if (!startVal || floor > startVal) {
+        return floor;
     }
     return startVal;
 }
@@ -930,19 +983,20 @@ function ensurePlannedDateTextInput($input) {
 
 function applyPlannedStartConstraints(pair) {
     var $container = getPlannedDateContainer(pair.$start);
-    var seqMin = getSequentialMinStart($container);
-    var seqDate = parseYmdToDate(seqMin);
+    var minStart = effectiveDeptPlannedMinStart($container);
+    var minDate = parseYmdToDate(minStart);
     var startVal = (pair.$start.val() || '').trim();
 
     if (typeof $.fn.datepicker !== 'undefined' && pair.$start.data('datepicker')) {
-        if (seqDate) {
-            pair.$start.datepicker('setStartDate', seqDate);
-            if (startVal && startVal < seqMin) {
-                pair.$start.datepicker('setDate', seqMin);
+        if (minDate) {
+            pair.$start.datepicker('setStartDate', minDate);
+            if (startVal && startVal < minStart) {
+                pair.$start.datepicker('setDate', minStart);
             }
         } else {
             pair.$start.datepicker('setStartDate', -Infinity);
         }
+        pair.$start.datepicker('setEndDate', Infinity);
     }
 }
 
@@ -955,6 +1009,7 @@ function applyPlannedEndConstraints(pair) {
     var endVal = ($end.val() || '').trim();
 
     if (typeof $.fn.datepicker !== 'undefined' && $end.data('datepicker')) {
+        $end.datepicker('setEndDate', Infinity);
         if (effectiveDate) {
             $end.prop('readonly', false).removeClass('planned-end-locked');
             $end.datepicker('setStartDate', effectiveDate);
@@ -1005,11 +1060,11 @@ function initPlannedDatePickerPair(pair) {
     if (!$start.data('datepicker')) {
         $start.datepicker(plannedDatePickerOptionsFor($start))
             .on('show.plannedRange', function() {
-                var seqMin = getSequentialMinStart(getPlannedDateContainer(pair.$start));
-                var seqDate = parseYmdToDate(seqMin);
-                if (seqDate) {
+                var minStart = effectiveDeptPlannedMinStart(getPlannedDateContainer(pair.$start));
+                var minDate = parseYmdToDate(minStart);
+                if (minDate) {
                     try {
-                        pair.$start.datepicker('setViewDate', seqDate);
+                        pair.$start.datepicker('setViewDate', minDate);
                     } catch (e) {}
                 }
             })
@@ -1036,10 +1091,11 @@ function initPlannedDatePickerPair(pair) {
                 var startVal = (pair.$start.val() || '').trim();
                 var endVal = (pair.$end.val() || '').trim();
                 var msg = plannedDateRangeMessage(startVal, endVal, endLabel)
+                    || plannedProjectDateMessage($container, startVal, endVal)
                     || plannedSequentialDateMessage($container, startVal, endVal);
                 if (msg) {
                     toastr.error(msg);
-                    highlightErrorInput(pair.$end);
+                    highlightPlannedDateRangeError(pair, $container, startVal, endVal, endLabel);
                 } else {
                     pair.$end.removeClass('errorBorder');
                 }
@@ -1047,8 +1103,9 @@ function initPlannedDatePickerPair(pair) {
     }
 
     $end.off('click.plannedRange focus.plannedRange').on('click.plannedRange focus.plannedRange', function(e) {
-        var seqMin = getSequentialMinStart(getPlannedDateContainer(pair.$start));
-        if (!($start.val() || '').trim() && !seqMin) {
+        var $container = getPlannedDateContainer(pair.$start);
+        var minStart = effectiveDeptPlannedMinStart($container);
+        if (!($start.val() || '').trim() && !minStart) {
             e.preventDefault();
             e.stopImmediatePropagation();
             $end.blur();
@@ -1075,16 +1132,11 @@ function validatePlannedDateRangesInScope($scope) {
         var startVal = (pair.$start.val() || '').trim();
         var endVal = (pair.$end.val() || '').trim();
         var msg = plannedDateRangeMessage(startVal, endVal, endLabel)
+            || plannedProjectDateMessage($container, startVal, endVal)
             || plannedSequentialDateMessage($container, startVal, endVal);
         if (msg) {
             toastr.error('<li>' + msg + '</li>');
-            if (plannedDateRangeMessage(startVal, endVal, endLabel)) {
-                highlightErrorInput(pair.$end);
-            } else if (startVal && getSequentialMinStart($container) && startVal < getSequentialMinStart($container)) {
-                highlightErrorInput(pair.$start);
-            } else {
-                highlightErrorInput(pair.$end);
-            }
+            highlightPlannedDateRangeError(pair, $container, startVal, endVal, endLabel);
             valid = false;
         }
     });

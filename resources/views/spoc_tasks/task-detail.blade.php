@@ -38,6 +38,7 @@
         'saveButtonLabel' => 'Save details',
         'inProgressLabel' => 'Mark In Progress',
         'completeLabel' => 'Mark Complete',
+        'projectPlannedStart' => !empty($project['planned_start_date']) ? date('Y-m-d', strtotime($project['planned_start_date'])) : '',
     ])
     @else
     <div class="alert alert-info mb-0">This department is not yet active on the project. Contact the project manager when it is your turn to execute.</div>

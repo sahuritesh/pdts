@@ -383,7 +383,7 @@ Active
     <script src="{{ getAssetUrl('js/ajaxPromise.js') }}?v=1.2"></script>
     @include('in-app-notifications::scripts')
     {{-- Bump querystring to bust browser cache when common utilities change --}}
-    <script src="{{ getAssetUrl('js/common.js') }}?v=2.6"></script>
+    <script src="{{ getAssetUrl('js/common.js') }}?v=2.8"></script>
     <script src="{{ getAssetUrl('js/custom_operations.js') }}"></script>
     <script src="{{ getAssetUrl('js/common-confirm.js') }}"></script>
     <!--confirm popup--->

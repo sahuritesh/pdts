@@ -366,6 +366,42 @@ class ProjectDepartmentService
         return '';
     }
 
+    /**
+     * Department planned dates must not begin before the project planned start.
+     * End date may extend past project planned completion when delays revise the timeline.
+     *
+     * @return string HTML error fragment (<li>...</li>) or empty
+     */
+    public function validateDepartmentDatesAgainstProject(
+        int $projectId,
+        ?string $plannedStart,
+        ?string $plannedEnd
+    ): string {
+        $project = DB::table('tbl_projects')
+            ->where('id', $projectId)
+            ->where('is_delete', 0)
+            ->first(['planned_start_date']);
+
+        if (!$project) {
+            return '';
+        }
+
+        $projectStart = $this->normalizeOptionalDate($project->planned_start_date ?? null);
+        $start = $this->normalizeOptionalDate($plannedStart);
+        $end = $this->normalizeOptionalDate($plannedEnd);
+
+        if ($projectStart && $start && $start < $projectStart) {
+            return '<li>Department planned start cannot be earlier than the project planned start date ('
+                . e($projectStart) . ')</li>';
+        }
+        if ($projectStart && $end && $end < $projectStart) {
+            return '<li>Department planned end cannot be earlier than the project planned start date ('
+                . e($projectStart) . ')</li>';
+        }
+
+        return '';
+    }
+
     public function hasDepartmentSpoc($row): bool
     {
         $row = (array) $row;

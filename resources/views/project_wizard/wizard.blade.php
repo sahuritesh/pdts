@@ -270,6 +270,9 @@
                             <span class="dept-legend-item"><i class="ri-arrow-right-line"></i> Sequential</span>
                             <span class="dept-legend-item"><i class="ri-git-branch-line"></i> Parallel</span>
                         </div>
+                        @php
+                            $projectPlannedStartYmd = !empty($project['planned_start_date']) ? date('Y-m-d', strtotime($project['planned_start_date'])) : '';
+                        @endphp
                         <div class="accordion" id="deptExecutionAccordion">
                             @foreach($projectDepartments as $index => $pd)
                             @php
@@ -336,6 +339,7 @@
                                                     'sequentialEnforced' => $sequentialEnforced,
                                                     'sequentialMinStart' => $sequentialMinStart,
                                                     'sequentialPrevName' => $sequentialPrevName,
+                                                    'projectPlannedStart' => $projectPlannedStartYmd,
                                                     'actionsDisabled' => $actionsDisabled,
                                                 ])
                                                 @endif

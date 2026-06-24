@@ -14,13 +14,15 @@
     $sequentialEnforced = !empty($sequentialEnforced);
     $sequentialMinStart = $sequentialMinStart ?? '';
     $sequentialPrevName = $sequentialPrevName ?? '';
+    $projectPlannedStart = $projectPlannedStart ?? '';
     $actionsDisabled = !empty($actionsDisabled);
 @endphp
 @if(($status ?? 'pending') !== 'pending')
 <div class="dept-meta-form planned-date-range row g-2 {{ $formMarginClass }} @if($actionsDisabled) dept-actions-disabled @endif" data-pd-id="{{ $pd['id'] }}"
     data-seq-enforced="{{ $sequentialEnforced && $sequentialMinStart !== '' ? '1' : '0' }}"
     data-seq-min-start="{{ $sequentialMinStart }}"
-    data-seq-prev-name="{{ e($sequentialPrevName) }}">
+    data-seq-prev-name="{{ e($sequentialPrevName) }}"
+    data-project-min-start="{{ $projectPlannedStart }}">
     <input type="hidden" name="project_department_id" value="{{ $pd['id'] }}">
     @if($showSpoc)
     <div class="col-md-6">

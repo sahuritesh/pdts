@@ -21,7 +21,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `migrations` */
 
@@ -67,7 +67,8 @@ insert  into `migrations`(`id`,`migration`,`batch`) values
 (39,'2026_06_12_100100_ensure_project_spoc_role_exists',9),
 (40,'2026_06_12_100200_consolidate_spoc_roles',10),
 (41,'2026_06_18_100000_create_tbl_hospitals_and_add_hospital_id_to_projects',11),
-(42,'2026_06_18_100100_ensure_hospitals_permission_on_roles',12);
+(42,'2026_06_18_100100_ensure_hospitals_permission_on_roles',12),
+(43,'2026_06_18_120000_create_tbl_user_in_app_notifications',13);
 
 /*Table structure for table `personal_access_tokens` */
 
@@ -111,7 +112,7 @@ CREATE TABLE `tbl_audit_trails` (
   KEY `tbl_audit_trails_entity_type_entity_id_index` (`entity_type`,`entity_id`),
   KEY `tbl_audit_trails_created_by_index` (`created_by`),
   KEY `tbl_audit_trails_created_on_index` (`created_on`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_audit_trails` */
 
@@ -132,7 +133,15 @@ insert  into `tbl_audit_trails`(`id`,`entity_type`,`entity_id`,`action`,`old_val
 (14,'delay_register',2,'create',NULL,'{\"project_id\":3,\"project_department_id\":13,\"delay_category_id\":20,\"delay_title\":\"test\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":5,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-17\",\"delay_end_date\":\"2026-06-26\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":1,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:08:48\",\"delay_days\":9,\"severity\":\"showstopper\",\"alert_level\":\"black\",\"escalation_level\":4,\"created_by\":1,\"created_on\":\"2026-06-18 17:08:48\",\"is_delete\":0}',1,'2026-06-18 17:08:48',1,'2026-06-18 17:08:48','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
 (15,'delay_register',4,'create',NULL,'{\"project_id\":3,\"project_department_id\":14,\"delay_category_id\":21,\"delay_title\":\"testtest\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":1,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-07\",\"delay_end_date\":\"2026-07-05\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":0,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:11:17\",\"delay_days\":28,\"severity\":\"moderate\",\"alert_level\":\"amber\",\"escalation_level\":2,\"created_by\":1,\"created_on\":\"2026-06-18 17:11:17\",\"is_delete\":0}',1,'2026-06-18 17:11:17',1,'2026-06-18 17:11:17','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
 (16,'delay_register',5,'create',NULL,'{\"project_id\":3,\"project_department_id\":14,\"delay_category_id\":21,\"delay_title\":\"testtest\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":1,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-07\",\"delay_end_date\":\"2026-07-05\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":0,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:11:17\",\"delay_days\":28,\"severity\":\"moderate\",\"alert_level\":\"amber\",\"escalation_level\":2,\"created_by\":1,\"created_on\":\"2026-06-18 17:11:17\",\"is_delete\":0}',1,'2026-06-18 17:11:17',1,'2026-06-18 17:11:17','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
-(17,'delay_register',6,'create',NULL,'{\"project_id\":1,\"project_department_id\":3,\"delay_category_id\":21,\"delay_title\":\"test delay\",\"primary_delay_drivers\":\"testd d\",\"specific_event_description\":\"test d\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":2,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-19\",\"delay_end_date\":\"2026-06-20\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":1,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:18:14\",\"delay_days\":1,\"severity\":\"showstopper\",\"alert_level\":\"black\",\"escalation_level\":4,\"created_by\":1,\"created_on\":\"2026-06-18 17:18:14\",\"is_delete\":0}',1,'2026-06-18 17:18:14',1,'2026-06-18 17:18:14','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36');
+(17,'delay_register',6,'create',NULL,'{\"project_id\":1,\"project_department_id\":3,\"delay_category_id\":21,\"delay_title\":\"test delay\",\"primary_delay_drivers\":\"testd d\",\"specific_event_description\":\"test d\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":2,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-19\",\"delay_end_date\":\"2026-06-20\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":1,\"updated_by\":1,\"updated_on\":\"2026-06-18 17:18:14\",\"delay_days\":1,\"severity\":\"showstopper\",\"alert_level\":\"black\",\"escalation_level\":4,\"created_by\":1,\"created_on\":\"2026-06-18 17:18:14\",\"is_delete\":0}',1,'2026-06-18 17:18:14',1,'2026-06-18 17:18:14','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(18,'delay_register',7,'create',NULL,'{\"project_id\":3,\"project_department_id\":13,\"delay_category_id\":20,\"delay_title\":\"test\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":5,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-11\",\"delay_end_date\":\"2026-06-30\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":1,\"updated_by\":1,\"updated_on\":\"2026-06-24 11:23:40\",\"delay_days\":19,\"severity\":\"showstopper\",\"alert_level\":\"black\",\"escalation_level\":4,\"created_by\":1,\"created_on\":\"2026-06-24 11:23:40\",\"is_delete\":0}',1,'2026-06-24 11:23:41',1,'2026-06-24 11:23:41','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(19,'delay_register',8,'create',NULL,'{\"project_id\":3,\"project_department_id\":14,\"delay_category_id\":21,\"delay_title\":\"test\",\"primary_delay_drivers\":\"abcd\",\"specific_event_description\":\"abcd\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":5,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-30\",\"delay_end_date\":\"2026-07-21\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":1,\"updated_by\":1,\"updated_on\":\"2026-06-24 11:32:18\",\"delay_days\":21,\"severity\":\"showstopper\",\"alert_level\":\"black\",\"escalation_level\":4,\"created_by\":1,\"created_on\":\"2026-06-24 11:32:18\",\"is_delete\":0}',1,'2026-06-24 11:32:19',1,'2026-06-24 11:32:19','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(20,'delay_register',9,'create',NULL,'{\"project_id\":3,\"project_department_id\":14,\"delay_category_id\":21,\"delay_title\":\"test delay\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":6,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-26\",\"delay_end_date\":\"2026-06-27\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":1,\"updated_by\":1,\"updated_on\":\"2026-06-24 11:40:52\",\"delay_days\":1,\"severity\":\"showstopper\",\"alert_level\":\"black\",\"escalation_level\":4,\"created_by\":1,\"created_on\":\"2026-06-24 11:40:52\",\"is_delete\":0}',1,'2026-06-24 11:40:53',1,'2026-06-24 11:40:53','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(21,'delay_register',10,'create',NULL,'{\"project_id\":3,\"project_department_id\":13,\"delay_category_id\":20,\"delay_title\":\"test now\",\"primary_delay_drivers\":\"test now\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":2,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-30\",\"delay_end_date\":\"2026-07-14\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":0,\"updated_by\":1,\"updated_on\":\"2026-06-24 11:49:18\",\"delay_days\":14,\"severity\":\"moderate\",\"alert_level\":\"amber\",\"escalation_level\":2,\"created_by\":1,\"created_on\":\"2026-06-24 11:49:18\",\"is_delete\":0}',1,'2026-06-24 11:49:18',1,'2026-06-24 11:49:18','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(22,'delay_register',11,'create',NULL,'{\"project_id\":3,\"project_department_id\":13,\"delay_category_id\":20,\"delay_title\":\"test1\",\"primary_delay_drivers\":\"test1\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":null,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-13\",\"delay_end_date\":\"2026-06-23\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":0,\"updated_by\":1,\"updated_on\":\"2026-06-24 12:35:39\",\"delay_days\":10,\"severity\":\"moderate\",\"alert_level\":\"amber\",\"escalation_level\":2,\"created_by\":1,\"created_on\":\"2026-06-24 12:35:40\",\"is_delete\":0}',1,'2026-06-24 12:35:40',1,'2026-06-24 12:35:40','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(23,'delay_register',12,'create',NULL,'{\"project_id\":3,\"project_department_id\":13,\"delay_category_id\":20,\"delay_title\":\"abcd\",\"primary_delay_drivers\":\"abcd\",\"specific_event_description\":\"abcd\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":4,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-03\",\"delay_end_date\":\"2026-06-10\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":0,\"updated_by\":1,\"updated_on\":\"2026-06-24 12:41:37\",\"delay_days\":7,\"severity\":\"minor\",\"alert_level\":\"green\",\"escalation_level\":1,\"created_by\":1,\"created_on\":\"2026-06-24 12:41:37\",\"is_delete\":0}',1,'2026-06-24 12:41:38',1,'2026-06-24 12:41:38','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(24,'delay_register',13,'create',NULL,'{\"project_id\":3,\"project_department_id\":13,\"delay_category_id\":20,\"delay_title\":\"123\",\"primary_delay_drivers\":\"123\",\"specific_event_description\":\"123\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":6,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-14\",\"delay_end_date\":\"2026-06-16\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":0,\"updated_by\":1,\"updated_on\":\"2026-06-24 12:42:14\",\"delay_days\":2,\"severity\":\"minor\",\"alert_level\":\"green\",\"escalation_level\":1,\"created_by\":1,\"created_on\":\"2026-06-24 12:42:14\",\"is_delete\":0}',1,'2026-06-24 12:42:15',1,'2026-06-24 12:42:15','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36'),
+(25,'delay_register',14,'create',NULL,'{\"project_id\":3,\"project_department_id\":13,\"delay_category_id\":20,\"delay_title\":\"test again\",\"primary_delay_drivers\":\"test\",\"specific_event_description\":\"test\",\"impacted_task\":\"\",\"responsibility_name\":\"\",\"root_cause_id\":5,\"root_cause_label\":\"\",\"delay_start_date\":\"2026-06-01\",\"delay_end_date\":\"2026-06-10\",\"target_revised_completion_date\":null,\"register_status\":\"open\",\"licensing_openings_affected\":0,\"updated_by\":1,\"updated_on\":\"2026-06-24 12:48:30\",\"delay_days\":9,\"severity\":\"moderate\",\"alert_level\":\"amber\",\"escalation_level\":2,\"created_by\":1,\"created_on\":\"2026-06-24 12:48:30\",\"is_delete\":0}',1,'2026-06-24 12:48:31',1,'2026-06-24 12:48:31','::1','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36');
 
 /*Table structure for table `tbl_delay_attachments` */
 
@@ -162,12 +171,9 @@ CREATE TABLE `tbl_delay_attachments` (
   KEY `tbl_delay_attachments_attachment_type_index` (`attachment_type`),
   KEY `tbl_delay_attachments_is_delete_index` (`is_delete`),
   KEY `tbl_delay_attachments_project_department_id_index` (`project_department_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_delay_attachments` */
-
-insert  into `tbl_delay_attachments`(`id`,`delay_register_id`,`project_id`,`project_department_id`,`attachment_type`,`file_name`,`file_path`,`mime_type`,`file_size`,`description`,`uploaded_by`,`uploaded_on`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,NULL,2,9,'photo','Screenshot 2026-01-08 140637.png','uploads/pdts/attachments/1781607569_Screenshot_2026-01-08_140637.png','image/png',442543,'test',1,'2026-06-16 16:29:29',1,'2026-06-16 16:29:29',1,'2026-06-16 16:29:29',0);
 
 /*Table structure for table `tbl_delay_financial_impacts` */
 
@@ -271,17 +277,9 @@ CREATE TABLE `tbl_delay_registers` (
   KEY `tbl_delay_registers_delay_start_date_index` (`delay_start_date`),
   KEY `tbl_delay_registers_is_delete_index` (`is_delete`),
   KEY `tbl_delay_registers_project_department_id_index` (`project_department_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_delay_registers` */
-
-insert  into `tbl_delay_registers`(`id`,`project_id`,`project_department_id`,`delay_title`,`delay_description`,`primary_delay_drivers`,`specific_event_description`,`impacted_task`,`root_cause_id`,`root_cause_label`,`delay_start_date`,`delay_end_date`,`target_revised_completion_date`,`delay_days`,`delay_category_id`,`responsibility_user_id`,`responsibility_name`,`severity`,`licensing_openings_affected`,`alert_level`,`escalation_level`,`register_status`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,1,2,'test',NULL,'test','test','',2,'','2026-06-30','2026-06-29',NULL,0,20,NULL,'','showstopper',1,'black',4,'open',1,'2026-06-15 12:52:41',1,'2026-06-15 12:52:41',0),
-(2,3,13,'test',NULL,'test','test','',5,'','2026-06-17','2026-06-26',NULL,9,20,NULL,'','showstopper',1,'black',4,'open',1,'2026-06-18 17:08:48',1,'2026-06-18 17:08:48',0),
-(3,3,13,'test',NULL,'test','test','',5,'','2026-06-17','2026-06-26',NULL,9,20,NULL,'','showstopper',1,'black',4,'open',1,'2026-06-18 17:08:48',1,'2026-06-18 17:08:48',0),
-(4,3,14,'testtest',NULL,'test','test','',1,'','2026-06-07','2026-07-05',NULL,28,21,NULL,'','moderate',0,'amber',2,'open',1,'2026-06-18 17:11:17',1,'2026-06-18 17:11:17',0),
-(5,3,14,'testtest',NULL,'test','test','',1,'','2026-06-07','2026-07-05',NULL,28,21,NULL,'','moderate',0,'amber',2,'open',1,'2026-06-18 17:11:17',1,'2026-06-18 17:11:17',0),
-(6,1,3,'test delay',NULL,'testd d','test d','',2,'','2026-06-19','2026-06-20',NULL,1,21,NULL,'','showstopper',1,'black',4,'open',1,'2026-06-18 17:18:14',1,'2026-06-18 17:18:14',0);
 
 /*Table structure for table `tbl_delay_severity_rules` */
 
@@ -603,19 +601,19 @@ CREATE TABLE `tbl_project_departments` (
 insert  into `tbl_project_departments`(`id`,`project_id`,`department_id`,`sort_order`,`allow_parallel_next`,`department_status`,`spoc_name`,`spoc_user_id`,`planned_start_date`,`planned_end_date`,`actual_start_date`,`actual_end_date`,`delay_days`,`remarks`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
 (1,1,19,1,0,'completed','spoc2 user',3,'2026-06-08','2026-06-15','2026-06-15','2026-06-15',0,'',1,'2026-06-12 18:47:37',1,'2026-06-18 17:17:45',0),
 (2,1,20,2,0,'completed','spoc2 user',3,'2026-06-30','2026-06-30','2026-06-15','2026-06-18',0,'',1,'2026-06-12 18:47:37',1,'2026-06-18 17:17:45',0),
-(3,1,21,3,0,'delay','test test',2,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-12 18:47:37',1,'2026-06-18 17:18:14',0),
+(3,1,21,3,0,'start','test test',2,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-12 18:47:37',1,'2026-06-24 13:22:32',0),
 (4,1,10,4,0,'pending',NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-12 18:47:37',1,'2026-06-18 17:17:46',0),
 (5,2,19,1,0,'completed','spoc2 user',3,'2026-06-29','2026-06-29','2026-06-15','2026-06-15',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:06',0),
 (6,2,24,2,0,'completed','spoc2 user',3,'2026-06-23','2026-06-28','2026-06-16','2026-06-16',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:06',0),
 (7,2,20,3,0,'completed','spoc2 user',3,'2026-06-16','2026-06-22','2026-06-16','2026-06-16',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:06',0),
 (8,2,21,4,0,'completed','spoc2 user',3,'2026-06-29','2026-07-06','2026-06-16','2026-06-16',0,'',1,'2026-06-15 19:39:40',1,'2026-06-16 16:20:34',0),
 (9,2,10,5,0,'completed','spoc2 user',3,'2026-06-28','2026-06-28','2026-06-16','2026-06-16',0,'test',1,'2026-06-15 19:39:40',1,'2026-06-16 16:29:05',0),
-(10,3,19,1,0,'completed','spoc4 banglore',5,'2026-06-30','2026-07-08','2026-06-18','2026-06-18',0,'',1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0),
-(11,3,24,2,1,'completed','spoc5 banglore',6,'2026-07-08','2026-10-22',NULL,'2026-06-18',0,'',1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0),
-(12,3,23,3,0,'completed','Spoc3 banglore',4,'2026-06-28','2026-06-30','2026-06-18','2026-06-18',0,'',1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0),
-(13,3,20,4,1,'delay','spoc5 banglore',6,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0),
-(14,3,21,5,0,'delay','spoc5 banglore',6,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-18 10:52:44',1,'2026-06-18 17:11:17',0),
-(15,3,10,6,0,'pending',NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-18 10:52:44',1,'2026-06-18 17:10:38',0);
+(10,3,19,1,0,'completed','spoc4 banglore',5,'2026-06-30','2026-07-08','2026-06-18','2026-06-18',0,'',1,'2026-06-18 10:52:44',1,'2026-06-24 11:17:19',0),
+(11,3,24,2,1,'completed','spoc5 banglore',6,'2026-07-08','2026-10-22',NULL,'2026-06-18',0,'',1,'2026-06-18 10:52:44',1,'2026-06-24 11:17:19',0),
+(12,3,23,3,0,'completed','Spoc3 banglore',4,'2026-06-28','2026-06-30','2026-06-18','2026-06-18',0,'',1,'2026-06-18 10:52:44',1,'2026-06-24 11:17:19',0),
+(13,3,20,4,1,'start','spoc5 banglore',6,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-18 10:52:44',1,'2026-06-24 13:22:32',0),
+(14,3,21,5,0,'start','spoc5 banglore',6,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-18 10:52:44',1,'2026-06-24 13:22:32',0),
+(15,3,10,6,0,'pending','spoc2 user',3,NULL,NULL,NULL,NULL,0,NULL,1,'2026-06-18 10:52:44',1,'2026-06-24 11:17:20',0);
 
 /*Table structure for table `tbl_project_types` */
 
@@ -695,9 +693,9 @@ CREATE TABLE `tbl_projects` (
 /*Data for the table `tbl_projects` */
 
 insert  into `tbl_projects`(`id`,`project_code`,`project_name`,`project_type_id`,`project_type_label`,`project_scope`,`location`,`hospital_name`,`hospital_id`,`contractor_name`,`zone_department`,`zone_id`,`location_id`,`area_facility`,`responsible_user_id`,`responsibility_name`,`project_spoc_name`,`planned_start_date`,`planned_completion_date`,`actual_completion_date`,`target_revised_completion_date`,`project_status`,`wizard_step`,`total_delay_cost`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,'AH-Gurugram','Apollo Gurugram Annex — Emergency Wing',2,'Brown Field','test','Central HQ Campus','Apollo Hospitals',2,'test','Central Zone',9,7,'test',2,'test test','test test','2026-06-26','2026-06-30',NULL,NULL,'delayed',3,0.00,1,'2026-06-12 18:47:29',1,'2026-06-19 08:34:22',0),
-(2,'AH-Hyderabad','Apollo Hyderabad Emergency wing',1,'Green Field','test','South Site A','Apollo',1,'spoc3','South Zone',2,4,'Hyderabad',3,'spoc2 user','spoc2 user','2026-06-23','2026-06-29',NULL,NULL,'completed',3,0.00,1,'2026-06-15 19:39:15',1,'2026-06-19 08:34:22',0),
-(3,'AH-Banglore','Apollo Banglore Emergency wing',2,'Brown Field','test','South Site A','Apollo Hospitals',2,'test','South Zone',2,4,'Banglore',4,'Spoc3 banglore','Spoc3 banglore','2026-06-17','2026-12-23',NULL,NULL,'delayed',3,0.00,1,'2026-06-18 10:52:05',1,'2026-06-19 08:34:22',0);
+(1,'AH-Gurugram','Apollo Gurugram Annex — Emergency Wing',2,'Brown Field','test','Central HQ Campus','Apollo Hospitals',2,'test','Central Zone',9,7,'test',2,'test test','test test','2026-06-26','2026-06-30',NULL,NULL,'active',3,0.00,1,'2026-06-12 18:47:29',1,'2026-06-24 13:27:50',0),
+(2,'AH-Hyderabad','Apollo Hyderabad Emergency wing',1,'Green Field','test','South Site A','Apollo',1,'spoc3','South Zone',2,4,'Hyderabad',3,'spoc2 user','spoc2 user','2026-06-23','2026-06-29',NULL,NULL,'completed',3,0.00,1,'2026-06-15 19:39:15',1,'2026-06-24 13:27:50',0),
+(3,'AH-Banglore','Apollo Banglore Emergency wing',2,'Brown Field','test','South Site A','Apollo Hospitals',2,'test','South Zone',2,4,'Banglore',4,'Spoc3 banglore','Spoc3 banglore','2026-06-17','2026-12-23',NULL,NULL,'active',3,0.00,1,'2026-06-18 10:52:05',1,'2026-06-24 13:27:50',0);
 
 /*Table structure for table `tbl_renovation_approvals` */
 
@@ -1072,9 +1070,9 @@ CREATE TABLE `tbl_user` (
 /*Data for the table `tbl_user` */
 
 insert  into `tbl_user`(`id`,`username`,`email_id`,`password`,`first_name`,`last_name`,`mobile_no`,`user_type`,`status`,`remember_token`,`last_logged_on`,`profile_image`,`address`,`reference_id`,`serial_number`,`qr_code`,`otp_code`,`otp_expiry`,`created_by`,`created_on`,`updated_by`,`updated_on`,`is_delete`) values 
-(1,'admin','admin@pdts.com','$2y$10$6ENWaU36KzJSV5YAo1ezIenuJwKNYrUBFdGk51lIB2ZsQ0c1Pn25e','Admin','User','4323214324',1,1,NULL,'2026-06-19 08:34:20',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-08 12:47:40',1,'2026-06-12 16:35:39',0),
+(1,'admin','admin@pdts.com','$2y$10$6ENWaU36KzJSV5YAo1ezIenuJwKNYrUBFdGk51lIB2ZsQ0c1Pn25e','Admin','User','4323214324',1,1,NULL,'2026-06-24 11:01:47',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-08 12:47:40',1,'2026-06-12 16:35:39',0),
 (2,NULL,'spoc1@pdts.com','$2y$10$PtK3sYMlvaLecDxhHXt2EeLF2T4jZE8aA4jfAAbRRcL8G41Fa1T1S','test','test','6768687686',5,1,NULL,'2026-06-18 12:56:50',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-15 12:50:33',1,'2026-06-15 12:50:33',0),
-(3,NULL,'spoc2@pdts.com','$2y$10$C8gq6aoc0XRviQa/iTwQteDJqqerS.rLpYqonZ1fWE159LUY1qoQq','spoc2','user','8437598437',5,1,NULL,'2026-06-16 15:42:49',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-15 12:52:05',1,'2026-06-15 12:52:05',0),
+(3,NULL,'spoc2@pdts.com','$2y$10$C8gq6aoc0XRviQa/iTwQteDJqqerS.rLpYqonZ1fWE159LUY1qoQq','spoc2','user','8437598437',5,1,NULL,'2026-06-24 11:18:25',NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-15 12:52:05',1,'2026-06-15 12:52:05',0),
 (4,NULL,'spoc3@pdts.com','$2y$10$s4pp0G8OsoPoSur8ZWNNV.BYdG76v0CBe285M.j98spIvSMV2dUpu','Spoc3','banglore','3243214324',5,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-18 10:51:48',1,'2026-06-18 10:51:48',0),
 (5,NULL,'spoc4@pdts.com','$2y$10$RzwkOUO5xK4Lr9OZiy3ereynkGKTLRvad2lEAUjT7FMcBH77l3dfO','spoc4','banglore','3243243243',5,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-18 11:48:37',1,'2026-06-18 11:48:37',0),
 (6,NULL,'spoc5@pdts.com','$2y$10$OT610W0P2gPmhUG7Ldd6JupDxHmzAKBd7xXOW8LZYDTIU6nhRgKNO','spoc5','banglore','4324324324',5,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2026-06-18 11:56:07',1,'2026-06-18 11:56:07',0);
@@ -1139,6 +1137,40 @@ CREATE TABLE `tbl_user_device_tokens` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 /*Data for the table `tbl_user_device_tokens` */
+
+/*Table structure for table `tbl_user_in_app_notifications` */
+
+DROP TABLE IF EXISTS `tbl_user_in_app_notifications`;
+
+CREATE TABLE `tbl_user_in_app_notifications` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL COMMENT 'Recipient — users table id',
+  `notification_type` varchar(50) NOT NULL DEFAULT 'general',
+  `title` varchar(255) NOT NULL,
+  `message` text DEFAULT NULL,
+  `entity_type` varchar(50) DEFAULT NULL COMMENT 'Domain entity key, e.g. delay_register',
+  `entity_id` int(11) DEFAULT NULL COMMENT 'Domain entity id',
+  `meta_json` text DEFAULT NULL COMMENT 'Optional JSON payload for app-specific data',
+  `triggered_by` int(11) DEFAULT NULL COMMENT 'User who triggered the notification',
+  `action_url` varchar(500) DEFAULT NULL,
+  `action_mode` varchar(20) NOT NULL DEFAULT 'redirect' COMMENT 'redirect, sidelayout',
+  `status` tinyint(4) NOT NULL DEFAULT 0 COMMENT '0=unread, 1=read',
+  `created_by` int(11) DEFAULT NULL,
+  `created_on` datetime DEFAULT NULL,
+  `updated_by` int(11) DEFAULT NULL,
+  `updated_on` datetime DEFAULT NULL,
+  `is_delete` tinyint(4) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `tbl_user_in_app_notifications_user_id_index` (`user_id`),
+  KEY `tbl_user_in_app_notifications_notification_type_index` (`notification_type`),
+  KEY `tbl_user_in_app_notifications_entity_type_index` (`entity_type`),
+  KEY `tbl_user_in_app_notifications_entity_id_index` (`entity_id`),
+  KEY `tbl_user_in_app_notifications_status_index` (`status`),
+  KEY `tbl_user_in_app_notifications_is_delete_index` (`is_delete`),
+  KEY `tbl_user_in_app_notifications_user_id_status_is_delete_index` (`user_id`,`status`,`is_delete`)
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/*Data for the table `tbl_user_in_app_notifications` */
 
 /*Table structure for table `tbl_zones` */
 
