@@ -61,33 +61,7 @@
 
                 </div>
             </div>
-          <!--  <div class="dropdown d-inline-block">
-                <button type="button" class="btn header-item noti-icon waves-effect notificationCnt"
-                    id="page-header-notifications-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="ri-notification-3-line"></i>
-                    <span class="badge rounded-pill bg-danger getNotificationCnt" id="notifycnt">0</span>
-                </button>
-                
-                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0"
-                    aria-labelledby="page-header-notifications-dropdown">
-                    <div class="p-3">
-                        <div class="row align-items-center">                        
-                            <div class="col">
-                                <h6 class="m-0"> Notifications </h6>
-                            </div>
-                            <div class="col-auto">
-                                <a href="{{url('/getallNotifications')}}" class="small"> View All</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    
-                    <div class="notificationsScroll"  data-simplebar style="max-height: 230px;" id="display">
-
-                    </div>
-                    
-                </div>
-            </div> --> 
+          @include('in-app-notifications::bell')
             <div class="dropdown d-inline-block user-dropdown">
                 <button type="button" class="btn header-item waves-effect d-flex align-items-center" id="page-header-user-dropdown"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

@@ -323,7 +323,7 @@ setInterval(function() {
     cleanupAllWavesRipples();
 }, 2000);
 
-function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', callback = '', buttonSelector = null, method = 'POST', timeoutMs = 0) {
+function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', callback = '', buttonSelector = null, method = 'POST', timeoutMs = 0, skipLoader = false) {
     // Auto-detect button if not provided
     var $submitButton = null;
     if (!buttonSelector) {
@@ -396,8 +396,10 @@ function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', ca
         }
     }
     
-    // Show unified loader overlay
-    showGlobalLoader(true);
+    // Show unified loader overlay (skip for background polling)
+    if (!skipLoader) {
+        showGlobalLoader(true);
+    }
     
     const promise = new Promise(function (resolve, reject) {
         var ajaxOptions = {
@@ -408,7 +410,9 @@ function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', ca
             data: dataToSend,
             success: function (data) {
                 // Hide loader overlay
-                showGlobalLoader(false);
+                if (!skipLoader) {
+                    showGlobalLoader(false);
+                }
                 
                 // Reset button state
                 if ($submitButton && $submitButton.length > 0) {
@@ -432,7 +436,9 @@ function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', ca
             },
             error: function (err) {
                 // Hide loader overlay on error
-                showGlobalLoader(false);
+                if (!skipLoader) {
+                    showGlobalLoader(false);
+                }
                 
                 // Reset button state on error
                 if ($submitButton && $submitButton.length > 0) {

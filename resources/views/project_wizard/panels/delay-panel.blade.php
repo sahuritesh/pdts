@@ -9,8 +9,12 @@
     $statusMap = collect($statuses)->pluck('label', 'value');
     $severityClass = ['minor' => 'secondary', 'moderate' => 'warning', 'critical' => 'danger', 'showstopper' => 'dark'];
 @endphp
-<div class="sidelayout-panel delay-register-panel">
+<div class="sidelayout-panel delay-register-panel"
+    data-panel-url="{{ getProjectUrl('projects/wizard/panel/delay/' . $encPd) }}"
+    data-panel-title="{{ $pageTitle }}">
     <div class="sidelayout-context">{{ $ctx['project_code'] }} — {{ $ctx['department_name'] }}</div>
+
+    @include('project_wizard.partials.delay-ews-legend')
 
     @if($delays->count())
     <h6>Delay Log History <span class="badge bg-light text-dark">{{ $delays->count() }}</span></h6>
@@ -105,15 +109,21 @@
                     </div>
                     @endif
                     @if(!empty($delay->alert_level))
+                    @php
+                        $alertDef = delayEwsDefinition('alert_levels', $delay->alert_level);
+                        $alertBadge = $alertDef['badge_class'] ?? 'secondary';
+                    @endphp
                     <div class="col-md-6">
                         <span class="delay-log-label">Alert Level</span>
-                        <p class="delay-log-value mb-0 text-capitalize">{{ $delay->alert_level }}</p>
+                        <p class="delay-log-value mb-0">
+                            <span class="badge bg-{{ $alertBadge }}">{{ delayEwsLabel('alert_levels', $delay->alert_level, ucfirst($delay->alert_level)) }}</span>
+                        </p>
                     </div>
                     @endif
                     @if(!empty($delay->escalation_level))
                     <div class="col-md-6">
                         <span class="delay-log-label">Escalation Level</span>
-                        <p class="delay-log-value mb-0">{{ $delay->escalation_level }}</p>
+                        <p class="delay-log-value mb-0">{{ delayEwsLabel('escalation_levels', $delay->escalation_level, 'Level ' . (int) $delay->escalation_level) }}</p>
                     </div>
                     @endif
                 </div>
@@ -299,64 +309,110 @@
 .delay-register-panel .delay-mitigation-item:last-child {
     margin-bottom: 0;
 }
+.delay-register-panel .delay-ews-legend-heading {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #878a99;
+    margin-bottom: 0.35rem;
+}
+.delay-register-panel .delay-ews-legend-list li {
+    line-height: 1.35;
+}
+.delay-register-panel .delay-ews-legend-toggle[aria-expanded="true"] .delay-ews-legend-chevron {
+    transform: rotate(180deg);
+}
 </style>
 
 <script>
 (function initDelayRegisterPanel() {
-    var $panel = $('#dynamicSideLayoutContent .delay-register-panel').first();
+    function getDelayPanel() {
+        return $('#dynamicSideLayoutContent .delay-register-panel').first();
+    }
+
+    function reloadPanel() {
+        var $panel = getDelayPanel();
+        var url = $panel.data('panel-url');
+        var title = $panel.data('panel-title') || 'Delay Register';
+        if (!url) {
+            return;
+        }
+        openSideLayout({}, url, title);
+    }
+
+    if (!window.__wizardDelayHandlersBound) {
+        window.__wizardDelayHandlersBound = true;
+
+        $(document).on('click.wizardDelaySave', '#saveWizardDelayBtn', function() {
+            if (window.__wizardDelaySaving) {
+                return;
+            }
+
+            var $btn = $(this);
+            var $panel = getDelayPanel();
+            var $form = $panel.find('#wizardDelayForm');
+            if (!$panel.length || !$form.length) {
+                return;
+            }
+            if (typeof validatePlannedDateRangesInScope === 'function' && !validatePlannedDateRangesInScope($form)) {
+                return;
+            }
+
+            window.__wizardDelaySaving = true;
+            $btn.prop('disabled', true);
+
+            ajaxRequestWithPromise(@json(getProjectUrl('wizard_save_delay')), $form.serialize(), 'wizard_save_delay', 0, '', $btn)
+                .then(function(res) {
+                    if (res.error == 0 || res.error == '0') {
+                        $form[0].reset();
+                        if ($form.find('.dd-select').length && $.fn.select2) {
+                            $form.find('.dd-select').val('').trigger('change');
+                        }
+                        reloadPanel();
+                    }
+                })
+                .finally(function() {
+                    window.__wizardDelaySaving = false;
+                    $btn.prop('disabled', false);
+                });
+        });
+
+        $(document).on('click.wizardMitigationSave', '#saveWizardMitigationBtn', function() {
+            if (window.__wizardMitigationSaving) {
+                return;
+            }
+
+            var $btn = $(this);
+            var $panel = getDelayPanel();
+            if (!$panel.length) {
+                return;
+            }
+
+            window.__wizardMitigationSaving = true;
+            $btn.prop('disabled', true);
+
+            ajaxRequestWithPromise(@json(getProjectUrl('wizard_save_mitigation')), $panel.find('#wizardMitigationForm').serialize(), 'wizard_save_mitigation', 0, '', $btn)
+                .then(function(res) {
+                    if (res.error == 0 || res.error == '0') {
+                        reloadPanel();
+                    }
+                })
+                .finally(function() {
+                    window.__wizardMitigationSaving = false;
+                    $btn.prop('disabled', false);
+                });
+        });
+    }
+
+    var $panel = getDelayPanel();
     if (!$panel.length) {
         return;
     }
 
-    $('.sidelayoutTitle').html('{{ $pageTitle }}');
+    $('.sidelayoutTitle').html($panel.data('panel-title') || @json($pageTitle));
     if ($.fn.select2) {
         $panel.find('.dd-select').select2({ dropdownParent: $('#offcanvasRight'), width: '100%' });
     }
-
-    var panelUrl = "{{ getProjectUrl('projects/wizard/panel/delay/' . $encPd) }}";
-    function reloadPanel() {
-        openSideLayout({}, panelUrl, '{{ $pageTitle }}');
-    }
-
-    $panel.off('click.delaySave', '#saveWizardDelayBtn').on('click.delaySave', '#saveWizardDelayBtn', function() {
-        if (window.__wizardDelaySaving) {
-            return;
-        }
-        var $btn = $(this);
-        var $form = $panel.find('#wizardDelayForm');
-        if (!$form.length) {
-            return;
-        }
-        if (typeof validatePlannedDateRangesInScope === 'function' && !validatePlannedDateRangesInScope($form)) {
-            return;
-        }
-        window.__wizardDelaySaving = true;
-        ajaxRequestWithPromise("{{ getProjectUrl('wizard_save_delay') }}", $form.serialize(), 'wizard_save_delay', 0, '', $btn)
-            .then(function(res) {
-                if (res.error == 0 || res.error == '0') {
-                    reloadPanel();
-                }
-            })
-            .finally(function() {
-                window.__wizardDelaySaving = false;
-            });
-    });
-
-    $panel.off('click.delayMitigationSave', '#saveWizardMitigationBtn').on('click.delayMitigationSave', '#saveWizardMitigationBtn', function() {
-        if (window.__wizardMitigationSaving) {
-            return;
-        }
-        var $btn = $(this);
-        window.__wizardMitigationSaving = true;
-        ajaxRequestWithPromise("{{ getProjectUrl('wizard_save_mitigation') }}", $panel.find('#wizardMitigationForm').serialize(), 'wizard_save_mitigation', 0, '', $btn)
-            .then(function(res) {
-                if (res.error == 0 || res.error == '0') {
-                    reloadPanel();
-                }
-            })
-            .finally(function() {
-                window.__wizardMitigationSaving = false;
-            });
-    });
 })();
 </script>

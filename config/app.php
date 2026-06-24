@@ -78,7 +78,7 @@ return [
     |''
     */
 
-    'timezone' => env('APP_TIMEZONE', 'Asia/Dubai'),
+    'timezone' => env('APP_TIMEZONE', 'Asia/Kolkata'),
     // 'timezone' => 'UTC',
 
     /*
@@ -187,6 +187,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        App\Modules\InAppNotifications\InAppNotificationsServiceProvider::class,
         SimpleSoftwareIO\QrCode\QrCodeServiceProvider::class,
         Barryvdh\DomPDF\ServiceProvider::class,
         Intervention\Image\ImageServiceProvider::class,

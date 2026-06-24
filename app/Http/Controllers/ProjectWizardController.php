@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Traits\WebResponseTrait;
 use App\Models\Common_model;
 use App\Services\AuditTrailService;
+use App\Services\DelayNotificationService;
 use App\Services\DelayRegisterService;
 use App\Services\FinancialImpactService;
 use App\Services\ProjectDepartmentService;
@@ -29,6 +30,7 @@ class ProjectWizardController extends Controller
     protected AuditTrailService $auditTrail;
     protected ProjectDepartmentService $projectDepartmentService;
     protected DelayRegisterService $delayRegisterService;
+    protected DelayNotificationService $delayNotificationService;
     protected FinancialImpactService $financialImpactService;
     protected UserScopeService $userScope;
 
@@ -36,12 +38,14 @@ class ProjectWizardController extends Controller
         AuditTrailService $auditTrail,
         ProjectDepartmentService $projectDepartmentService,
         DelayRegisterService $delayRegisterService,
+        DelayNotificationService $delayNotificationService,
         FinancialImpactService $financialImpactService,
         UserScopeService $userScope
     ) {
         $this->auditTrail = $auditTrail;
         $this->projectDepartmentService = $projectDepartmentService;
         $this->delayRegisterService = $delayRegisterService;
+        $this->delayNotificationService = $delayNotificationService;
         $this->financialImpactService = $financialImpactService;
         $this->userScope = $userScope;
     }
@@ -836,6 +840,20 @@ class ProjectWizardController extends Controller
             $payload = $this->delayRegisterService->applyAutoCalculations($payload);
 
             if ($operation === 'Add') {
+                $duplicateWindow = date('Y-m-d H:i:s', strtotime('-15 seconds'));
+                $recentDuplicate = DB::table('tbl_delay_registers')
+                    ->where('project_department_id', $ctx['id'])
+                    ->where('delay_title', $title)
+                    ->where('created_by', Auth::id())
+                    ->where('is_delete', 0)
+                    ->where('created_on', '>=', $duplicateWindow)
+                    ->exists();
+
+                if ($recentDuplicate) {
+                    $this->sendSuccessResponse('Delay logged', $operation);
+                    return;
+                }
+
                 $payload['created_by'] = Auth::id();
                 $payload['created_on'] = current_datetime();
                 $payload['is_delete'] = 0;
@@ -843,6 +861,7 @@ class ProjectWizardController extends Controller
                 if ($newId) {
                     $this->projectDepartmentService->setDepartmentDelay($pdId);
                     $this->auditTrail->log('delay_register', (int) $newId, 'create', null, $payload);
+                    $this->delayNotificationService->notifyDelayLogged((int) $newId, (int) Auth::id());
                     $this->sendSuccessResponse('Delay logged', $operation);
                 } else {
                     $this->sendErrorResponse('Save failed', 1);

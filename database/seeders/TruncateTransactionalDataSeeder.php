@@ -23,6 +23,8 @@ class TruncateTransactionalDataSeeder extends Seeder
         'tbl_ews_potential_delay_alerts',
         'tbl_audit_trails',
         'tbl_notification_logs',
+        'tbl_pdts_user_notifications',
+        'tbl_user_in_app_notifications',
         'tbl_renovation_daily_delay_logs',
         'tbl_renovation_task_dependencies',
         'tbl_renovation_approvals',

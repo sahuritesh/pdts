@@ -7,6 +7,7 @@ Documentation for development, coding standards, and implementation planning.
 | File | Purpose |
 |------|---------|
 | [PDTS_PROJECT_GUIDE.md](PDTS_PROJECT_GUIDE.md) | **Flows, decisions, validations, schema relationships, reusable components** (start here for wizard/SPOC work) |
+| [IN_APP_NOTIFICATIONS.md](IN_APP_NOTIFICATIONS.md) | **In-app notification system** (bell, polling, toasts, delay alerts, API, config, troubleshooting) |
 | [CODING_STANDARDS.md](CODING_STANDARDS.md) | Mandatory coding rules (ported from TDMS + PDTS-specific) |
 | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Step-by-step module build order and per-task checklist |
 | [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) | Table reference aligned to FRS Modules 1–4 |

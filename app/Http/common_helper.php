@@ -27,7 +27,9 @@ function displayCustomDateTime($date)
         return '';
     }
     try {
-        return \Carbon\Carbon::parse($date)->format('dS M Y h:i A');
+        return \Carbon\Carbon::parse($date, config('app.timezone'))
+            ->timezone(config('app.timezone'))
+            ->format('dS M Y h:i A');
     } catch (\Throwable $e) {
         return '';
     }
@@ -42,20 +44,41 @@ function displayCustomDate($date)
         return '';
     }
     try {
-        return \Carbon\Carbon::parse($date)->format('dS M Y');
+        return \Carbon\Carbon::parse($date, config('app.timezone'))
+            ->timezone(config('app.timezone'))
+            ->format('dS M Y');
     } catch (\Throwable $e) {
         return '';
     }
 }
 
-function displayDateTime($date)
+/**
+ * EWS definition lookup from config/delay_ews.php.
+ *
+ * @param  'severity'|'alert_levels'|'escalation_levels'  $group
+ * @return array<string, mixed>|null
+ */
+function delayEwsDefinition(string $group, $code): ?array
 {
-    if ($date == "0000-00-00 00:00:00" || $date == '') {
-        return '<p class="text-center">-</p>';
-    } else {
-        $date_new = date("d-m-Y", strtotime($date));
-        return $date_new;
+    if ($code === null || $code === '') {
+        return null;
     }
+
+    $definitions = config('delay_ews.' . $group, []);
+    if ($group === 'escalation_levels') {
+        $code = (int) $code;
+    } else {
+        $code = strtolower((string) $code);
+    }
+
+    return $definitions[$code] ?? null;
+}
+
+function delayEwsLabel(string $group, $code, string $fallback = ''): string
+{
+    $def = delayEwsDefinition($group, $code);
+
+    return $def['label'] ?? ($fallback !== '' ? $fallback : (string) $code);
 }
 
 function displayDate($date)

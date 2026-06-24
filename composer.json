@@ -45,7 +45,8 @@
         "files": [
             "app/Http/common_helper.php",
             "app/Models/Common_model.php",
-            "config/constants.php"
+            "config/constants.php",
+            "app/Modules/InAppNotifications/helpers.php"
         ]
     },
     "autoload-dev": {

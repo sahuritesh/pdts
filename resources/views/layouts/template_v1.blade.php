@@ -380,7 +380,8 @@ Active
     <script src="{{ getAssetUrl('libs/tinymce/tinymce.min.js') }}"></script>
     <script src="{{ getAssetUrl('js/tinymce-utils.js') }}"></script>
     <script src="{{ getAssetUrl('js/growl.js') }}"></script>
-    <script src="{{ getAssetUrl('js/ajaxPromise.js') }}?v=1.1"></script>
+    <script src="{{ getAssetUrl('js/ajaxPromise.js') }}?v=1.2"></script>
+    @include('in-app-notifications::scripts')
     {{-- Bump querystring to bust browser cache when common utilities change --}}
     <script src="{{ getAssetUrl('js/common.js') }}?v=2.6"></script>
     <script src="{{ getAssetUrl('js/custom_operations.js') }}"></script>
@@ -449,10 +450,6 @@ Active
     });
 
    
-    //get the norifications count
-    getNotificationsCnt();
-    // For new notification count automatically append
-    //setInterval("getNotificationsCnt()",300000);	
     @if(Session::has('success'))
     toastr.options = {
         "closeButton": true,
@@ -467,96 +464,6 @@ Active
     }
     toastr.error("{{ session('error') }}");
     @endif
-
-    function getNotificationsCnt() {
-        url = baseURL + "/getNotificationCnt";
-        var postKey = "";
-        var data = "";
-        ajaxRequestPromise(url, data, postKey).then(function(response) {
-            preloaderOverlay('hide');
-            // ajaxRequestPromise already returns a parsed object, no need to JSON.parse
-            var res = response;
-            //console.log(res.noticationcnt);
-            $("#notifycnt").text(res.noticationcnt);
-        }).catch(function(err) {
-            console.log(err);
-            preloaderOverlay('hide');
-        })
-    }
-    $(document).on('click', '.notificationCnt', function() {
-        getNotifications();
-    });
-
-    $(document).on('click', '.notification-item', function() {
-        var notify_id = $(this).attr("data-value");
-        var notify_type = $(this).attr("data-type");
-        var notify_type_id = $(this).attr("data-typeid");
-        updateNotificaionStatus(notify_id, notify_type, notify_type_id);
-        if (notify_type == 'Proposal Change') {
-            //alert('Preoreproep'); return false;
-            postKey = '';
-            url = baseURL + "/getNotification";
-            let data = {
-                notify_id: notify_id
-            };
-            ajaxRequestPromise(url, data, postKey).then(function(response) {
-                preloaderOverlay('hide');
-                // ajaxRequestPromise already returns a parsed object, no need to JSON.parse
-                var res = response;
-                //console.log(res.html);return false;
-                if (res.error == 0) {
-                    $('#customModalBody').html(res.html);
-                    $('#customModal').modal('toggle');
-
-                }
-            }).catch(function(err) {
-                console.log(err);
-                preloaderOverlay('hide');
-            })
-        }
-
-    });
-
-
-    function getNotifications() {
-        url = baseURL + "/getNotifications";
-        var postKey = "";
-        var data = "";
-        $('#display').html('');
-        ajaxRequestPromise(url, data, postKey).then(function(response) {
-            preloaderOverlay('hide');
-            // ajaxRequestPromise already returns a parsed object, no need to JSON.parse
-            var res = response;
-            if (res.error == 0) {
-                $('#display').html(res.html);
-            }
-        }).catch(function(err) {
-            console.log(err);
-            preloaderOverlay('hide');
-        })
-
-    }
-
-    function updateNotificaionStatus(notify_id, notify_type, type_id) {
-        url = baseURL + "/updateNotificationStatus";
-        var postKey = "";
-        let data = {
-            id: notify_id,
-        };
-        ajaxRequestPromise(url, data, postKey).then(function(response) {
-            preloaderOverlay('hide');
-            if (notify_type != 'Proposal Change') {
-                window.location = baseURL + '/view-notification/' + notify_type + '/' + notify_id + '/' +
-                    type_id;
-            } else {
-                return false;
-            }
-        }).catch(function(err) {
-            console.log(err);
-            preloaderOverlay('hide');
-        })
-
-    }
 
     function initializeDaterangepicker() {
         let mindate = new Date(new Date().getFullYear()-1, 0, 1);

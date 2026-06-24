@@ -323,7 +323,7 @@ setInterval(function() {
     cleanupAllWavesRipples();
 }, 2000);
 
-function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', callback = '', buttonSelector = null, method = 'POST') {
+function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', callback = '', buttonSelector = null, method = 'POST', timeoutMs = 0, skipLoader = false) {
     // Auto-detect button if not provided
     var $submitButton = null;
     if (!buttonSelector) {
@@ -396,11 +396,13 @@ function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', ca
         }
     }
     
-    // Show unified loader overlay
-    showGlobalLoader(true);
+    // Show unified loader overlay (skip for background polling)
+    if (!skipLoader) {
+        showGlobalLoader(true);
+    }
     
     const promise = new Promise(function (resolve, reject) {
-        $.ajax({
+        var ajaxOptions = {
             url: url,
             type: method,
             processData: processData,
@@ -408,7 +410,9 @@ function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', ca
             data: dataToSend,
             success: function (data) {
                 // Hide loader overlay
-                showGlobalLoader(false);
+                if (!skipLoader) {
+                    showGlobalLoader(false);
+                }
                 
                 // Reset button state
                 if ($submitButton && $submitButton.length > 0) {
@@ -432,7 +436,9 @@ function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', ca
             },
             error: function (err) {
                 // Hide loader overlay on error
-                showGlobalLoader(false);
+                if (!skipLoader) {
+                    showGlobalLoader(false);
+                }
                 
                 // Reset button state on error
                 if ($submitButton && $submitButton.length > 0) {
@@ -441,7 +447,11 @@ function ajaxRequestWithPromise(url, parameterData, postKey, isFormData = '', ca
                 // console.log('Error+++'+err);
                 reject(err);
             }
-        });
+        };
+        if (timeoutMs > 0) {
+            ajaxOptions.timeout = timeoutMs;
+        }
+        $.ajax(ajaxOptions);
     });
 
     return promise;
@@ -499,52 +509,76 @@ function showValidationMsg(msg, id, error) {
 
 
 
+function normalizeResponseMessageText(msg) {
+      if (msg === null || msg === undefined || msg === '') {
+            return '';
+      }
+      if (typeof msg === 'string') {
+            return msg.replace(/<[^>]*>/g, '');
+      }
+      if (Array.isArray(msg)) {
+            return msg.map(function (item) {
+                  return String(item).replace(/<[^>]*>/g, '');
+            }).filter(Boolean).join('<br>');
+      }
+      if (typeof msg === 'object') {
+            return Object.keys(msg).map(function (key) {
+                  return String(msg[key]).replace(/<[^>]*>/g, '');
+            }).filter(Boolean).join('<br>');
+      }
+      return String(msg).replace(/<[^>]*>/g, '');
+}
+
 function displayResponseMessage(response, response_type) {
-      var datatype = typeof response;
+      var data = response;
       try {
-            if(datatype == 'string')
-            {
+            if (typeof response === 'string') {
                   data = JSON.parse(response);
-                  toastr.options = {
-                        "closeButton": true,
-                        "progressBar": false
-                  }
-                  if (response_type == 'array') {
-                        $.each(data, function () {                  
-                              if (this.error == '1') {
-                                    var msgText = typeof this.msg === 'string' ? this.msg.replace(/<[^>]*>/g, '') : this.msg;
-                                    toastr.error(msgText);
-                                    return false;
-                              } else {
-                                    var msgText = typeof this.msg === 'string' ? this.msg.replace(/<[^>]*>/g, '') : this.msg;
-                                    toastr.success(msgText);
-                                    return true;
-                              }
-                        });
-                  } else {
-                        if ((data.error == '0' || data.error == 0) && data.msg) {
-                              var msgText = typeof data.msg === 'string' ? data.msg.replace(/<[^>]*>/g, '') : data.msg;
-                              toastr.success(msgText);
-                              if( typeof(data.redirect) != 'undefined' && data.redirect != null && data.redirect != '' ){
-                                    window.setTimeout( function(){
-                                          window.location.href = data.redirect;
-                                    }, 1500 );
-                              }
-                        } else if(data.msg) {
-                              toastr.options = {
-                                    "closeButton": true,
-                                    "progressBar": false
-                              }
-                              // Strip HTML tags from error message
-                              var msgText = typeof data.msg === 'string' ? data.msg.replace(/<[^>]*>/g, '') : data.msg;
-                              toastr.error(msgText);
-                        }
-                  }    
             }
-      }catch(e){
+            if (typeof data !== 'object' || data === null) {
+                  return false;
+            }
+
+            toastr.options = {
+                  closeButton: true,
+                  progressBar: false
+            };
+
+            if (response_type === 'array' && Array.isArray(data)) {
+                  $.each(data, function () {
+                        var msgText = normalizeResponseMessageText(this.msg);
+                        if (!msgText) {
+                              return true;
+                        }
+                        if (this.error == '1' || this.error == 1) {
+                              toastr.error(msgText);
+                              return false;
+                        }
+                        toastr.success(msgText);
+                        return true;
+                  });
+                  return true;
+            }
+
+            var msgText = normalizeResponseMessageText(data.msg);
+            if (!msgText) {
+                  return false;
+            }
+
+            if (data.error == '0' || data.error == 0) {
+                  toastr.success(msgText);
+                  if (typeof data.redirect !== 'undefined' && data.redirect != null && data.redirect !== '') {
+                        window.setTimeout(function () {
+                              window.location.href = data.redirect;
+                        }, 1500);
+                  }
+            } else {
+                  toastr.error(msgText);
+            }
+            return true;
+      } catch (e) {
             return false;
       }
-
 }
 
 
