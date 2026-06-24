@@ -48,10 +48,14 @@ body{
     margin-left: 10px;
     margin-bottom:0px;
 }
+.form-check-input:checked {
+    background-color: #0f8c91;
+    border-color: #0f8c91;
+}
 .btn-primary{ 
     border-radius: 30px;
-    background-color: var(--dark-yellow);
-    border-color: var(--dark-yellow);
+    background-color: var(--dark-blue);
+    border-color: var(--dark-blue);
     padding: 10px 26px;
     color: var(--full-white);
 }
@@ -972,6 +976,11 @@ font-size: 14px;color: #1B428A;
 text-align: left;margin: 0px;
 }
 
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+    background-color: var(--dark-blue) !important;
+    color: #fff !important;
+}
+
 .selectdropDownStyle .select2.select2-container{  margin-right: 0px;    margin-left:0px;}
 .wizardActionsBlock{    padding: 0px 15px;    background: #f3f4f8;}
 .wizardActionsBlock .twitter-bs-wizard-pager-link{padding-bottom: 12px !important;   padding-top: 12px !important;
@@ -1317,15 +1326,18 @@ div#basic-pills-wizard {
   border-radius: 20px;
   transition: all 0.2s ease;
 }
+.btn-check:focus+.btn-primary, .btn-primary:focus{
+    background: #0f8c91;
+}
 
 /* PRIMARY */
 .btn-custom.btn-primary {
-  background: #1f5741;
+  background: #0f8c91;
   border: none;
 }
 
 .btn-custom.btn-primary:hover {
-  background: #135e32;
+  background: #0f8c91;
 }
 
 /* DANGER → CONVERT TO CLEAN STYLE */
@@ -2373,8 +2385,8 @@ table.dataTable th {
 
 /* CHECKED */
 .role-permission-ui input[type="checkbox"]:checked {
-  background: #2563eb;
-  border-color: #2563eb;
+  background-color: var(--dark-blue);
+  border-color: var(--dark-blue);
 }
 
 /* CHECK MARK */
@@ -2540,7 +2552,18 @@ table.dataTable th {
 
 .department-select-wrapper .select2-results__option--highlighted{
 
-    background:#1F8EF1 !important;
+    background:#1ff13f !important;
 
     color:#fff !important;
+}
+.save-dept-meta{
+    border-radius: 30px;
+    padding: 6px 16px;
+    font-size: 14px;
+    background: #0f8c91;
+    color: #fff;
+    border: 0px;
+}
+.save-dept-meta:hover{
+     background: #0f8c91;
 }
