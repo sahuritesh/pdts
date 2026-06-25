@@ -41,6 +41,10 @@
             break;
         }
     }
+    $suggestedProjectCode = $data['suggested_project_code'] ?? '';
+    $projectCodeValue = (is_array($project) && trim((string) ($project['project_code'] ?? '')) !== '')
+        ? $project['project_code']
+        : $suggestedProjectCode;
 @endphp
 
 <div class="row">
@@ -101,8 +105,13 @@
                         <h5 class="mb-3">Project — General Information</h5>
                         <div class="row">
                             <div class="col-md-4 mb-2">
-                                <label class="required-label">Project ID</label>
-                                <input type="text" class="form-control required" name="project_code" value="{{ $project['project_code'] ?? '' }}">
+                                <label for="wizard_project_code" class="required-label">Project ID</label>
+                                <input type="text" class="form-control required" name="project_code" id="wizard_project_code"
+                                    value="{{ $projectCodeValue }}" placeholder="Auto-generated — edit if needed"
+                                    @if($isProjectReadOnly) readonly @endif>
+                                @if(!$projectId)
+                                <small class="text-muted">Auto-generated. You can change it before saving.</small>
+                                @endif
                             </div>
                             <div class="col-md-8 mb-2">
                                 <label class="required-label">Project Name</label>
@@ -204,7 +213,7 @@
                     <form id="masterForm1" class="masterForm" data-url="save_wizard_departments" enctype="multipart/form-data">
                         @csrf
                         <h5 class="mb-3">Select, Order &amp; Configure Departments</h5>
-                        <p class="text-muted small mb-3">Choose departments, drag to set execution order, then use <strong>Configure</strong> on each row to assign the department SPOC and parallel workflow before execution.</p>
+                        <p class="text-muted small mb-3">Choose departments, drag to set execution order, then use <strong>Configure</strong> on each row to assign the department SPOC, planned dates, and parallel workflow before execution.</p>
                         <div class="row">
                             <div class="col-md-5">
                                 <label class="form-label small text-muted text-uppercase fw-semibold">Available departments</label>
@@ -330,6 +339,9 @@
                                             <div class="col-md-8">
                                                 <p class="text-muted small">{{ $pd['department_description'] ?? '' }}</p>
                                                 @include('project_wizard.partials.dept-spoc-required-notice', ['spocMissing' => $spocMissing])
+                                                @php
+                                                    $hasPlannedDates = !empty($pd['planned_start_date']) || !empty($pd['planned_end_date']);
+                                                @endphp
                                                 @if(!$isPending)
                                                 @include('project_wizard.partials.dept-workflow-fields', [
                                                     'pd' => $pd,
@@ -342,6 +354,15 @@
                                                     'projectPlannedStart' => $projectPlannedStartYmd,
                                                     'actionsDisabled' => $actionsDisabled,
                                                 ])
+                                                @elseif($hasPlannedDates)
+                                                <div class="alert alert-light border small mb-2 py-2">
+                                                    <i class="ri-calendar-line me-1"></i>
+                                                    Planned:
+                                                    <strong>{{ !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '—' }}</strong>
+                                                    →
+                                                    <strong>{{ !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '—' }}</strong>
+                                                    <span class="text-muted d-block mt-1 mb-0">Dates from department setup. Editable once this step is active.</span>
+                                                </div>
                                                 @endif
                                             </div>
                                             <div class="col-md-4">
@@ -1575,6 +1596,8 @@ function refreshDeptSortableMeta($li) {
     var spocName = getDeptLiAttr($li, 'spoc-name').trim();
     var allowParallel = parseInt(getDeptLiAttr($li, 'allow-parallel'), 10) === 1;
     var isLast = $li.is('#deptSortable li:last');
+    var plannedStart = getDeptLiAttr($li, 'planned-start').trim();
+    var plannedEnd = getDeptLiAttr($li, 'planned-end').trim();
 
     $li.toggleClass('dept-has-spoc', spocName !== '');
     $li.toggleClass('dept-spoc-missing', spocName === '');
@@ -1584,6 +1607,19 @@ function refreshDeptSortableMeta($li) {
         .attr('class', spocName !== ''
             ? 'ri-user-follow-line dept-icon-spoc-assigned'
             : 'ri-user-unfollow-line dept-icon-spoc-missing');
+
+    var $dates = $li.find('.dept-meta-dates');
+    if (plannedStart || plannedEnd) {
+        var dateLabel = (plannedStart || '—') + ' → ' + (plannedEnd || '—');
+        if (!$dates.length) {
+            $li.find('.dept-sortable-meta').append('<span class="dept-meta-dates text-muted small ms-2"><i class="ri-calendar-line"></i> <span class="dept-meta-dates-text"></span></span>');
+            $dates = $li.find('.dept-meta-dates');
+        }
+        $dates.find('.dept-meta-dates-text').text(dateLabel);
+        $dates.show();
+    } else if ($dates.length) {
+        $dates.hide();
+    }
 
     var $badge = $li.find('.dept-meta-parallel');
     if (isLast) {
@@ -1613,7 +1649,9 @@ function syncProjectDepartmentOrder() {
         spocs[id] = {
             spoc_user_id: getDeptLiAttr($li, 'spoc-user-id'),
             spoc_name: getDeptLiAttr($li, 'spoc-name'),
-            allow_parallel_next: allowParallel ? 1 : 0
+            allow_parallel_next: allowParallel ? 1 : 0,
+            planned_start_date: getDeptLiAttr($li, 'planned-start'),
+            planned_end_date: getDeptLiAttr($li, 'planned-end')
         };
 
         refreshDeptSortableMeta($li);
@@ -1640,7 +1678,7 @@ function buildDeptSortableItem(dept) {
         '<div class="dept-sortable-actions">';
 
     if (!projectWizardReadOnly) {
-        html += '<button type="button" class="btn btn-sm btn-outline-primary btn-config-dept" title="Configure SPOC & workflow">' +
+        html += '<button type="button" class="btn btn-sm btn-outline-primary btn-config-dept" title="Configure SPOC, dates & workflow">' +
             '<i class="ri-settings-3-line me-1"></i> Configure</button>';
     }
 
@@ -1697,6 +1735,12 @@ function openDeptSetupPanel($li) {
         '&department_id=' + encodeURIComponent(deptId) +
         '&sort_index=' + sortIndex +
         '&total=' + total;
+
+    var seq = getDeptSequentialConstraint(sortIndex);
+    if (seq && seq.minStart) {
+        url += '&seq_min_start=' + encodeURIComponent(seq.minStart);
+        url += '&seq_prev_name=' + encodeURIComponent(seq.prevName || 'previous department');
+    }
 
     openSideLayout({}, url, 'Configure Department');
 }

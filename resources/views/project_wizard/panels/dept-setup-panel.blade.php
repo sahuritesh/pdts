@@ -5,11 +5,15 @@
     $isLast = !empty($data['is_last']);
     $spocUsers = $data['spoc_users'] ?? [];
     $pd = $row;
+    $sequentialEnforced = !empty($data['sequential_enforced']);
+    $sequentialMinStart = $data['sequential_min_start'] ?? '';
+    $sequentialPrevName = $data['sequential_prev_name'] ?? '';
+    $projectPlannedStart = $data['project_planned_start'] ?? '';
 @endphp
 <div class="sidelayout-panel dept-setup-panel">
     <div class="sidelayout-context mb-3">
         <strong>{{ $row['department_name'] ?? 'Department' }}</strong>
-        <p class="text-muted small mb-0">Assign the department SPOC and workflow options. Planned dates are set during execution.</p>
+        <p class="text-muted small mb-0">Assign the department SPOC, planned dates, and workflow options before execution.</p>
     </div>
 
     <form id="wizardDeptSetupForm">
@@ -20,6 +24,14 @@
         <input type="hidden" name="department_parallel" id="deptSetupParallel" value="">
 
         @include('project_wizard.partials.spoc-user-field', ['pd' => $pd, 'spocUsers' => $spocUsers])
+
+        <div class="dept-meta-form planned-date-range row g-2 mt-3 mb-0"
+            data-seq-enforced="{{ $sequentialEnforced && $sequentialMinStart !== '' ? '1' : '0' }}"
+            data-seq-min-start="{{ $sequentialMinStart }}"
+            data-seq-prev-name="{{ e($sequentialPrevName) }}"
+            data-project-min-start="{{ $projectPlannedStart }}">
+            @include('project_wizard.partials.dept-planned-date-fields', ['pd' => $pd])
+        </div>
 
         @if(!$isLast)
         <div class="card card-body p-3 mt-3 bg-light border-0">
@@ -61,12 +73,20 @@
         initSpocUserControls();
     }
 
+    if (typeof bindPlannedDateRangeInputs === 'function') {
+        bindPlannedDateRangeInputs($('.dept-setup-panel'));
+    }
+
     $(document).off('click.deptSetupSave', '#saveDeptSetupBtn').on('click.deptSetupSave', '#saveDeptSetupBtn', function() {
         var $btn = $(this);
         if (typeof syncProjectDepartmentOrder === 'function') {
             syncProjectDepartmentOrder();
             $('#deptSetupOrder').val($('#department_order').val());
             $('#deptSetupParallel').val($('#department_parallel').val());
+        }
+
+        if (typeof validatePlannedDateRangesInScope === 'function' && !validatePlannedDateRangesInScope($('#wizardDeptSetupForm'))) {
+            return;
         }
 
         var $opt = $('#wizardDeptSetupForm .spoc-user-select option:selected');

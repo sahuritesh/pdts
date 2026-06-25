@@ -8,6 +8,7 @@ use App\Services\AuditTrailService;
 use App\Services\DelayNotificationService;
 use App\Services\DelayRegisterService;
 use App\Services\FinancialImpactService;
+use App\Services\ProjectCodeService;
 use App\Services\ProjectDepartmentService;
 use App\Services\UserScopeService;
 use Illuminate\Http\Request;
@@ -32,6 +33,7 @@ class ProjectWizardController extends Controller
     protected DelayRegisterService $delayRegisterService;
     protected DelayNotificationService $delayNotificationService;
     protected FinancialImpactService $financialImpactService;
+    protected ProjectCodeService $projectCodeService;
     protected UserScopeService $userScope;
 
     public function __construct(
@@ -40,6 +42,7 @@ class ProjectWizardController extends Controller
         DelayRegisterService $delayRegisterService,
         DelayNotificationService $delayNotificationService,
         FinancialImpactService $financialImpactService,
+        ProjectCodeService $projectCodeService,
         UserScopeService $userScope
     ) {
         $this->auditTrail = $auditTrail;
@@ -47,6 +50,7 @@ class ProjectWizardController extends Controller
         $this->delayRegisterService = $delayRegisterService;
         $this->delayNotificationService = $delayNotificationService;
         $this->financialImpactService = $financialImpactService;
+        $this->projectCodeService = $projectCodeService;
         $this->userScope = $userScope;
     }
 
@@ -219,6 +223,7 @@ class ProjectWizardController extends Controller
             'spoc_users' => $this->getSpocUserOptions('Department SPOC'),
             'project_spoc_users' => $this->getSpocUserOptions(self::SPOC_ROLE_NAME, $responsibleUserId ?: null),
             'read_only' => $readOnly,
+            'suggested_project_code' => $project ? null : $this->projectCodeService->generate(),
         ];
 
         return view('project_wizard.wizard', compact('pageTitle', 'data'));
@@ -238,6 +243,12 @@ class ProjectWizardController extends Controller
             if ($this->denyWizardManageUnless($projectId ? (int) $projectId : null, $operation === 'Add')) {
                 return;
             }
+
+            $this->projectCodeService->resolveForSave(
+                $postData,
+                $operation,
+                $projectId ? (int) $projectId : null
+            );
 
             $errMessage = $this->validateProjectData($postData);
             if ($errMessage !== '') {
@@ -398,6 +409,16 @@ class ProjectWizardController extends Controller
         }
 
         $pageTitle = 'Configure — ' . ($row['department_name'] ?? 'Department');
+        $projectPlannedStart = '';
+        if ($projectId > 0) {
+            $projectRow = DB::table('tbl_projects')->where('id', $projectId)->where('is_delete', 0)->first(['planned_start_date']);
+            if ($projectRow && !empty($projectRow->planned_start_date)) {
+                $projectPlannedStart = date('Y-m-d', strtotime($projectRow->planned_start_date));
+            }
+        }
+
+        $sequentialMinStart = trim((string) $request->input('seq_min_start', ''));
+        $sequentialPrevName = trim((string) $request->input('seq_prev_name', ''));
         $data = [
             'row' => $row,
             'project_id' => $projectId,
@@ -406,6 +427,10 @@ class ProjectWizardController extends Controller
             'is_last' => $isLast,
             'spoc_users' => $this->getSpocUserOptions('Department SPOC', !empty($row['spoc_user_id']) ? (int) $row['spoc_user_id'] : null),
             'read_only' => false,
+            'project_planned_start' => $projectPlannedStart,
+            'sequential_enforced' => $sequentialMinStart !== '',
+            'sequential_min_start' => $sequentialMinStart,
+            'sequential_prev_name' => $sequentialPrevName,
         ];
 
         return $this->panelView($request, 'project_wizard.panels.dept-setup-panel', compact('pageTitle', 'data'));
@@ -443,11 +468,46 @@ class ProjectWizardController extends Controller
             $allowParallel = !empty($postData['allow_parallel_next']) ? 1 : 0;
             $parallelFlags[$departmentId] = $allowParallel;
 
+            $dateErr = $this->validatePlannedDateRange(
+                $postData['planned_start_date'] ?? '',
+                $postData['planned_end_date'] ?? '',
+                'Planned end date'
+            );
+            if ($dateErr !== '') {
+                $this->sendValidationErrorResponse($dateErr);
+                return;
+            }
+
+            $projectDateErr = $this->projectDepartmentService->validateDepartmentDatesAgainstProject(
+                $projectId,
+                $postData['planned_start_date'] ?? '',
+                $postData['planned_end_date'] ?? ''
+            );
+            if ($projectDateErr !== '') {
+                $this->sendValidationErrorResponse($projectDateErr);
+                return;
+            }
+
+            $seqErr = $this->projectDepartmentService->validateSequentialDepartmentDates(
+                $projectId,
+                $departmentId,
+                $postData['planned_start_date'] ?? '',
+                $postData['planned_end_date'] ?? '',
+                $ordered
+            );
+            if ($seqErr !== '') {
+                $this->sendValidationErrorResponse($seqErr);
+                return;
+            }
+
             $spocUserId = !empty($postData['spoc_user_id']) ? (int) $postData['spoc_user_id'] : null;
             $setup = [
                 'spoc_user_id' => $spocUserId ?: '',
                 'spoc_name' => trim($postData['spoc_name'] ?? ''),
                 'allow_parallel_next' => $allowParallel,
+                'planned_start_date' => $postData['planned_start_date'] ?? '',
+                'planned_end_date' => $postData['planned_end_date'] ?? '',
+                '_touch_planned_dates' => true,
             ];
 
             $this->projectDepartmentService->syncProjectDepartments(

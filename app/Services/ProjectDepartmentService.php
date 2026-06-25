@@ -271,12 +271,24 @@ class ProjectDepartmentService
     private function resolveSpocFieldsFromSetup(array $setup): array
     {
         $fields = [];
+        $touchPlannedDates = !empty($setup['_touch_planned_dates']);
 
-        if (array_key_exists('planned_start_date', $setup)) {
-            $fields['planned_start_date'] = $this->normalizeOptionalDate($setup['planned_start_date']);
-        }
-        if (array_key_exists('planned_end_date', $setup)) {
-            $fields['planned_end_date'] = $this->normalizeOptionalDate($setup['planned_end_date']);
+        if ($touchPlannedDates) {
+            $fields['planned_start_date'] = $this->normalizeOptionalDate($setup['planned_start_date'] ?? null);
+            $fields['planned_end_date'] = $this->normalizeOptionalDate($setup['planned_end_date'] ?? null);
+        } else {
+            if (array_key_exists('planned_start_date', $setup)) {
+                $normalized = $this->normalizeOptionalDate($setup['planned_start_date']);
+                if ($normalized !== null) {
+                    $fields['planned_start_date'] = $normalized;
+                }
+            }
+            if (array_key_exists('planned_end_date', $setup)) {
+                $normalized = $this->normalizeOptionalDate($setup['planned_end_date']);
+                if ($normalized !== null) {
+                    $fields['planned_end_date'] = $normalized;
+                }
+            }
         }
 
         if (!empty($setup['spoc_user_id'])) {

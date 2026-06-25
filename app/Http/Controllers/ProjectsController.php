@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Common_model;
 use App\Models\Datatables_model;
 use App\Services\AuditTrailService;
+use App\Services\ProjectCodeService;
 use App\Services\UserScopeService;
 use App\Http\Traits\GridConfigTrait;
 use App\Http\Traits\WebResponseTrait;
@@ -21,11 +22,16 @@ class ProjectsController extends Controller
     public $module = 'projects';
 
     protected AuditTrailService $auditTrail;
+    protected ProjectCodeService $projectCodeService;
     protected UserScopeService $userScope;
 
-    public function __construct(AuditTrailService $auditTrail, UserScopeService $userScope)
-    {
+    public function __construct(
+        AuditTrailService $auditTrail,
+        ProjectCodeService $projectCodeService,
+        UserScopeService $userScope
+    ) {
         $this->auditTrail = $auditTrail;
+        $this->projectCodeService = $projectCodeService;
         $this->userScope = $userScope;
     }
 
@@ -70,6 +76,8 @@ class ProjectsController extends Controller
             } catch (\Exception $e) {
                 Log::error('Project edit decrypt error: ' . $e->getMessage());
             }
+        } else {
+            $data['suggested_project_code'] = $this->projectCodeService->generate();
         }
 
         if ($request->input('postKey') == 'sidelayoutContent') {
@@ -90,14 +98,20 @@ class ProjectsController extends Controller
             $requestData = $request->post();
             parse_str(json_decode($requestData['data'], true), $postData);
 
+            $projectId = $postData['project_id'] ?? null;
+            $operation = ($projectId && $projectId !== '') ? 'Update' : 'Add';
+
+            $this->projectCodeService->resolveForSave(
+                $postData,
+                $operation,
+                $projectId ? (int) $projectId : null
+            );
+
             $errMessage = $this->validateProjectData($postData);
             if ($errMessage !== '') {
                 $this->sendValidationErrorResponse($errMessage);
                 return;
             }
-
-            $projectId = $postData['project_id'] ?? null;
-            $operation = ($projectId && $projectId !== '') ? 'Update' : 'Add';
 
             if ($operation === 'Update' && $this->userScope->isProjectCompleted((int) $projectId)) {
                 $this->sendErrorResponse('This project is completed and cannot be edited.', 1);

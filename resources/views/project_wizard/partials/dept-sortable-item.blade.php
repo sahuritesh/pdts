@@ -40,7 +40,7 @@
     </div>
     <div class="dept-sortable-actions">
         @if(empty($isProjectReadOnly))
-        <button type="button" class="btn btn-sm btn-outline-primary btn-config-dept" title="Configure SPOC & workflow">
+        <button type="button" class="btn btn-sm btn-outline-primary btn-config-dept" title="Configure SPOC, dates & workflow">
             <i class="ri-settings-3-line me-1"></i> Configure
         </button>
         @endif

@@ -26,6 +26,7 @@
                         }
                     }
                 }
+                $projectCodeValue = $project['project_code'] ?? ($data['suggested_project_code'] ?? '');
                 @endphp
                 <form class="custom-validations" id="projectForm" action="#" method="POST" autocomplete="off">
                     @csrf
@@ -36,7 +37,10 @@
                             <div class="col-md-4 mb-2">
                                 <label for="project_code" class="required-label">Project ID</label>
                                 <input type="text" class="form-control required" name="project_code" id="project_code"
-                                    value="{{ $project['project_code'] ?? '' }}" placeholder="e.g. AH-Gurugram - CONST-01" />
+                                    value="{{ $projectCodeValue }}" placeholder="Auto-generated — edit if needed" />
+                                @if(empty($project['project_id'] ?? $project['id'] ?? ''))
+                                <small class="text-muted">Auto-generated. You can change it before saving.</small>
+                                @endif
                             </div>
                             <div class="col-md-8 mb-2">
                                 <label for="project_name" class="required-label">Project Name</label>
