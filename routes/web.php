@@ -83,12 +83,17 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::match(array('GET', 'POST'), '/projects/wizard/new', [ProjectWizardController::class, 'wizard']);
     Route::match(array('GET', 'POST'), '/projects/wizard/{id}', [ProjectWizardController::class, 'wizard']);
     Route::match(array('GET', 'POST'), '/projects/wizard/dept-setup/{token}', [ProjectWizardController::class, 'department_setup_panel']);
+    Route::match(array('GET', 'POST'), '/projects/wizard/dept-tasks/{token}', [ProjectWizardController::class, 'department_linked_tasks_panel']);
     Route::post('save_wizard_step1', [ProjectWizardController::class, 'save_wizard_step1']);
     Route::post('save_wizard_department_setup', [ProjectWizardController::class, 'save_wizard_department_setup']);
     Route::post('save_wizard_departments', [ProjectWizardController::class, 'save_wizard_departments']);
     Route::post('save_wizard_finish', [ProjectWizardController::class, 'save_wizard_finish']);
     Route::post('update_department_status', [ProjectWizardController::class, 'update_department_status']);
     Route::post('save_project_department', [ProjectWizardController::class, 'save_project_department']);
+    Route::get('get_project_department_tasks', [ProjectWizardController::class, 'get_project_department_tasks']);
+    Route::post('save_project_department_task', [ProjectWizardController::class, 'save_project_department_task']);
+    Route::post('update_project_department_task_status', [ProjectWizardController::class, 'update_project_department_task_status']);
+    Route::post('delete_project_department_task', [ProjectWizardController::class, 'delete_project_department_task']);
     Route::post('get_spoc_users', [ProjectWizardController::class, 'get_spoc_users']);
     Route::post('wizard_create_spoc_user', [ProjectWizardController::class, 'wizard_create_spoc_user']);
     Route::post('wizard_save_delay', [ProjectWizardController::class, 'wizard_save_delay']);

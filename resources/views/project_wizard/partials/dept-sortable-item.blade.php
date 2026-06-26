@@ -10,6 +10,7 @@
     $encPdId = $pdId > 0 ? Crypt::encrypt($pdId) : '';
     $plannedStartYmd = !empty($pd['planned_start_date']) ? date('Y-m-d', strtotime($pd['planned_start_date'])) : '';
     $plannedEndYmd = !empty($pd['planned_end_date']) ? date('Y-m-d', strtotime($pd['planned_end_date'])) : '';
+    $taskCount = (int) ($taskCount ?? 0);
 @endphp
 <li class="list-group-item dept-sortable-item {{ $spocName !== '' ? 'dept-has-spoc' : 'dept-spoc-missing' }}"
     data-dept-id="{{ $deptId }}"
@@ -35,6 +36,11 @@
                     <span>{{ $allowParallel ? 'Parallel' : 'Sequential' }}</span>
                 </span>
                 @endif
+                @include('project_wizard.partials.dept-task-count-badge', [
+                    'projectDepartmentId' => $pdId,
+                    'taskCount' => $taskCount,
+                    'cssClass' => 'ms-2',
+                ])
             </div>
         </div>
     </div>

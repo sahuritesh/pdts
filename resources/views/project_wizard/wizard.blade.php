@@ -33,7 +33,10 @@
     $canOpenDepartmentsTab = $enableClick && $savedWizardStep >= 2;
     $canOpenExecutionTab = $enableClick && $savedWizardStep >= 3;
     $isProjectReadOnly = !empty($data['read_only']);
+    $departmentTasksByPd = $data['department_tasks_by_pd'] ?? [];
+    $taskStatusLabels = $data['task_status_labels'] ?? [];
     $projectDeptService = app(\App\Services\ProjectDepartmentService::class);
+    $projectDeptTaskService = app(\App\Services\ProjectDepartmentTaskService::class);
     $activeExpand = null;
     foreach ($projectDepartments as $pd) {
         if (in_array($pd['department_status'] ?? '', ['start', 'in_progress', 'delay'])) {
@@ -244,6 +247,7 @@
                                         'pd' => $pd,
                                         'isLast' => ($pdIndex === count($projectDepartments) - 1),
                                         'isProjectReadOnly' => $isProjectReadOnly,
+                                        'taskCount' => count($departmentTasksByPd[$pd['id']] ?? []),
                                     ])
                                     @endforeach
                                 </ul>
@@ -306,6 +310,7 @@
                                 $expanded = ($activeExpand && $activeExpand == $pd['id']) || (!$activeExpand && $index === 0 && !$isLocked);
                                 $encPdId = Crypt::encrypt($pd['id']);
                                 $badgeClass = ['pending'=>'secondary','start'=>'info','in_progress'=>'primary','delay'=>'warning','completed'=>'success'][$status] ?? 'secondary';
+                                $deptTaskCount = count($departmentTasksByPd[$pd['id']] ?? []);
                             @endphp
                             <div class="accordion-item dept-accordion-item {{ $spocBorderClass }} {{ $status }} mb-2 @if($isLocked) dept-accordion-locked @endif">
                                 <h2 class="accordion-header">
@@ -319,6 +324,11 @@
                                             <span class="dept-meta-spoc-text">{{ $spocName !== '' ? $spocName : 'SPOC not assigned' }}</span>
                                         </span>
                                         <span class="badge bg-{{ $badgeClass }} ms-2">{{ $statusLabels[$status] ?? ucfirst($status) }}</span>
+                                        @include('project_wizard.partials.dept-task-count-badge', [
+                                            'projectDepartmentId' => $pd['id'],
+                                            'taskCount' => $deptTaskCount,
+                                            'cssClass' => 'ms-2',
+                                        ])
                                         @if(!$isLastDept)
                                         <span class="dept-meta-parallel dept-meta-flow badge rounded-pill ms-2 {{ $allowParallelNext ? 'bg-info-subtle text-info dept-flow-parallel' : 'bg-secondary-subtle text-secondary dept-flow-sequential' }}">
                                             <i class="{{ $allowParallelNext ? 'ri-git-branch-line' : 'ri-arrow-right-line' }}"></i>
@@ -374,6 +384,16 @@
                                                 ])
                                             </div>
                                         </div>
+                                        @include('project_wizard.partials.dept-tasks-section', [
+                                            'projectDepartmentId' => (int) $pd['id'],
+                                            'projectId' => (int) $projectId,
+                                            'tasks' => $departmentTasksByPd[$pd['id']] ?? [],
+                                            'linkableDepartments' => $projectDeptTaskService->getLinkableMasterDepartments($projectId, (int) $pd['department_id']),
+                                            'taskStatusLabels' => $taskStatusLabels,
+                                            'readOnly' => $isProjectReadOnly || $isPending || $spocMissing,
+                                            'mode' => 'execution',
+                                            'projectPlannedStart' => $projectPlannedStartYmd,
+                                        ])
                                     </div>
                                 </div>
                             </div>
@@ -1198,6 +1218,40 @@
     margin-left:.35rem;
 }
 
+.dept-accordion-item .accordion-button .dept-task-count-badge{
+    flex-shrink:0;
+    font-weight:500;
+}
+
+.dept-accordion-item .accordion-button .dept-task-count-badge i{
+    margin-right:.15rem;
+    vertical-align:-1px;
+}
+
+.dept-task-item{
+    flex-wrap:wrap;
+}
+
+.dept-task-status-quick{
+    flex-shrink:0;
+}
+
+.dept-task-status-quick .btn{
+    font-size:11px;
+    padding:.2rem .45rem;
+}
+
+@media (max-width: 768px){
+    .dept-task-status-quick{
+        width:100%;
+        order:3;
+        margin-top:.35rem;
+    }
+    .dept-task-item-actions{
+        margin-left:auto;
+    }
+}
+
 .dept-spoc-required-alert{
     border-left:4px solid #f59e0b;
     background:#fffbeb;
@@ -1592,6 +1646,20 @@ function deptFlowBadgeHtml(allowParallel) {
         '<i class="ri-arrow-right-line" title="Next department waits for completion"></i><span>Sequential</span></span>';
 }
 
+function deptTaskCountBadgeHtml(projectDepartmentId, taskCount, cssClass) {
+    if (typeof ProjectDepartmentTasks !== 'undefined' && typeof ProjectDepartmentTasks.taskCountBadgeHtml === 'function') {
+        return ProjectDepartmentTasks.taskCountBadgeHtml(projectDepartmentId, taskCount, cssClass);
+    }
+    projectDepartmentId = parseInt(projectDepartmentId, 10) || 0;
+    taskCount = parseInt(taskCount, 10) || 0;
+    cssClass = (cssClass || '').trim();
+    var tone = taskCount > 0 ? 'bg-primary-subtle text-primary' : 'bg-light text-muted';
+    return '<span class="badge rounded-pill dept-task-count-badge ' + tone +
+        (cssClass ? ' ' + cssClass : '') + '" data-pd-id="' + projectDepartmentId + '" title="Tasks configured">' +
+        '<i class="ri-list-check-2"></i><span class="dept-task-count-label">' + taskCount + ' ' +
+        (taskCount === 1 ? 'task' : 'tasks') + '</span></span>';
+}
+
 function refreshDeptSortableMeta($li) {
     var spocName = getDeptLiAttr($li, 'spoc-name').trim();
     var allowParallel = parseInt(getDeptLiAttr($li, 'allow-parallel'), 10) === 1;
@@ -1630,6 +1698,14 @@ function refreshDeptSortableMeta($li) {
     } else {
         $badge.replaceWith(deptFlowBadgeHtml(allowParallel));
     }
+
+    var pdId = parseInt(getDeptLiAttr($li, 'pd-id'), 10) || 0;
+    var $taskBadge = $li.find('.dept-task-count-badge');
+    if (!$taskBadge.length) {
+        $li.find('.dept-sortable-meta').append(deptTaskCountBadgeHtml(pdId, 0, 'ms-2'));
+        $taskBadge = $li.find('.dept-task-count-badge');
+    }
+    $taskBadge.attr('data-pd-id', pdId);
 }
 
 function syncProjectDepartmentOrder() {
@@ -1674,6 +1750,7 @@ function buildDeptSortableItem(dept) {
         '<div class="dept-sortable-meta">' +
         '<span class="dept-meta-spoc"><i class="ri-user-unfollow-line dept-icon-spoc-missing"></i><span class="dept-meta-spoc-text">SPOC not assigned</span></span>' +
         deptFlowBadgeHtml(false) +
+        deptTaskCountBadgeHtml(0, 0, 'ms-2') +
         '</div></div></div>' +
         '<div class="dept-sortable-actions">';
 
@@ -1794,6 +1871,10 @@ function bindExecutionPanelHandlers() {
 
     if (typeof bindPlannedDateRangeInputs === 'function') {
         bindPlannedDateRangeInputs($('.section2'));
+    }
+
+    if (typeof ProjectDepartmentTasks !== 'undefined') {
+        ProjectDepartmentTasks.bind($('.section2'));
     }
 
     initSpocUserControls();

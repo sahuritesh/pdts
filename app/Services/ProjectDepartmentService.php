@@ -267,6 +267,52 @@ class ProjectDepartmentService
         $this->syncProjectRollupStatus($projectId);
     }
 
+    /**
+     * Ensure a project department row exists (e.g. before configure / tasks in sidelayout).
+     */
+    public function ensureProjectDepartmentRow(int $projectId, int $departmentId): int
+    {
+        if ($projectId <= 0 || $departmentId <= 0) {
+            return 0;
+        }
+
+        $existing = DB::table('tbl_project_departments')
+            ->where('project_id', $projectId)
+            ->where('department_id', $departmentId)
+            ->where('is_delete', 0)
+            ->first();
+
+        if ($existing) {
+            return (int) $existing->id;
+        }
+
+        $maxSort = (int) DB::table('tbl_project_departments')
+            ->where('project_id', $projectId)
+            ->where('is_delete', 0)
+            ->max('sort_order');
+
+        $userId = Auth::id();
+        $now = current_datetime();
+        $hasParallelColumn = Schema::hasColumn('tbl_project_departments', 'allow_parallel_next');
+
+        $insert = [
+            'project_id' => $projectId,
+            'department_id' => $departmentId,
+            'sort_order' => $maxSort + 1,
+            'department_status' => self::STATUS_PENDING,
+            'created_by' => $userId,
+            'created_on' => $now,
+            'updated_by' => $userId,
+            'updated_on' => $now,
+            'is_delete' => 0,
+        ];
+        if ($hasParallelColumn) {
+            $insert['allow_parallel_next'] = 0;
+        }
+
+        return (int) DB::table('tbl_project_departments')->insertGetId($insert);
+    }
+
     /** @param array<string, mixed> $setup */
     private function resolveSpocFieldsFromSetup(array $setup): array
     {

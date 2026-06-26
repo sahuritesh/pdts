@@ -4,6 +4,8 @@
     $mitigations = $data['mitigations'];
     $rootCauses = $data['root_causes'];
     $statuses = $data['register_statuses'];
+    $departmentTasks = $data['department_tasks'] ?? [];
+    $tasksById = collect($departmentTasks)->keyBy('id');
     $encPd = Crypt::encrypt($ctx['id']);
     $rootCauseMap = collect($rootCauses)->keyBy('id');
     $statusMap = collect($statuses)->pluck('label', 'value');
@@ -36,6 +38,11 @@
         $endDate = !empty($delay->delay_end_date) ? date('d M Y', strtotime($delay->delay_end_date)) : '—';
         $targetDate = !empty($delay->target_revised_completion_date)
             ? date('d M Y', strtotime($delay->target_revised_completion_date)) : '—';
+        $linkedTaskId = (int) ($delay->project_department_task_id ?? 0);
+        $linkedTaskName = $linkedTaskId > 0 && $tasksById->has($linkedTaskId)
+            ? ($tasksById[$linkedTaskId]['task_name'] ?? '')
+            : '';
+        $impactedTaskLabel = $linkedTaskName !== '' ? $linkedTaskName : trim($delay->impacted_task ?? '');
     @endphp
     <div class="delay-log-card card border mb-3">
         <div class="card-body">
@@ -71,10 +78,15 @@
                 </div>
                 @endif
 
-                @if(!empty($delay->impacted_task))
+                @if($impactedTaskLabel !== '')
                 <div class="delay-log-field">
                     <span class="delay-log-label">Impacted Task</span>
-                    <p class="delay-log-value">{{ $delay->impacted_task }}</p>
+                    <p class="delay-log-value">
+                        {{ $impactedTaskLabel }}
+                        @if($linkedTaskId > 0)
+                        <span class="badge bg-info-subtle text-info ms-1">Linked task</span>
+                        @endif
+                    </p>
                 </div>
                 @endif
 
@@ -180,6 +192,10 @@
                 <label>Event Description</label>
                 <textarea class="form-control" name="specific_event_description" rows="2"></textarea>
             </div>
+            @include('project_wizard.partials.dept-delay-task-select', [
+                'projectDepartmentId' => $ctx['id'],
+                'tasks' => $departmentTasks,
+            ])
             <div class="col-12 mb-2">
                 <div class="row g-2 planned-date-range">
                     <div class="col-md-6">

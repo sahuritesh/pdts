@@ -1573,6 +1573,9 @@ function openSideLayout(data, url, title, width = 75) {
         if (typeof bindPlannedDateRangeInputs === 'function') {
             bindPlannedDateRangeInputs($root);
         }
+        if (typeof ProjectDepartmentTasks !== 'undefined') {
+            ProjectDepartmentTasks.bind($root);
+        }
     }).catch(function (err) {
         console.log(err);
         preloaderOverlay('hide');

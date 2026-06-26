@@ -10,6 +10,7 @@ use App\Services\DelayRegisterService;
 use App\Services\FinancialImpactService;
 use App\Services\ProjectCodeService;
 use App\Services\ProjectDepartmentService;
+use App\Services\ProjectDepartmentTaskService;
 use App\Services\UserScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +35,7 @@ class ProjectWizardController extends Controller
     protected DelayNotificationService $delayNotificationService;
     protected FinancialImpactService $financialImpactService;
     protected ProjectCodeService $projectCodeService;
+    protected ProjectDepartmentTaskService $projectDepartmentTaskService;
     protected UserScopeService $userScope;
 
     public function __construct(
@@ -43,6 +45,7 @@ class ProjectWizardController extends Controller
         DelayNotificationService $delayNotificationService,
         FinancialImpactService $financialImpactService,
         ProjectCodeService $projectCodeService,
+        ProjectDepartmentTaskService $projectDepartmentTaskService,
         UserScopeService $userScope
     ) {
         $this->auditTrail = $auditTrail;
@@ -51,6 +54,7 @@ class ProjectWizardController extends Controller
         $this->delayNotificationService = $delayNotificationService;
         $this->financialImpactService = $financialImpactService;
         $this->projectCodeService = $projectCodeService;
+        $this->projectDepartmentTaskService = $projectDepartmentTaskService;
         $this->userScope = $userScope;
     }
 
@@ -224,6 +228,8 @@ class ProjectWizardController extends Controller
             'project_spoc_users' => $this->getSpocUserOptions(self::SPOC_ROLE_NAME, $responsibleUserId ?: null),
             'read_only' => $readOnly,
             'suggested_project_code' => $project ? null : $this->projectCodeService->generate(),
+            'department_tasks_by_pd' => $projectId ? $this->projectDepartmentTaskService->getTasksGroupedByProjectDepartment($projectId) : [],
+            'task_status_labels' => $this->projectDepartmentTaskService->statusLabels(),
         ];
 
         return view('project_wizard.wizard', compact('pageTitle', 'data'));
@@ -408,6 +414,16 @@ class ProjectWizardController extends Controller
             ];
         }
 
+        if (empty($row['id'])) {
+            $ensuredPdId = $this->projectDepartmentService->ensureProjectDepartmentRow($projectId, $departmentId);
+            if ($ensuredPdId > 0) {
+                $resolved = $this->projectDepartmentService->resolveDepartment($ensuredPdId);
+                if ($resolved) {
+                    $row = $resolved;
+                }
+            }
+        }
+
         $pageTitle = 'Configure — ' . ($row['department_name'] ?? 'Department');
         $projectPlannedStart = '';
         if ($projectId > 0) {
@@ -419,6 +435,16 @@ class ProjectWizardController extends Controller
 
         $sequentialMinStart = trim((string) $request->input('seq_min_start', ''));
         $sequentialPrevName = trim((string) $request->input('seq_prev_name', ''));
+        $projectDepartmentId = (int) ($row['id'] ?? 0);
+        if ($projectDepartmentId <= 0 && $projectId > 0 && $departmentId > 0) {
+            $projectDepartmentId = (int) (DB::table('tbl_project_departments')
+                ->where('project_id', $projectId)
+                ->where('department_id', $departmentId)
+                ->where('is_delete', 0)
+                ->value('id') ?? 0);
+        }
+
+        $pageTitle = 'Configure — ' . ($row['department_name'] ?? 'Department');
         $data = [
             'row' => $row,
             'project_id' => $projectId,
@@ -431,6 +457,12 @@ class ProjectWizardController extends Controller
             'sequential_enforced' => $sequentialMinStart !== '',
             'sequential_min_start' => $sequentialMinStart,
             'sequential_prev_name' => $sequentialPrevName,
+            'tasks' => $projectDepartmentId > 0
+                ? $this->projectDepartmentTaskService->getTasksForProjectDepartment($projectDepartmentId)
+                : [],
+            'project_department_id' => $projectDepartmentId,
+            'linkable_departments' => $this->projectDepartmentTaskService->getLinkableMasterDepartments($projectId, $departmentId),
+            'task_status_labels' => $this->projectDepartmentTaskService->statusLabels(),
         ];
 
         return $this->panelView($request, 'project_wizard.panels.dept-setup-panel', compact('pageTitle', 'data'));
@@ -568,6 +600,202 @@ class ProjectWizardController extends Controller
         }
 
         return $out;
+    }
+
+    public function get_project_department_tasks(Request $request)
+    {
+        if (!$this->canManageDepartmentWorkflow()) {
+            $this->sendErrorResponse('Permission missing.', 1);
+            return;
+        }
+
+        $pdId = (int) $request->input('project_department_id');
+        if (!$this->assertDepartmentAccess($pdId)) {
+            $this->sendErrorResponse('You do not have access to this department', 1);
+            return;
+        }
+
+        $tasks = $this->projectDepartmentTaskService->getTasksForProjectDepartment($pdId);
+        $this->sendSuccessResponse('OK', 'Get', null, ['tasks' => $tasks]);
+    }
+
+    public function save_project_department_task(Request $request)
+    {
+        if (!$this->canManageDepartmentWorkflow()) {
+            $this->sendErrorResponse('Permission missing.', 1);
+            return;
+        }
+
+        try {
+            $postData = $this->parseWizardPost($request);
+            $pdId = (int) ($postData['project_department_id'] ?? 0);
+
+            if (!$this->assertDepartmentAccess($pdId)) {
+                $this->sendErrorResponse('You do not have access to this department', 1);
+                return;
+            }
+
+            $row = DB::table('tbl_project_departments')->where('id', $pdId)->where('is_delete', 0)->first();
+            if (!$row) {
+                $this->sendErrorResponse('Department not found', 1);
+                return;
+            }
+
+            if ($this->denyIfProjectCompleted((int) $row->project_id)) {
+                return;
+            }
+
+            $result = $this->projectDepartmentTaskService->saveTask($postData);
+            if (!empty($result['error'])) {
+                if (!empty($result['validation'])) {
+                    $this->sendValidationErrorResponse('<li>' . e($result['validation']) . '</li>');
+                    return;
+                }
+                $this->sendErrorResponse($result['msg'] ?? 'Save failed', 1);
+                return;
+            }
+
+            $this->sendSuccessResponse($result['msg'] ?? 'Task saved', 'Update', null, [
+                'task' => $result['task'] ?? null,
+                'tasks' => $this->projectDepartmentTaskService->getTasksForProjectDepartment($pdId),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            $this->sendValidationErrorResponse('<li>' . e($e->getMessage()) . '</li>');
+        } catch (\Exception $e) {
+            Log::error('Save project department task: ' . $e->getMessage());
+            $this->sendErrorResponse($e->getMessage(), 2);
+        }
+    }
+
+    public function delete_project_department_task(Request $request)
+    {
+        if (!$this->canManageDepartmentWorkflow()) {
+            $this->sendErrorResponse('Permission missing.', 1);
+            return;
+        }
+
+        try {
+            $postData = $this->parseWizardPost($request);
+            $taskId = (int) ($postData['id'] ?? 0);
+            $task = $this->projectDepartmentTaskService->resolveTask($taskId);
+
+            if (!$task) {
+                $this->sendErrorResponse('Task not found', 1);
+                return;
+            }
+
+            if (!$this->assertDepartmentAccess((int) $task['project_department_id'])) {
+                $this->sendErrorResponse('You do not have access to this department', 1);
+                return;
+            }
+
+            if ($this->denyIfProjectCompleted((int) $task['project_id'])) {
+                return;
+            }
+
+            $this->projectDepartmentTaskService->softDeleteTask($taskId);
+            $this->sendSuccessResponse('Task removed', 'Delete', null, [
+                'tasks' => $this->projectDepartmentTaskService->getTasksForProjectDepartment((int) $task['project_department_id']),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Delete project department task: ' . $e->getMessage());
+            $this->sendErrorResponse($e->getMessage(), 2);
+        }
+    }
+
+    public function update_project_department_task_status(Request $request)
+    {
+        if (!$this->canManageDepartmentWorkflow()) {
+            $this->sendErrorResponse('Permission missing.', 1);
+            return;
+        }
+
+        try {
+            $postData = $this->parseWizardPost($request);
+            $taskId = (int) ($postData['id'] ?? 0);
+            $pdId = (int) ($postData['project_department_id'] ?? 0);
+            $status = (string) ($postData['task_status'] ?? '');
+
+            $task = $this->projectDepartmentTaskService->resolveTask($taskId);
+            if (!$task) {
+                $this->sendErrorResponse('Task not found', 1);
+                return;
+            }
+
+            if ($pdId <= 0) {
+                $pdId = (int) ($task['project_department_id'] ?? 0);
+            }
+
+            if (!$this->assertDepartmentAccess($pdId)) {
+                $this->sendErrorResponse('You do not have access to this department', 1);
+                return;
+            }
+
+            if ($this->denyIfProjectCompleted((int) $task['project_id'])) {
+                return;
+            }
+
+            $result = $this->projectDepartmentTaskService->updateTaskStatus($taskId, $status);
+            if (!empty($result['error'])) {
+                $this->sendErrorResponse($result['msg'] ?? 'Update failed', 1);
+                return;
+            }
+
+            $this->sendSuccessResponse($result['msg'] ?? 'Status updated', 'Update', null, [
+                'task' => $result['task'] ?? null,
+                'tasks' => $this->projectDepartmentTaskService->getTasksForProjectDepartment($pdId),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Update project department task status: ' . $e->getMessage());
+            $this->sendErrorResponse($e->getMessage(), 2);
+        }
+    }
+
+    public function department_linked_tasks_panel(Request $request, $token = '')
+    {
+        if (!$this->canManageDepartmentWorkflow()) {
+            return $this->panelDenied($request);
+        }
+
+        try {
+            $pdId = (int) Crypt::decrypt($token);
+        } catch (\Exception $e) {
+            return $this->panelError($request, 'Invalid department');
+        }
+
+        if (!$this->assertDepartmentAccess($pdId)) {
+            return $this->panelDenied($request);
+        }
+
+        $ctx = $this->projectDepartmentService->resolveDepartment($pdId, true);
+        if (!$ctx) {
+            return $this->panelError($request, 'Department not found');
+        }
+
+        $department = $ctx['department'];
+        $project = $ctx['project'];
+        $projectId = (int) ($department['project_id'] ?? 0);
+
+        if ($this->denyIfProjectCompleted($projectId)) {
+            return $this->panelError($request, 'This project is completed and cannot be edited');
+        }
+
+        $pageTitle = ($department['department_name'] ?? 'Department') . ' — Tasks';
+        $data = [
+            'department' => $department,
+            'project' => $project,
+            'project_id' => $projectId,
+            'tasks' => $this->projectDepartmentTaskService->getTasksForProjectDepartment($pdId),
+            'linkable_departments' => $this->projectDepartmentTaskService->getLinkableMasterDepartments(
+                $projectId,
+                (int) ($department['department_id'] ?? 0)
+            ),
+            'task_status_labels' => $this->projectDepartmentTaskService->statusLabels(),
+            'read_only' => $this->userScope->isProjectCompleted($projectId),
+            'mode' => 'linked',
+        ];
+
+        return $this->panelView($request, 'project_wizard.panels.dept-linked-tasks-panel', compact('pageTitle', 'data'));
     }
 
     public function save_wizard_finish(Request $request)
@@ -732,6 +960,7 @@ class ProjectWizardController extends Controller
                 }
                 $this->projectDepartmentService->updateDepartmentRow($pdId, $update);
                 $this->projectDepartmentService->syncProjectRollupStatus((int) $row->project_id);
+                $this->projectDepartmentTaskService->syncLinkedTasksForDepartment($pdId);
                 $this->projectDepartmentService->ensureWizardExecutionStep((int) $row->project_id);
                 $this->sendSuccessResponse('Status updated', 'Update');
                 return;
@@ -743,6 +972,7 @@ class ProjectWizardController extends Controller
                     $this->sendErrorResponse($result['msg'] ?? 'Unable to complete', 1);
                     return;
                 }
+                $this->projectDepartmentTaskService->syncLinkedTasksForDepartment($pdId);
                 $this->sendSuccessResponse($result['msg'], 'Update');
                 return;
             }
@@ -782,12 +1012,14 @@ class ProjectWizardController extends Controller
         }
 
         $pageTitle = 'Delay Register — ' . $ctx['department_name'];
+        $departmentTasks = $this->projectDepartmentTaskService->getTasksForProjectDepartment((int) $ctx['id']);
         $data = [
             'ctx' => $ctx,
             'delays' => $delays,
             'mitigations' => $mitigations,
             'root_causes' => $this->getRootCauses(),
             'register_statuses' => $this->getRegisterStatuses(),
+            'department_tasks' => $departmentTasks,
         ];
 
         return $this->panelView($request, 'project_wizard.panels.delay-panel', compact('pageTitle', 'data'));
@@ -868,6 +1100,16 @@ class ProjectWizardController extends Controller
                 return;
             }
 
+            $taskId = (int) ($postData['project_department_task_id'] ?? 0);
+            $linkedTask = null;
+            if ($taskId > 0) {
+                $linkedTask = $this->projectDepartmentTaskService->resolveTaskForDepartment($taskId, (int) $ctx['id']);
+                if (!$linkedTask) {
+                    $this->sendValidationErrorResponse('<li>Selected task does not belong to this department</li>');
+                    return;
+                }
+            }
+
             $title = trim($postData['delay_title'] ?? '');
             if ($title === '') {
                 $this->sendValidationErrorResponse('<li>Please enter delay title</li>');
@@ -887,14 +1129,20 @@ class ProjectWizardController extends Controller
             $registerId = $postData['delay_register_id'] ?? null;
             $operation = ($registerId && $registerId !== '') ? 'Update' : 'Add';
 
+            $impactedTask = trim($postData['impacted_task'] ?? '');
+            if ($linkedTask) {
+                $impactedTask = trim((string) ($linkedTask['task_name'] ?? $linkedTask['display_name'] ?? ''));
+            }
+
             $payload = [
                 'project_id' => $ctx['project_id'],
                 'project_department_id' => $ctx['id'],
+                'project_department_task_id' => $taskId > 0 ? $taskId : null,
                 'delay_category_id' => $ctx['department_id'],
                 'delay_title' => $title,
                 'primary_delay_drivers' => trim($postData['primary_delay_drivers'] ?? ''),
                 'specific_event_description' => trim($postData['specific_event_description'] ?? ''),
-                'impacted_task' => trim($postData['impacted_task'] ?? ''),
+                'impacted_task' => $impactedTask,
                 'responsibility_name' => trim($postData['responsibility_name'] ?? ''),
                 'root_cause_id' => !empty($postData['root_cause_id']) ? (int) $postData['root_cause_id'] : null,
                 'root_cause_label' => trim($postData['root_cause_label'] ?? ''),
@@ -1649,12 +1897,15 @@ class ProjectWizardController extends Controller
         if ($request->has('data')) {
             $raw = $request->input('data');
             $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+            if (is_array($decoded)) {
+                return $decoded;
+            }
             if (is_string($decoded)) {
                 parse_str($decoded, $postData);
                 return $postData ?? [];
             }
         }
 
-        return $request->except(['_token']);
+        return $request->except(['_token', 'postKey']);
     }
 }

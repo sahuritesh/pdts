@@ -9,6 +9,10 @@
     $sequentialMinStart = $data['sequential_min_start'] ?? '';
     $sequentialPrevName = $data['sequential_prev_name'] ?? '';
     $projectPlannedStart = $data['project_planned_start'] ?? '';
+    $projectDepartmentId = (int) ($data['project_department_id'] ?? ($row['id'] ?? 0));
+    $deptTasks = $data['tasks'] ?? [];
+    $linkableDepartments = $data['linkable_departments'] ?? [];
+    $taskStatusLabels = $data['task_status_labels'] ?? [];
 @endphp
 <div class="sidelayout-panel dept-setup-panel">
     <div class="sidelayout-context mb-3">
@@ -54,6 +58,17 @@
             </button>
         </div>
     </form>
+
+    @include('project_wizard.partials.dept-tasks-section', [
+        'projectDepartmentId' => $projectDepartmentId,
+        'projectId' => $projectId,
+        'tasks' => $deptTasks,
+        'linkableDepartments' => $linkableDepartments,
+        'taskStatusLabels' => $taskStatusLabels,
+        'readOnly' => false,
+        'mode' => 'setup',
+        'projectPlannedStart' => $projectPlannedStart,
+    ])
 </div>
 <script>
 (function initDeptSetupPanelSideLayout() {
@@ -75,6 +90,10 @@
 
     if (typeof bindPlannedDateRangeInputs === 'function') {
         bindPlannedDateRangeInputs($('.dept-setup-panel'));
+    }
+
+    if (typeof ProjectDepartmentTasks !== 'undefined') {
+        ProjectDepartmentTasks.bind($('#dynamicSideLayoutContent'));
     }
 
     $(document).off('click.deptSetupSave', '#saveDeptSetupBtn').on('click.deptSetupSave', '#saveDeptSetupBtn', function() {
