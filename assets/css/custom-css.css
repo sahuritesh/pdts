@@ -2567,3 +2567,8 @@ table.dataTable th {
 .save-dept-meta:hover{
      background: #0f8c91;
 }
+.custome-box{
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: none;
+}

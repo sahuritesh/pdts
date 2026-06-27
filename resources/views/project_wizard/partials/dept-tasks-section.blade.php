@@ -21,14 +21,14 @@
     data-list-url="{{ getProjectUrl('get_project_department_tasks') }}"
     data-status-url="{{ getProjectUrl('update_project_department_task_status') }}"
     data-linked-panel-url="{{ getProjectUrl('projects/wizard/dept-tasks') }}">
-    <div class="card-body p-3">
+    <div class="card-body p-3 custome-box">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <div>
-                <h6 class="mb-0">Tasks</h6>
+                <h6 class="mb-3">Tasks</h6>
                 <p class="text-muted small mb-0">Each row is one task. Optionally tie a task to another department module.</p>
             </div>
             @if(!$readOnly && $projectDepartmentId > 0)
-            <button type="button" class="btn btn-outline-primary btn-sm btn-add-dept-task">
+            <button type="button" class="btn btn-outline-primary btn-sm btn-add-dept-task save-dept-meta d-flex">
                 <i class="ri-add-line"></i> Add task
             </button>
             @endif
