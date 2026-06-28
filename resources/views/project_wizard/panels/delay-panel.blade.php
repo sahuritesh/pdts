@@ -339,6 +339,227 @@
 .delay-register-panel .delay-ews-legend-toggle[aria-expanded="true"] .delay-ews-legend-chevron {
     transform: rotate(180deg);
 }
+
+
+/* new design  */
+/*==========================
+ Delay Log Premium Card
+===========================*/
+
+.delay-log-card{
+    position:relative;
+    border:none !important;
+    border-radius:16px;
+    overflow:hidden;
+    background:#fff;
+    transition:.35s;
+    box-shadow:
+        0 4px 18px rgba(15,23,42,.06);
+}
+
+.delay-log-card:hover{
+
+    transform:translateY(-5px);
+
+    box-shadow:
+        0 18px 40px rgba(37,99,235,.12);
+}
+
+
+/* LEFT BORDER */
+
+.delay-log-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+    top:0;
+
+    width:5px;
+    height:100%;
+
+    background:linear-gradient(
+        180deg,
+        #2563eb,
+        #06b6d4
+    );
+}
+
+
+/* BODY */
+
+.delay-log-card .card-body{
+
+    padding:16px 18px;
+}
+
+
+/*==========================
+TITLE
+===========================*/
+
+.delay-log-card .delay-log-title{
+
+    font-size:18px;
+    margin-bottom:4px;
+    line-height:1.4;
+}
+
+
+/* META */
+
+.delay-log-card .delay-log-meta{
+
+    color:#64748b;
+
+    font-size:12px;
+    margin-top:2px;
+
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+
+/*==========================
+LABELS
+===========================*/
+
+.delay-log-card .delay-log-label{
+
+    display:inline-block;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    text-transform:uppercase;
+
+    color:#2563eb;
+
+    letter-spacing:.6px;
+
+    margin-bottom:6px;
+}
+
+
+/* VALUE */
+
+.delay-log-card .delay-log-value{
+
+    color:#334155;
+
+    line-height:1.7;
+
+    font-size:15px;
+}
+
+
+/*==========================
+DETAIL BOX
+===========================*/
+
+.delay-log-card .delay-log-field{
+
+    background:#f8fafc;
+
+    border:1px solid #e2e8f0;
+
+    border-radius:12px;
+
+    padding:15px 18px;
+
+    margin-bottom:15px;
+}
+
+.delay-log-card .delay-log-field:hover{
+
+    border-color:#2563eb;
+
+    background:#fff;
+}
+
+
+/*==========================
+GRID
+===========================*/
+
+.delay-log-card .delay-log-grid{
+
+    margin-top:15px;
+}
+
+.delay-log-card .delay-log-grid .col-md-6{
+
+    margin-bottom:14px;
+}
+
+.delay-log-card .delay-log-grid .col-md-6>span,
+.delay-log-card .delay-log-grid .col-md-6>p{
+
+    display:block;
+
+    background:#fff;
+
+    border:1px solid #edf2f7;
+
+    border-radius:12px;
+
+    padding:14px 18px;
+}
+
+
+/*==========================
+BADGE
+===========================*/
+
+.delay-log-card .badge{
+
+    padding:8px 14px;
+
+    border-radius:30px;
+
+    font-size:12px;
+
+    font-weight:600;
+}
+
+
+/*==========================
+MITIGATION
+===========================*/
+
+.delay-log-card .delay-mitigations{
+
+    margin-top:25px;
+
+    padding-top:20px;
+
+    border-top:1px dashed #d7deea;
+}
+
+.delay-log-card .delay-mitigation-item{
+
+    background:#f8fafc;
+
+    border-left:4px solid #2563eb;
+
+    border-radius:12px;
+
+    padding:16px 18px;
+
+    margin-bottom:14px;
+}
+
+.delay-log-card .delay-mitigation-item:hover{
+
+    background:#fff;
+
+    box-shadow:
+        0 10px 24px rgba(37,99,235,.08);
+}
 </style>
 
 <script>
