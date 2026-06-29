@@ -43,6 +43,7 @@ Route::post('switch-role', [LoginController::class, 'switchRole'])->name('switch
 
 Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::get('dashboard', [DashboardController::class, 'dashboard']);
+    Route::get('dashboard/analytics', [DashboardController::class, 'dashboardAnalytics']);
 
     Route::match(array('GET', 'POST'), '/role-management/add', [RoleManagement::class, 'role_management']);
     Route::match(array('GET', 'POST'), '/role-management/edit/{id}', [RoleManagement::class, 'role_management']);

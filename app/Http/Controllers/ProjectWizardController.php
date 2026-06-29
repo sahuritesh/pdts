@@ -1862,6 +1862,10 @@ class ProjectWizardController extends Controller
             'dashboard_m1_chart_mitigation',
             'dashboard_m1_table_critical',
             'dashboard_m1_chart_zone',
+            'dashboard_m1_task_kpis',
+            'dashboard_m1_chart_task_status',
+            'dashboard_m1_chart_top_tasks',
+            'dashboard_m1_table_dept_open_tasks',
         ];
         $permissions = implode(',', array_merge(
             ['dashboard_view', 'my_projects', 'spoc_tasks'],

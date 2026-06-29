@@ -486,6 +486,26 @@ class RoleManagement extends Controller
                 'module' => 1,
                 'label' => 'Zone-wise metrics chart',
             ],
+            'm1_task_kpis' => [
+                'permission' => 'dashboard_m1_task_kpis',
+                'module' => 1,
+                'label' => 'Task overview KPI cards',
+            ],
+            'm1_chart_task_status' => [
+                'permission' => 'dashboard_m1_chart_task_status',
+                'module' => 1,
+                'label' => 'Wizard tasks by status chart',
+            ],
+            'm1_chart_top_tasks' => [
+                'permission' => 'dashboard_m1_chart_top_tasks',
+                'module' => 1,
+                'label' => 'Top tasks across projects chart',
+            ],
+            'm1_table_dept_open_tasks' => [
+                'permission' => 'dashboard_m1_table_dept_open_tasks',
+                'module' => 1,
+                'label' => 'Departments with open tasks table',
+            ],
         ];
     }
 

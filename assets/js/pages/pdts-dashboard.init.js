@@ -246,6 +246,12 @@
         if (isVisible('m1_chart_zone')) {
             renderZoneMetrics('#chart-zone-metrics', data.zone_metrics);
         }
+        if (isVisible('m1_chart_task_status')) {
+            renderDonut('#chart-wizard-task-status', data.wizard_task_status, 'No wizard tasks configured yet.');
+        }
+        if (isVisible('m1_chart_top_tasks')) {
+            renderBar('#chart-top-wizard-tasks', data.top_wizard_tasks, true, 'No task usage data yet.', 'Instances');
+        }
     });
 
     function renderZoneMetrics(elId, chartData) {

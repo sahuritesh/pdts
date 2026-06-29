@@ -13,28 +13,37 @@ class DashboardDrilldownService
      *
      * @return array<string, string>
      */
-    public function buildKpiLinks(?int $zoneId = null): array
+    public function buildKpiLinks(?int $zoneId = null, ?int $projectId = null): array
     {
-        $zone = $this->zoneParams($zoneId);
+        $filters = $this->dashboardFilterParams($zoneId, $projectId);
 
         return [
-            'total_projects' => $this->projectsListUrl($zone),
-            'open_delays' => $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'delay'])),
-            'departments_delayed' => $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'delay'])),
-            'total_delay_cost' => $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'delay'])),
-            'delayed_projects' => $this->projectsListUrl(array_merge($zone, ['rollup_status' => 'delayed'])),
-            'departments_in_progress' => $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'active_work'])),
-            'departments_completed' => $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'completed'])),
+            'total_projects' => $projectId
+                ? $this->projectWizardUrl($projectId)
+                : $this->projectsListUrl($filters),
+            'open_delays' => $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'delay'])),
+            'departments_delayed' => $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'delay'])),
+            'total_delay_cost' => $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'delay'])),
+            'delayed_projects' => $this->projectsListUrl(array_merge($filters, ['rollup_status' => 'delayed'])),
+            'departments_in_progress' => $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'active_work'])),
+            'departments_completed' => $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'completed'])),
             'total_departments' => $this->departmentsMasterUrl(),
+            'total_configured_tasks' => $this->wizardTasksDrillUrl($filters),
+            'master_tasks' => $this->tasksMasterUrl(),
+            'tasks_not_started' => $this->wizardTasksDrillUrl(array_merge($filters, ['task_status' => 'not_started'])),
+            'tasks_in_progress' => $this->wizardTasksDrillUrl(array_merge($filters, ['task_status' => 'in_progress'])),
+            'tasks_completed' => $this->wizardTasksDrillUrl(array_merge($filters, ['task_status' => 'completed'])),
+            'tasks_on_hold' => $this->wizardTasksDrillUrl(array_merge($filters, ['task_status' => 'on_hold'])),
+            'tasks_overdue' => $this->wizardTasksDrillUrl(array_merge($filters, ['task_overdue' => 1])),
         ];
     }
 
     /**
      * Add drill_urls (and keys where needed) to analytics chart payloads.
      */
-    public function attachChartDrillUrls(array $analytics, ?int $zoneId = null): array
+    public function attachChartDrillUrls(array $analytics, ?int $zoneId = null, ?int $projectId = null): array
     {
-        $zone = $this->zoneParams($zoneId);
+        $filters = $this->dashboardFilterParams($zoneId, $projectId);
 
         if (!empty($analytics['project_status'])) {
             $labelToRollup = [
@@ -47,12 +56,12 @@ class DashboardDrilldownService
             foreach ($analytics['project_status']['labels'] ?? [] as $label) {
                 $key = $labelToRollup[$label] ?? '';
                 if ($key === 'on_hold') {
-                    $analytics['project_status']['drill_urls'][] = $this->projectsListUrl(array_merge($zone, ['project_status' => 'on_hold']));
+                    $analytics['project_status']['drill_urls'][] = $this->projectsListUrl(array_merge($filters, ['project_status' => 'on_hold']));
                     continue;
                 }
                 $analytics['project_status']['drill_urls'][] = $key !== ''
-                    ? $this->projectsListUrl(array_merge($zone, ['rollup_status' => $key]))
-                    : $this->projectsListUrl($zone);
+                    ? $this->projectsListUrl(array_merge($filters, ['rollup_status' => $key]))
+                    : $this->projectsListUrl($filters);
             }
         }
 
@@ -70,21 +79,21 @@ class DashboardDrilldownService
                 $key = $labelToKey[$label] ?? '';
                 $filter = $key === 'start' || $key === 'in_progress' ? 'active_work' : $key;
                 $analytics['department_status']['drill_urls'][] = $key !== ''
-                    ? $this->departmentTasksUrl(array_merge($zone, ['status_filter' => $filter]))
-                    : $this->departmentTasksUrl($zone);
+                    ? $this->departmentTasksUrl(array_merge($filters, ['status_filter' => $filter]))
+                    : $this->departmentTasksUrl($filters);
             }
         }
 
         if (!empty($analytics['delays_by_severity'])) {
             $analytics['delays_by_severity']['drill_urls'] = array_map(
-                fn () => $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'delay'])),
+                fn () => $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'delay'])),
                 $analytics['delays_by_severity']['labels'] ?? []
             );
         }
 
         if (!empty($analytics['delays_by_category'])) {
             $analytics['delays_by_category']['drill_urls'] = array_map(
-                fn ($label) => $this->departmentTasksUrl(array_merge($zone, [
+                fn ($label) => $this->departmentTasksUrl(array_merge($filters, [
                     'status_filter' => 'delay',
                     'search' => $label,
                 ])),
@@ -97,22 +106,22 @@ class DashboardDrilldownService
             $analytics['delays_by_hospital']['hospital_ids'] = $hospitalIds;
             $analytics['delays_by_hospital']['drill_urls'] = array_map(
                 fn ($hospitalId) => $hospitalId
-                    ? $this->projectsListUrl(array_merge($zone, ['hospital' => $hospitalId]))
-                    : $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'delay'])),
+                    ? $this->projectsListUrl(array_merge($filters, ['hospital' => $hospitalId]))
+                    : $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'delay'])),
                 $hospitalIds
             );
         }
 
         if (!empty($analytics['financial_impact'])) {
             $analytics['financial_impact']['drill_urls'] = [
-                $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'delay'])),
-                $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'delay'])),
+                $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'delay'])),
+                $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'delay'])),
             ];
         }
 
         if (!empty($analytics['delay_trend'])) {
             $analytics['delay_trend']['drill_urls'] = array_map(
-                fn () => $this->departmentTasksUrl(array_merge($zone, ['status_filter' => 'delay'])),
+                fn () => $this->departmentTasksUrl(array_merge($filters, ['status_filter' => 'delay'])),
                 $analytics['delay_trend']['labels'] ?? []
             );
         }
@@ -144,6 +153,35 @@ class DashboardDrilldownService
 
                 return $row;
             }, $analytics['recent_delayed_departments']);
+        }
+
+        if (!empty($analytics['wizard_task_status'])) {
+            $labelToKey = array_flip(config('project_department_tasks.statuses', []));
+            $analytics['wizard_task_status']['drill_urls'] = [];
+            foreach ($analytics['wizard_task_status']['labels'] ?? [] as $label) {
+                $key = $labelToKey[$label] ?? '';
+                $analytics['wizard_task_status']['drill_urls'][] = $key !== ''
+                    ? $this->wizardTasksDrillUrl(array_merge($filters, ['task_status' => $key]))
+                    : $this->wizardTasksDrillUrl($filters);
+            }
+        }
+
+        if (!empty($analytics['top_wizard_tasks'])) {
+            $analytics['top_wizard_tasks']['drill_urls'] = array_map(
+                fn ($label) => $this->tasksMasterUrl(['search' => $label]),
+                $analytics['top_wizard_tasks']['labels'] ?? []
+            );
+        }
+
+        if (!empty($analytics['departments_with_open_tasks'])) {
+            $analytics['departments_with_open_tasks'] = array_map(function ($row) {
+                $row['url'] = $this->departmentRowUrl(
+                    (int) ($row['pd_id'] ?? 0),
+                    (int) ($row['project_id'] ?? 0)
+                );
+
+                return $row;
+            }, $analytics['departments_with_open_tasks']);
         }
 
         return $analytics;
@@ -190,7 +228,16 @@ class DashboardDrilldownService
             return $this->projectsListUrl(['rollup_status' => 'completed']);
         }
 
-        return $this->projectsListUrl($this->zoneParams($params['zone_id'] ?? null));
+        return $this->projectsListUrl($this->dashboardFilterParams($params['zone_id'] ?? null, $params['project_id'] ?? null));
+    }
+
+    public function projectWizardUrl(int $projectId): string
+    {
+        if ($projectId <= 0) {
+            return $this->projectsListUrl();
+        }
+
+        return getProjectUrl('projects/wizard/' . Crypt::encrypt($projectId));
     }
 
     public function departmentsMasterUrl(): string
@@ -200,6 +247,30 @@ class DashboardDrilldownService
         }
 
         return $this->departmentTasksUrl();
+    }
+
+    public function tasksMasterUrl(array $params = []): string
+    {
+        if (function_exists('modulePermissionExists') && modulePermissionExists('tasks')) {
+            return $this->buildListUrl('tasks-list', $params);
+        }
+
+        return $this->wizardTasksDrillUrl($params);
+    }
+
+    public function wizardTasksDrillUrl(array $params = []): string
+    {
+        if ($this->canUseDepartmentTasks()) {
+            return $this->buildListUrl('spoc-tasks-list', $params);
+        }
+
+        if (permissionexists('projects') === '1'
+            || permissionexists('my_projects') === '1'
+            || permissionexists('spoc_project_access') === '1') {
+            return $this->projectsListUrl($this->dashboardFilterParams($params['zone_id'] ?? null, $params['project_id'] ?? null));
+        }
+
+        return getProjectUrl('dashboard');
     }
 
     private function canUseDepartmentTasks(): bool
@@ -226,10 +297,18 @@ class DashboardDrilldownService
         return $url . '?' . http_build_query($query);
     }
 
-    /** @return array<string, int|string|null> */
-    private function zoneParams(?int $zoneId): array
+    /** @return array<string, int> */
+    private function dashboardFilterParams(?int $zoneId, ?int $projectId = null): array
     {
-        return $zoneId ? ['zone_id' => $zoneId] : [];
+        $params = [];
+        if ($zoneId) {
+            $params['zone_id'] = $zoneId;
+        }
+        if ($projectId) {
+            $params['project_id'] = $projectId;
+        }
+
+        return $params;
     }
 
     /**
