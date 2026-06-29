@@ -1062,7 +1062,7 @@ body[data-sidebar=dark].vertical-collpsed .vertical-menu #sidebar-menu ul>li>a.m
     color: #ffffff;
     border: none;
     border-radius: 30px;
-    padding: 12px 40px;
+    padding: 12px 30px;
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -2571,4 +2571,204 @@ table.dataTable th {
     background: #fff;
     border-radius: 10px;
     box-shadow: none;
+}
+.box-custome .btn{
+    border-radius: 50px;
+}
+
+
+/* /////////////////////// Configure — Design & Planning */
+
+/* ===============================
+   Configure — Design & Planning
+================================ */
+
+.box-custome{
+
+    background:#fff !important;
+
+    border:1px solid #dbe5ef !important;
+
+    border-radius:14px !important;
+
+    padding:14px 16px !important;
+
+    margin-bottom:14px !important;
+
+    transition:all .35s ease;
+
+    box-shadow:
+        0 4px 18px rgba(15,23,42,.05);
+
+    position:relative;
+
+    overflow:hidden;
+}
+
+/* Top Accent Border */
+
+.box-custome::before{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+
+    top:0;
+
+    width:4px;
+
+    height:100%;
+
+    background:linear-gradient(
+        180deg,
+        #2563eb,
+        #1d4ed8
+    );
+
+    border-radius:20px;
+}
+
+/* Hover */
+
+.box-custome:hover{
+
+    transform:translateY(-3px);
+
+    border-color:#2563eb !important;
+
+    box-shadow:
+        0 12px 30px rgba(37,99,235,.12);
+}
+
+/* Task Name */
+
+.box-custome strong{
+
+    color:#0f172a;
+
+    font-size:15px;
+
+    font-weight:700;
+}
+
+/* Date */
+
+.box-custome .text-muted{
+
+    color:#64748b !important;
+
+    font-size:12px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+}
+
+.box-custome .text-muted i{
+
+    color:#2563eb;
+
+    font-size:14px;
+}
+
+/* Badge */
+
+.box-custome .badge{
+
+    border-radius:30px;
+
+    padding:5px 10px;
+
+    font-size:11px;
+
+    font-weight:600;
+}
+
+/* Action Buttons */
+
+.box-custome .dept-task-item-actions .btn{
+
+    width:34px;
+
+    height:34px;
+
+    padding:0;
+
+    border-radius:10px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    transition:.3s;
+}
+
+.box-custome .btn i{
+
+    font-size:16px;
+}
+
+.box-custome .btn-outline-primary:hover{
+
+    background:#2563eb;
+
+    border-color:#2563eb;
+
+    color:#fff;
+}
+
+.box-custome .btn-outline-secondary:hover{
+
+    background:#0f172a;
+
+    border-color:#0f172a;
+
+    color:#fff;
+}
+
+.box-custome .btn-outline-danger:hover{
+
+    background:#dc2626;
+
+    border-color:#dc2626;
+
+    color:#fff;
+}
+
+/* Quick Status Alignment */
+
+.box-custome .dept-task-item-actions{
+
+    align-items:center;
+}
+
+/* Responsive */
+
+@media(max-width:768px){
+
+.box-custome{
+
+    padding:12px !important;
+}
+
+.box-custome .dept-task-item{
+
+    flex-wrap:wrap;
+}
+
+.box-custome .dept-task-item-actions{
+
+    width:100%;
+
+    justify-content:flex-end;
+
+    margin-top:10px;
+}
+
 }

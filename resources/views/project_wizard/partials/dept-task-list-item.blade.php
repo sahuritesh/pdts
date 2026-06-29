@@ -9,7 +9,7 @@
     $end = $task['planned_end_date'] ?? '';
     $dateLabel = ($start ?: '—') . ' → ' . ($end ?: '—');
 @endphp
-<div class="dept-task-item d-flex align-items-center gap-2 border rounded bg-white p-2 mb-2"
+<div class="dept-task-item d-flex align-items-center gap-2 border rounded bg-white p-2 mb-2 box-custome"
     data-task-id="{{ $task['id'] ?? 0 }}"
     data-task-status="{{ $task['task_status'] ?? 'not_started' }}"
     data-linked-pd-id="{{ $task['linked_project_department_token'] ?? '' }}">

@@ -1593,6 +1593,21 @@ text-align: left;
 
     color:#2563eb;
 }
+.btn-outline-primary{
+    border-radius: 20px;
+}
+.dept-has-spoc .btn-outline-primary{
+    border-radius: 20px;
+}
+.dept-has-spoc .btn-outline-primary:hover{
+     background:var(--dark-blue);
+     border-color:var(--dark-blue);
+}
+.remove-dept{
+    background: #ffffff;
+    border-color: #F44336;
+    border-radius: 20px;
+}
 </style>
 @endpush
 
