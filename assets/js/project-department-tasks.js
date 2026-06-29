@@ -153,7 +153,9 @@ var ProjectDepartmentTasks = (function() {
     function resetForm($section) {
         var $wrap = $section.find('.dept-task-form');
         $wrap.find('[name="id"]').val('');
-        $wrap.find('[name="task_name"]').val('');
+        if (typeof TaskMasterSelect !== 'undefined') {
+            TaskMasterSelect.clearValue($wrap.find('.task-master-select-wrap'));
+        }
         $wrap.find('[name="linked_department_id"]').val('');
         $wrap.find('[name="planned_start_date"], [name="planned_end_date"]').val('');
         $wrap.find('[name="task_status"]').each(function() {
@@ -168,7 +170,9 @@ var ProjectDepartmentTasks = (function() {
 
         if (!isEdit) {
             $wrap.find('[name="id"]').val('');
-            $wrap.find('[name="task_name"]').val('');
+            if (typeof TaskMasterSelect !== 'undefined') {
+                TaskMasterSelect.clearValue($wrap.find('.task-master-select-wrap'));
+            }
             $wrap.find('[name="linked_department_id"]').val('');
             $wrap.find('[name="planned_start_date"], [name="planned_end_date"]').val('');
             $wrap.find('[name="task_status"]').each(function() {
@@ -177,24 +181,11 @@ var ProjectDepartmentTasks = (function() {
         }
 
         $section.find('.dept-task-form-wrap').show();
+        if (typeof TaskMasterSelect !== 'undefined') {
+            TaskMasterSelect.bind($wrap);
+        }
         if (typeof bindPlannedDateRangeInputs === 'function') {
             bindPlannedDateRangeInputs($section.find('.dept-task-form'));
-        }
-    }
-
-    function suggestTaskNameFromDepartment($section) {
-        var $select = $section.find('[name="linked_department_id"]');
-        var $name = $section.find('[name="task_name"]');
-        if ($name.val().trim()) {
-            return;
-        }
-        var deptId = $select.val();
-        if (!deptId) {
-            return;
-        }
-        var label = $select.find('option:selected').text().trim();
-        if (label && label !== 'Not linked') {
-            $name.val(label);
         }
     }
 
@@ -214,7 +205,13 @@ var ProjectDepartmentTasks = (function() {
                 }
                 var $form = $section.find('.dept-task-form');
                 $form.find('[name="id"]').val(task.id || '');
-                $form.find('[name="task_name"]').val(task.task_name || '');
+                if (typeof TaskMasterSelect !== 'undefined') {
+                    TaskMasterSelect.setValue(
+                        $form.find('.task-master-select-wrap'),
+                        task.task_id || 0,
+                        task.task_name || task.display_name || ''
+                    );
+                }
                 $form.find('[name="linked_department_id"]').val(task.linked_department_id || '');
                 $form.find('[name="planned_start_date"]').val(task.planned_start_date || '');
                 $form.find('[name="planned_end_date"]').val(task.planned_end_date || '');
@@ -225,12 +222,12 @@ var ProjectDepartmentTasks = (function() {
 
     function saveTask($section, $btn) {
         var $form = $section.find('.dept-task-form');
-        var taskName = ($form.find('[name="task_name"]').val() || '').trim();
-        if (!taskName) {
+        var taskId = parseInt($form.find('[name="task_id"]').val(), 10) || 0;
+        if (!taskId) {
             if (typeof parseFormErrors === 'function') {
-                parseFormErrors({ error: 1, msg: ['Please enter task name'] }, 'error');
+                parseFormErrors({ error: 1, msg: ['Please select a task'] }, 'error');
             }
-            $form.find('[name="task_name"]').focus();
+            $form.find('.task-master-select').focus();
             return;
         }
         if (typeof validatePlannedDateRangesInScope === 'function' && !validatePlannedDateRangesInScope($form)) {
@@ -297,11 +294,11 @@ var ProjectDepartmentTasks = (function() {
         $(document).off('click.pdtsDeptTasks', '.btn-add-dept-task').on('click.pdtsDeptTasks', '.btn-add-dept-task', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            showForm($(this).closest('.dept-tasks-section'));
-        });
-
-        $(document).off('change.pdtsDeptTasks', '.dept-task-linked-dept-select').on('change.pdtsDeptTasks', '.dept-task-linked-dept-select', function() {
-            suggestTaskNameFromDepartment($(this).closest('.dept-tasks-section'));
+            var $section = $(this).closest('.dept-tasks-section');
+            if (cfg($section).mode === 'execution') {
+                return;
+            }
+            showForm($section);
         });
 
         $(document).off('click.pdtsDeptTasks', '.btn-cancel-dept-task').on('click.pdtsDeptTasks', '.btn-cancel-dept-task', function(e) {
@@ -362,6 +359,9 @@ var ProjectDepartmentTasks = (function() {
                 return;
             }
             $section.data('deptTasksBound', 1);
+            if (typeof TaskMasterSelect !== 'undefined') {
+                TaskMasterSelect.bind($section);
+            }
             if (typeof bindPlannedDateRangeInputs === 'function') {
                 bindPlannedDateRangeInputs($section);
             }

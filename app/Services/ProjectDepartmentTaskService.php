@@ -21,7 +21,8 @@ class ProjectDepartmentTaskService
 
     public function __construct(
         protected ProjectDepartmentService $projectDepartmentService,
-        protected AuditTrailService $auditTrail
+        protected AuditTrailService $auditTrail,
+        protected TaskMasterService $taskMasterService
     ) {
     }
 
@@ -79,6 +80,7 @@ class ProjectDepartmentTaskService
         }
 
         $query = DB::table('tbl_project_department_tasks as t')
+            ->leftJoin('tbl_tasks as mt', 'mt.id', '=', 't.task_id')
             ->leftJoin('tbl_departments as ld', 'ld.id', '=', 't.linked_department_id')
             ->leftJoin('tbl_project_departments as lpd', 'lpd.id', '=', 't.linked_project_department_id')
             ->leftJoin('tbl_departments as lpd_d', 'lpd_d.id', '=', 'lpd.department_id')
@@ -95,6 +97,7 @@ class ProjectDepartmentTaskService
 
         return $query->get([
             't.*',
+            DB::raw('mt.task_name as master_task_name'),
             DB::raw("ld.$nameCol as linked_department_name"),
             DB::raw("lpd_d.$nameCol as linked_project_department_name"),
             'lpd.department_status as linked_department_status',
@@ -113,6 +116,7 @@ class ProjectDepartmentTaskService
         $nameCol = $this->projectDepartmentService->departmentNameColumn();
 
         return DB::table('tbl_project_department_tasks as t')
+            ->leftJoin('tbl_tasks as mt', 'mt.id', '=', 't.task_id')
             ->leftJoin('tbl_departments as ld', 'ld.id', '=', 't.linked_department_id')
             ->leftJoin('tbl_project_departments as lpd', 'lpd.id', '=', 't.linked_project_department_id')
             ->leftJoin('tbl_departments as lpd_d', 'lpd_d.id', '=', 'lpd.department_id')
@@ -124,6 +128,7 @@ class ProjectDepartmentTaskService
             ->orderBy('t.id')
             ->get([
                 't.*',
+                DB::raw('mt.task_name as master_task_name'),
                 DB::raw("ld.$nameCol as linked_department_name"),
                 DB::raw("lpd_d.$nameCol as linked_project_department_name"),
                 'lpd.department_status as linked_department_status',
@@ -140,6 +145,7 @@ class ProjectDepartmentTaskService
 
         $nameCol = $this->projectDepartmentService->departmentNameColumn();
         $row = DB::table('tbl_project_department_tasks as t')
+            ->leftJoin('tbl_tasks as mt', 'mt.id', '=', 't.task_id')
             ->leftJoin('tbl_departments as ld', 'ld.id', '=', 't.linked_department_id')
             ->leftJoin('tbl_project_departments as lpd', 'lpd.id', '=', 't.linked_project_department_id')
             ->leftJoin('tbl_departments as lpd_d', 'lpd_d.id', '=', 'lpd.department_id')
@@ -147,6 +153,7 @@ class ProjectDepartmentTaskService
             ->where('t.is_delete', 0)
             ->first([
                 't.*',
+                DB::raw('mt.task_name as master_task_name'),
                 DB::raw("ld.$nameCol as linked_department_name"),
                 DB::raw("lpd_d.$nameCol as linked_project_department_name"),
                 'lpd.department_status as linked_department_status',
@@ -205,7 +212,13 @@ class ProjectDepartmentTaskService
             return ['error' => 1, 'msg' => $validation, 'validation' => $validation];
         }
 
-        $taskName = trim((string) ($data['task_name'] ?? ''));
+        $masterTaskId = (int) ($data['task_id'] ?? 0);
+        $masterTask = $this->taskMasterService->resolveTask($masterTaskId, true);
+        if (!$masterTask) {
+            return ['error' => 1, 'msg' => 'Please select a valid task from the catalog', 'validation' => 'Please select a valid task from the catalog'];
+        }
+
+        $taskName = $masterTask['task_name'];
         $linkedDepartmentId = (int) ($data['linked_department_id'] ?? 0) ?: null;
         $kind = $linkedDepartmentId ? self::KIND_LINKED_DEPARTMENT : self::KIND_STANDARD;
 
@@ -235,6 +248,10 @@ class ProjectDepartmentTaskService
             'updated_by' => Auth::id(),
             'updated_on' => current_datetime(),
         ];
+
+        if ($this->hasTaskIdColumn()) {
+            $payload['task_id'] = $masterTaskId;
+        }
 
         if (!empty($data['owner_user_id'])) {
             $payload['owner_user_id'] = (int) $data['owner_user_id'];
@@ -395,9 +412,18 @@ class ProjectDepartmentTaskService
 
     public function validateTaskData(array $data, int $projectId, int $projectDepartmentId, ?int $taskId = null): string
     {
-        $taskName = trim((string) ($data['task_name'] ?? ''));
-        if ($taskName === '') {
-            return 'Please enter task name';
+        $masterTaskId = (int) ($data['task_id'] ?? 0);
+        if ($masterTaskId <= 0) {
+            return 'Please select a task';
+        }
+
+        $masterTask = $this->taskMasterService->resolveTask($masterTaskId, true);
+        if (!$masterTask) {
+            return 'Please select a valid task from the catalog';
+        }
+
+        if ($this->isDuplicateWizardTask($masterTaskId, $projectDepartmentId, $taskId)) {
+            return 'This task is already added for this department';
         }
 
         $linkedDepartmentId = (int) ($data['linked_department_id'] ?? 0) ?: null;
@@ -424,6 +450,34 @@ class ProjectDepartmentTaskService
         }
 
         return '';
+    }
+
+    private function isDuplicateWizardTask(int $masterTaskId, int $projectDepartmentId, ?int $wizardTaskId = null): bool
+    {
+        if (!$this->tableExists() || $masterTaskId <= 0 || $projectDepartmentId <= 0) {
+            return false;
+        }
+
+        if (!$this->hasTaskIdColumn()) {
+            return false;
+        }
+
+        $query = DB::table('tbl_project_department_tasks')
+            ->where('project_department_id', $projectDepartmentId)
+            ->where('task_id', $masterTaskId)
+            ->where('is_delete', 0)
+            ->whereNull('parent_task_id');
+
+        if ($wizardTaskId) {
+            $query->where('id', '!=', $wizardTaskId);
+        }
+
+        return $query->exists();
+    }
+
+    private function hasTaskIdColumn(): bool
+    {
+        return Schema::hasColumn('tbl_project_department_tasks', 'task_id');
     }
 
     public function syncLinkedTasksForDepartment(int $projectDepartmentId): void
@@ -509,6 +563,7 @@ class ProjectDepartmentTaskService
     private function formatTaskRow(array $row): array
     {
         $row['id'] = (int) ($row['id'] ?? 0);
+        $row['task_id'] = (int) ($row['task_id'] ?? 0);
         $row['project_id'] = (int) ($row['project_id'] ?? 0);
         $row['project_department_id'] = (int) ($row['project_department_id'] ?? 0);
         $row['task_kind'] = $row['task_kind'] ?? self::KIND_STANDARD;
@@ -517,7 +572,9 @@ class ProjectDepartmentTaskService
         $row['status_badge_html'] = $this->statusBadgeHtml($row['task_status']);
         $row['has_department_link'] = !empty($row['linked_department_id']);
         $row['is_linked_department'] = $row['has_department_link'];
-        $row['display_name'] = trim((string) ($row['task_name'] ?? '')) ?: 'Task';
+        $masterName = trim((string) ($row['master_task_name'] ?? ''));
+        $row['task_name'] = $masterName !== '' ? $masterName : trim((string) ($row['task_name'] ?? ''));
+        $row['display_name'] = $row['task_name'] !== '' ? $row['task_name'] : 'Task';
 
         if (!empty($row['planned_start_date'])) {
             $row['planned_start_date'] = date('Y-m-d', strtotime((string) $row['planned_start_date']));
@@ -544,6 +601,7 @@ class ProjectDepartmentTaskService
 
         return [
             'id' => $task['id'] ?? null,
+            'task_id' => $task['task_id'] ?? null,
             'project_id' => $task['project_id'] ?? null,
             'project_department_id' => $task['project_department_id'] ?? null,
             'task_name' => $task['task_name'] ?? null,

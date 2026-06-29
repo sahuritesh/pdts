@@ -6,6 +6,8 @@
     $taskStatusLabels = $taskStatusLabels ?? [];
     $readOnly = !empty($readOnly);
     $mode = $mode ?? 'setup';
+    $isExecution = ($mode === 'execution');
+    $canManageTasks = !$readOnly && !$isExecution && $projectDepartmentId > 0;
     $projectPlannedStart = $projectPlannedStart ?? '';
     $sectionId = 'deptTasks_' . $projectDepartmentId . '_' . $mode;
 @endphp
@@ -20,14 +22,20 @@
     data-delete-url="{{ getProjectUrl('delete_project_department_task') }}"
     data-list-url="{{ getProjectUrl('get_project_department_tasks') }}"
     data-status-url="{{ getProjectUrl('update_project_department_task_status') }}"
-    data-linked-panel-url="{{ getProjectUrl('projects/wizard/dept-tasks') }}">
+    data-linked-panel-url="{{ getProjectUrl('projects/wizard/dept-tasks') }}"
+    data-task-search-url="{{ getProjectUrl('search_master_tasks') }}"
+    data-task-quick-create-url="{{ getProjectUrl('quick_create_master_task') }}">
     <div class="card-body p-3 custome-box">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <div>
                 <h6 class="mb-3">Tasks</h6>
-                <p class="text-muted small mb-0">Each row is one task. Optionally tie a task to another department module.</p>
+                @if($isExecution)
+                <p class="text-muted small mb-0">Tasks configured for this department. Use Configure in Step 2 to add or change tasks.</p>
+                @else
+                <p class="text-muted small mb-0">Pick a task from the catalog and optionally tie it to another department module.</p>
+                @endif
             </div>
-            @if(!$readOnly && $projectDepartmentId > 0)
+            @if($canManageTasks)
             <button type="button" class="btn btn-outline-primary btn-sm btn-add-dept-task save-dept-meta d-flex">
                 <i class="ri-add-line"></i> Add task
             </button>
@@ -43,10 +51,11 @@
                 <input type="hidden" name="project_department_id" value="{{ $projectDepartmentId }}">
                 <input type="hidden" name="id" value="">
                 <div class="row g-2 align-items-end">
-                    <div class="col-md-4">
-                        <label class="small text-muted required-label">Task name</label>
-                        <input type="text" class="form-control form-control-sm" name="task_name" maxlength="255" placeholder="e.g. Fire safety clearance">
-                    </div>
+                    @include('project_wizard.partials.task-master-select', [
+                        'fieldName' => 'task_id',
+                        'searchUrl' => getProjectUrl('search_master_tasks'),
+                        'quickCreateUrl' => getProjectUrl('quick_create_master_task'),
+                    ])
                     <div class="col-md-4">
                         <label class="small text-muted">Department</label>
                         <select class="form-control form-control-sm dept-task-linked-dept-select" name="linked_department_id">

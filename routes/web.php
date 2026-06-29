@@ -17,6 +17,7 @@ use App\Http\Controllers\HospitalsController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\ProjectWizardController;
 use App\Http\Controllers\SpocTasksController;
+use App\Http\Controllers\TasksController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +69,13 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::get('hospitals-list', [HospitalsController::class, 'hospital_list']);
     Route::post('get_hospital_list', [HospitalsController::class, 'get_hospital_list']);
 
+    Route::match(array('GET', 'POST'), '/tasks/add', [TasksController::class, 'task_form']);
+    Route::match(array('GET', 'POST'), '/tasks/edit/{id}', [TasksController::class, 'task_form']);
+    Route::post('insert_update_task', [TasksController::class, 'insert_update_task']);
+    Route::get('tasks-list', [TasksController::class, 'task_list']);
+    Route::post('get_task_list', [TasksController::class, 'get_task_list']);
+    Route::get('search_tasks', [TasksController::class, 'search_tasks']);
+
     Route::get('spoc-tasks-list', [SpocTasksController::class, 'task_list']);
     Route::match(array('GET', 'POST'), '/spoc-tasks/view/{id}', [SpocTasksController::class, 'task_detail']);
     Route::post('get_spoc_task_list', [SpocTasksController::class, 'get_spoc_task_list']);
@@ -91,6 +99,8 @@ Route::group(['middleware' => ['Admin', 'SanitizePostData']], function () {
     Route::post('update_department_status', [ProjectWizardController::class, 'update_department_status']);
     Route::post('save_project_department', [ProjectWizardController::class, 'save_project_department']);
     Route::get('get_project_department_tasks', [ProjectWizardController::class, 'get_project_department_tasks']);
+    Route::get('search_master_tasks', [ProjectWizardController::class, 'search_master_tasks']);
+    Route::post('quick_create_master_task', [ProjectWizardController::class, 'quick_create_master_task']);
     Route::post('save_project_department_task', [ProjectWizardController::class, 'save_project_department_task']);
     Route::post('update_project_department_task_status', [ProjectWizardController::class, 'update_project_department_task_status']);
     Route::post('delete_project_department_task', [ProjectWizardController::class, 'delete_project_department_task']);

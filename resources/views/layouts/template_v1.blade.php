@@ -384,7 +384,8 @@ Active
     @include('in-app-notifications::scripts')
     {{-- Bump querystring to bust browser cache when common utilities change --}}
     <script src="{{ getAssetUrl('js/common.js') }}?v=2.9"></script>
-    <script src="{{ getAssetUrl('js/project-department-tasks.js') }}?v=1.9"></script>
+    <script src="{{ getAssetUrl('js/task-master-select.js') }}?v=1.0"></script>
+    <script src="{{ getAssetUrl('js/project-department-tasks.js') }}?v=2.1"></script>
     <script src="{{ getAssetUrl('js/custom_operations.js') }}"></script>
     <script src="{{ getAssetUrl('js/common-confirm.js') }}"></script>
     <!--confirm popup--->

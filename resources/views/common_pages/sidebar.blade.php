@@ -11,6 +11,7 @@
     $masterDataVisible = modulePermissionExists('departments')
         || modulePermissionExists('hospitals')
         || modulePermissionExists('locations')
+        || modulePermissionExists('tasks')
         || $showFullProjects
         || $showMyProjects
         || $showMyTasks;
@@ -70,6 +71,8 @@
                         <li><a href="{{ getProjectUrl('hospitals-list') }}">Hospitals</a></li>
                         @php } if (modulePermissionExists('locations')) { @endphp
                         <li><a href="{{ getProjectUrl('locations-list') }}">Locations</a></li>
+                        @php } if (modulePermissionExists('tasks')) { @endphp
+                        <li><a href="{{ getProjectUrl('tasks-list') }}">Tasks</a></li>
                         @php } if ($showFullProjects) { @endphp
                         <li><a href="{{ getProjectUrl('projects-list') }}">Projects</a></li>
                         @php } if ($showMyProjects) { @endphp

@@ -11,6 +11,7 @@ use App\Services\FinancialImpactService;
 use App\Services\ProjectCodeService;
 use App\Services\ProjectDepartmentService;
 use App\Services\ProjectDepartmentTaskService;
+use App\Services\TaskMasterService;
 use App\Services\UserScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +37,7 @@ class ProjectWizardController extends Controller
     protected FinancialImpactService $financialImpactService;
     protected ProjectCodeService $projectCodeService;
     protected ProjectDepartmentTaskService $projectDepartmentTaskService;
+    protected TaskMasterService $taskMasterService;
     protected UserScopeService $userScope;
 
     public function __construct(
@@ -46,6 +48,7 @@ class ProjectWizardController extends Controller
         FinancialImpactService $financialImpactService,
         ProjectCodeService $projectCodeService,
         ProjectDepartmentTaskService $projectDepartmentTaskService,
+        TaskMasterService $taskMasterService,
         UserScopeService $userScope
     ) {
         $this->auditTrail = $auditTrail;
@@ -55,6 +58,7 @@ class ProjectWizardController extends Controller
         $this->financialImpactService = $financialImpactService;
         $this->projectCodeService = $projectCodeService;
         $this->projectDepartmentTaskService = $projectDepartmentTaskService;
+        $this->taskMasterService = $taskMasterService;
         $this->userScope = $userScope;
     }
 
@@ -617,6 +621,54 @@ class ProjectWizardController extends Controller
 
         $tasks = $this->projectDepartmentTaskService->getTasksForProjectDepartment($pdId);
         $this->sendSuccessResponse('OK', 'Get', null, ['tasks' => $tasks]);
+    }
+
+    public function search_master_tasks(Request $request)
+    {
+        if (!$this->canManageDepartmentWorkflow()) {
+            $this->sendErrorResponse('Permission missing.', 1);
+            return;
+        }
+
+        $term = trim((string) $request->input('q', $request->input('term', '')));
+        $includeId = (int) $request->input('include_id', 0);
+        $tasks = $this->taskMasterService->searchTasks($term, 20, $includeId ?: null);
+
+        $results = array_map(function ($task) {
+            $label = $task['task_name'];
+            if (!empty($task['task_code'])) {
+                $label .= ' (' . $task['task_code'] . ')';
+            }
+
+            return ['id' => $task['id'], 'text' => $label];
+        }, $tasks);
+
+        echo json_encode(['error' => 0, 'results' => $results]);
+    }
+
+    public function quick_create_master_task(Request $request)
+    {
+        if (!$this->canManageDepartmentWorkflow()) {
+            $this->sendErrorResponse('Permission missing.', 1);
+            return;
+        }
+
+        try {
+            $postData = $this->parseWizardPost($request);
+            $result = $this->taskMasterService->quickCreate(trim((string) ($postData['task_name'] ?? '')));
+
+            if (!empty($result['error'])) {
+                $this->sendValidationErrorResponse('<li>' . e($result['msg'] ?? 'Save failed') . '</li>');
+                return;
+            }
+
+            $this->sendSuccessResponse($result['msg'] ?? 'Task added to catalog', 'Add', null, [
+                'task' => $result['task'] ?? null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Quick create master task: ' . $e->getMessage());
+            $this->sendErrorResponse($e->getMessage(), 2);
+        }
     }
 
     public function save_project_department_task(Request $request)
