@@ -58,7 +58,7 @@
                 </div>
                 <div class="d-flex flex-wrap gap-1 justify-content-end">
                     <span class="badge bg-{{ $severityClass[$sev] ?? 'secondary' }}">{{ ucfirst($sev) }}</span>
-                    <span class="badge bg-info text-dark">{{ (int)($delay->delay_days ?? 0) }} days</span>
+                    <span class="badge bg-info text-dark text-white">{{ (int)($delay->delay_days ?? 0) }} days</span>
                     <span class="badge bg-primary">{{ $statusLabel }}</span>
                 </div>
             </div>
@@ -127,7 +127,7 @@
                     @endphp
                     <div class="col-md-6">
                         <span class="delay-log-label">Alert Level</span>
-                        <p class="delay-log-value mb-0">
+                        <p class=" mb-0">
                             <span class="badge bg-{{ $alertBadge }}">{{ delayEwsLabel('alert_levels', $delay->alert_level, ucfirst($delay->alert_level)) }}</span>
                         </p>
                     </div>
@@ -306,7 +306,7 @@
 .delay-register-panel .delay-log-value {
     font-size: 0.85rem;
     color: #495057;
-    margin-bottom: 0.65rem;
+    margin-bottom: 0.35rem;
     white-space: pre-wrap;
     word-break: break-word;
 }
@@ -462,22 +462,15 @@ DETAIL BOX
 ===========================*/
 
 .delay-log-card .delay-log-field{
-
     background:#f8fafc;
-
     border:1px solid #e2e8f0;
-
     border-radius:12px;
-
-    padding:15px 18px;
-
-    margin-bottom:15px;
+    padding:5px 10px;
+    margin-bottom:10px;
 }
 
 .delay-log-card .delay-log-field:hover{
-
     border-color:#2563eb;
-
     background:#fff;
 }
 
@@ -487,27 +480,20 @@ GRID
 ===========================*/
 
 .delay-log-card .delay-log-grid{
-
     margin-top:15px;
 }
 
 .delay-log-card .delay-log-grid .col-md-6{
-
     margin-bottom:14px;
 }
 
 .delay-log-card .delay-log-grid .col-md-6>span,
 .delay-log-card .delay-log-grid .col-md-6>p{
-
     display:block;
-
     background:#fff;
-
     border:1px solid #edf2f7;
-
     border-radius:12px;
-
-    padding:14px 18px;
+    padding:10px 12px;
 }
 
 
