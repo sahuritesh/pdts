@@ -54,17 +54,17 @@ $showTaskTracking = $w('m1_task_kpis') || $w('m1_chart_task_status') || $w('m1_c
 @if($hasWidgets && !empty($analytics))
 
 @if($showModule1)
-<div class="row mb-2 align-items-center">
-    <div class="col-md-6">
-         <h5 class="dashboard-title mb-0">
+<div class="row mb-2 align-items-center dashboard-header-modern">
+    <div class="col-md-12 dashboard-title-wrapper">
+         <h5 class="dashboard-title mb-2">
     <span class="title-icon">
         <i class="ri-building-2-line"></i>
     </span>
     Project Tracking
-</h5>
+    </h5>
     </div>
     @if(!empty($data['zones']) || $hasWidgets)
-    <div class="col-md-6 text-md-end">
+    <div class="col-md-12 text-md-end dashboard-filter-wrapper">
         <div id="dashboard-filter-bar" class="dashboard-filter-bar">
             @if(!empty($data['zones']))
             <div class="dashboard-filter-item">
@@ -108,15 +108,30 @@ $showTaskTracking = $w('m1_task_kpis') || $w('m1_chart_task_status') || $w('m1_c
                 </div>
             </div>
             <div class="dashboard-filter-actions">
-                <button type="button" id="dashboard_apply_filters" class="btn btn-sm btn-primary" title="Apply filters">
-                    <i class="ri-refresh-line"></i>
-                </button>
-                <button type="button" id="dashboard_reset_filters" class="btn btn-sm btn-outline-secondary" title="Reset filters">
-                    <i class="ri-restart-line"></i>
-                </button>
-            </div>
+
+    <button type="button"
+        id="dashboard_apply_filters"
+        class="btn dashboard-btn-apply"
+        title="Apply Filters">
+
+        <i class="ri-filter-3-line me-2"></i>
+        Apply
+
+    </button>
+
+    <button type="button"
+        id="dashboard_reset_filters"
+        class="btn dashboard-btn-reset"
+        title="Reset Filters">
+
+        <i class="ri-refresh-line me-2"></i>
+        Reset
+
+    </button>
+
+</div>
         </div>
-        <div id="dashboard-filter-status" class="dashboard-filter-status text-muted small mt-1"></div>
+        <div id="dashboard-filter-status" class="dashboard-filter-status dashboard-status-box text-muted small mt-2 mb-1"></div>
     </div>
     @endif
 </div>

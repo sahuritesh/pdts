@@ -1414,3 +1414,182 @@ a.dashboard-drill-link:hover .dashboard-drill-icon {
         text-align: left;
     }
 }
+
+/* Add dashboard */
+.dashboard-header-modern .dashboard-filter-bar{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    gap:15px;
+}
+
+.dashboard-header-modern .dashboard-filter-item{
+    min-width:180px;
+    flex:1;
+}
+
+.dashboard-header-modern .dashboard-filter-actions{
+    display:flex;
+    align-items:flex-end;
+    gap:10px;
+}
+
+@media(max-width:768px){
+
+.dashboard-header-modern .dashboard-filter-bar{
+    flex-direction:column;
+    align-items:stretch;
+}
+
+.dashboard-header-modern .dashboard-filter-item{
+    width:100%;
+}
+
+.dashboard-header-modern .dashboard-filter-actions{
+    width:100%;
+    justify-content:flex-end;
+}
+
+}
+/* ===== Dashboard Action Buttons ===== */
+
+.dashboard-filter-actions{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+}
+
+/* Common Button */
+
+.dashboard-filter-actions .btn{
+
+    height:42px;
+
+    min-width:120px;
+
+    border-radius:10px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:8px;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    transition:all .35s ease;
+}
+
+/* Apply Button */
+
+.dashboard-btn-apply {
+    color: #fff;
+    border: none;
+    background: linear-gradient(135deg, #0f8c91, #0f8c91);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, .25);
+}
+
+.dashboard-btn-apply:hover{
+
+    color:#fff;
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 12px 28px rgba(37,99,235,.35);
+}
+
+/* Reset Button */
+
+.dashboard-btn-reset{
+
+    background:#fff;
+
+    color:#475569;
+
+    border:1px solid #dbe4ee;
+}
+
+.dashboard-btn-reset:hover{
+
+    background:#f8fafc;
+
+    color:#2563eb;
+
+    border-color:#2563eb;
+
+    transform:translateY(-2px);
+}
+
+/* Icons */
+
+.dashboard-filter-actions i{
+
+    font-size:17px;
+}
+
+/* Mobile */
+
+@media(max-width:768px){
+
+.dashboard-filter-actions{
+
+    width:100%;
+}
+
+.dashboard-filter-actions .btn{
+
+    flex:1;
+}
+
+}
+/* ===== Dashboard Status ===== */
+
+.dashboard-status-box{
+
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    margin-top: 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #dbe4ee;
+    color: #475569 !important;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all .3s ease;
+}
+
+.dashboard-status-box:empty{
+    display:none;
+}
+
+/* Success State (optional JS class) */
+
+.dashboard-status-box.success{
+
+    background:#ecfdf5;
+
+    border-color:#bbf7d0;
+
+    color:#15803d !important;
+}
+
+/* Error State (optional JS class) */
+
+.dashboard-status-box.error{
+
+    background:#fef2f2;
+
+    border-color:#fecaca;
+
+    color:#dc2626 !important;
+}
