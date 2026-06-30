@@ -724,7 +724,7 @@ body[data-sidebar=dark] .navbar-brand-box { background:var(--menuColor);}
 /* Days */
 
 .days-badge{
-    display:ruby-text;
+    /* display:ruby-text; */
 
     padding:6px 12px;
 

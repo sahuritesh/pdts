@@ -347,7 +347,7 @@ $showTaskTracking = $w('m1_task_kpis') || $w('m1_chart_task_status') || $w('m1_c
             <a href="{{ ($drillLinks['departments_delayed'] ?? '') }}" class="chart-drill-hint text-decoration-none" data-drill-key="departments_delayed">View all</a></h6>
             <div id="dashboard-delayed-depts-body">
             @if(!empty($recentDelayedDepts))
-            <div class="custom-table-wrapper">
+            <div class="custom-table-wrapper ">
     <div class="table-responsive">
         <table class="custom-table">
             <thead>
@@ -511,7 +511,7 @@ $showTaskTracking = $w('m1_task_kpis') || $w('m1_chart_task_status') || $w('m1_c
             <h6><span class="chart-icon"><i class="ri-building-line me-1"></i></span> Departments with open tasks</h6>
             <div id="dashboard-dept-open-tasks-body">
             @if(!empty($deptOpenTasks))
-            <div class="custom-table-wrapper">
+            <div class="custom-table-wrapper table-dashboard-modern">
                 <div class="table-responsive">
                     <table class="custom-table">
                         <thead>
@@ -667,5 +667,6 @@ $(document).on('click', '.dashboard-drill-row[data-href]', function() {
     }
 });
 </script>
+
 @endif
 @endpush
